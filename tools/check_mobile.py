@@ -34,8 +34,10 @@ CHECK = """() => {
 
 
 async def main():
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=PUBLIC)
-    handler.log_message = lambda *a: None
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+    handler = functools.partial(Quiet, directory=PUBLIC)
     server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     URL = 'http://127.0.0.1:%d/index.html' % server.server_address[1]
