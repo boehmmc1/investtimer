@@ -7,7 +7,9 @@ Statische Seite für investtimer.net. Zeigt den Marktstress (0–100).
 | Pfad | Zweck |
 |---|---|
 | `public/index.html` | Die Seite (kein Build-Schritt) |
-| `server/update_stress.py` | Berechnet den Wert auf dem Server, schreibt `stress.json` |
+| `server/update_stress.py` | Holt das Ergebnis von der Volafly-API, schreibt `stress.json` |
+| `volafly-api/marktstress.py` | Rechenkern für den API-Endpunkt `GET /v1/marktstress` |
+| `volafly-api/AUFTRAG.md` | Auftragstext zum Einbau des Endpunkts in die Volafly-API |
 | `deploy/setup.sh` | Einmalige Server-Einrichtung (wiederholbar) |
 | `deploy/auto-deploy.sh` | Holt `main` alle 2 Minuten |
 | `deploy/cert.sh` | Holt das HTTPS-Zertifikat, sobald DNS stimmt |
@@ -17,10 +19,10 @@ Statische Seite für investtimer.net. Zeigt den Marktstress (0–100).
 ## Ablauf
 
 - **Deploy:** Push auf `main` → spätestens 2 Minuten später live.
-- **Daten:** Alle 10 Minuten rechnet der Server den Wert und schreibt
-  `/var/lib/investtimer/data/stress.json`. Öffentlich sind nur Wert, Anzahl und
-  Anteile. Rohwerte, Anker und Datenquelle bleiben auf dem Server
-  (`/etc/investtimer.env`, nicht im Repo).
+- **Daten:** Die Volafly-API liefert unter `https://api.volafly.net/v1/marktstress`
+  das fertige Ergebnis (Wert, Anzahl, Anteile). InvestTimer holt es alle
+  10 Minuten ab und legt es als `/var/lib/investtimer/data/stress.json` ab.
+  InvestTimer kennt weder Rohwerte noch Anker noch die Datenquelle.
 - **Ausfall:** Kommt keine neue Datei, bleibt der letzte Stand stehen. Fehlt die
   Datei ganz, zeigt die Seite den eingebetteten Stand.
 
@@ -43,8 +45,8 @@ EOF
 
 ```bash
 systemctl list-timers 'investtimer-*'          # laufen die Timer?
-journalctl -u investtimer-data.service -n 20   # letzte Berechnungen
-systemctl start investtimer-data.service       # sofort neu rechnen
+journalctl -u investtimer-data.service -n 20   # letzte Abrufe
+systemctl start investtimer-data.service       # sofort neu abrufen
 bash /var/www/investtimer/deploy/setup.sh --force-nginx   # nginx-Block neu einspielen
 ```
 

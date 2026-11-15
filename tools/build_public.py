@@ -12,8 +12,8 @@ import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
-import update_stress as engine  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "volafly-api"))
+import marktstress as engine  # noqa: E402
 
 
 def once(text, old, new, label):

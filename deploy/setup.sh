@@ -22,27 +22,11 @@ mkdir -p "$DATA_DIR"
 
 echo "== 2/5 Datenquelle ($ENV_FILE)"
 if [ ! -f "$ENV_FILE" ]; then
-    # Veroeffentlichungs-Adresse des Volafly-Sheets aus den bestehenden Skripten uebernehmen
-    PUB=$(grep -rhoE 'https://docs\.google\.com/spreadsheets/d/e/[A-Za-z0-9_-]+' \
-            /root/volafly-scraper /root/volafly-chat \
-            --include='*.py' --include='*.env' --include='.env' --include='*.json' \
-            --exclude-dir=venv --exclude-dir=.venv --exclude-dir=.git --exclude-dir=node_modules 2>/dev/null \
-          | sort | uniq -c | sort -rn | awk 'NR==1{print $2}' || true)
-    METRICS=""; CONFIG=""
-    if [ -n "$PUB" ]; then
-        METRICS="$PUB/pub?gid=0&single=true&output=csv"
-        CONFIG="$PUB/pub?gid=1741488117&single=true&output=csv"
-    fi
-    umask 077
     cat > "$ENV_FILE" <<EOF
-# Datenquelle fuer InvestTimer (nicht im Repo, nur auf dem Server)
-# METRICS_CSV_URL: CSV mit Spalten Metric, Value
-# CONFIG_CSV_URL:  CSV mit Spalten name, lo, hi, weight (leer = eingebaute Standardwerte)
-METRICS_CSV_URL=$METRICS
-CONFIG_CSV_URL=$CONFIG
+# InvestTimer holt nur das fertige Ergebnis von der Volafly-API.
+STRESS_API_URL=https://api.volafly.net/v1/marktstress
 OUTPUT_PATH=$DATA_DIR/stress.json
 EOF
-    umask 022
     echo "angelegt."
 else
     echo "vorhanden, unveraendert."
@@ -141,6 +125,7 @@ echo "Seite lokal (erwartet 200 oder 301): $SITE"
 echo "Live-Daten: $DATA_OK"
 if [ "$DATA_OK" != ja ]; then
     echo "  -> Seite zeigt bis dahin den eingebetteten Stand."
-    echo "  -> In $ENV_FILE die METRICS_CSV_URL eintragen, dann: systemctl start investtimer-data.service"
+    echo "  -> Der Endpunkt /v1/marktstress fehlt noch in der Volafly-API: Auftrag in"
+    echo "     $REPO_DIR/volafly-api/AUFTRAG.md ausfuehren. Der Timer holt den Wert danach von selbst."
 fi
 echo "Zertifikat: $([ -d /etc/letsencrypt/live/investtimer.net ] && echo vorhanden || echo 'folgt automatisch, sobald DNS auf den Server zeigt')"
