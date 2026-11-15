@@ -1,6 +1,6 @@
 """Mobil-Pruefung vor jedem Push: Ueberlauf, Tippflaechen (mind. 40 px),
 Eingabe-Schriftgroessen (mind. 16 px gegen iOS-Zoom), abgeschnittene Dialoge.
-Prueft 6 Bildschirmgroessen x 9 Ansichten. Braucht playwright und Chrome.
+Prueft 6 Bildschirmgroessen x 12 Ansichten (inkl. KI-Bereich). Braucht playwright und Chrome.
 
 Aufruf: python3 tools/check_mobile.py [--shots]     (Endet mit 1 bei Auffaelligkeiten)
 """
@@ -35,8 +35,26 @@ CHECK = """() => {
 
 async def main():
     class Quiet(http.server.SimpleHTTPRequestHandler):
+        """Liefert public/ aus und spielt das Chat-Backend nach (/api/chat)."""
         def log_message(self, *args):
             pass
+
+        def _json(self, data):
+            body = json.dumps(data).encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            if self.path == '/api/chat':
+                return self._json({'ok': True})
+            return super().do_GET()
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get('Content-Length') or 0))
+            self._json({'antwort': '## Einordnung\nDer Markt zeigt **moderaten Stress**. Die erwarteten Schwankungen liegen im mittleren Bereich, die Marktbreite ist solide.\n\n- Volatilitaet: unauffaellig\n- Breite: stabil\n\nEin einzelnes Signal entscheidet nicht allein. Sehr_langes_Wort_ohne_Umbruch_' + 'x' * 60})
     handler = functools.partial(Quiet, directory=PUBLIC)
     server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -77,7 +95,13 @@ async def main():
             await pg.click('#account-done')
             await pg.click('#account-login'); await state('login')
             await pg.click('#close-account')
+            await pg.click('#ki-open'); await state('ki-start')
+            await pg.fill('#ki-input', 'vix'); await state('ki-vorschlaege')
+            await pg.fill('#ki-input', 'Wie ist die aktuelle Marktlage in drei Sätzen?')
+            await pg.click('#ki-send'); await pg.wait_for_selector('.ki-msg:not(.user)'); await state('ki-chat')
+            await pg.click('#ki-reset')
             await pg.select_option('#language', 'en'); await state('englisch')
+            assert await pg.evaluate("document.querySelector('#ki').hidden"), 'KI muss in der englischen Ansicht verborgen sein'
             if errors:
                 print(w, 'JS-Fehler', errors)
             await ctx.close()

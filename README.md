@@ -15,6 +15,10 @@ Statische Seite für investtimer.net. Zeigt den Marktstress (0–100).
 | `deploy/cert.sh` | Holt das HTTPS-Zertifikat, sobald DNS stimmt |
 | `deploy/nginx.conf` | nginx-Block |
 | `public/apple-touch-icon.png`, `public/og-image.png` | Homescreen-Icon, Vorschaubild für geteilte Links |
+| `ui/ki.html`, `ui/ki.css`, `ui/ki.js` | KI-Bereich (Fragenkarten, Autocomplete, Chat) |
+| `volafly-api/investtimer_fragen.json` | Musterfragen: einzige Quelle für Seite und Backend |
+| `volafly-api/investtimer_prompt.md` | Themen- und Stilprofil des InvestTimer-Chats |
+| `volafly-api/AUFTRAG-CHAT.md` | Auftragstext zum Einbau des Chat-Endpunkts in die Volafly-API |
 | `source/` | Unveränderter UI-Export (wird nicht ausgeliefert) |
 | `tools/build_public.py` | Baut `public/index.html` aus dem UI-Export (Live-Daten, Mobil-Nachschärfung) |
 | `tools/check_mobile.py` | Mobil-Prüfung: 6 Bildschirmgrößen × 9 Ansichten |
@@ -26,6 +30,10 @@ Statische Seite für investtimer.net. Zeigt den Marktstress (0–100).
   das fertige Ergebnis (Wert, Anzahl, Anteile). InvestTimer holt es alle
   10 Minuten ab und legt es als `/var/lib/investtimer/data/stress.json` ab.
   InvestTimer kennt weder Rohwerte noch Anker noch die Datenquelle.
+- **KI-Chat:** Die Seite ruft `/api/chat` auf; nginx reicht das an die
+  Volafly-API weiter (`/v1/investtimer/chat`). Der KI-Bereich erscheint nur,
+  wenn der Endpunkt antwortet, und nur in der deutschen Ansicht. Abschalten:
+  `INVESTTIMER_CHAT=off` in der `.env` der API.
 - **Ausfall:** Kommt keine neue Datei, bleibt der letzte Stand stehen. Fehlt die
   Datei ganz, zeigt die Seite den eingebetteten Stand.
 

@@ -138,7 +138,17 @@ function normaliseResult(d){
                 "try{result=normaliseResult(JSON.parse(document.getElementById('investtimer-result').textContent))}catch{result=null}", "Ergebnis laden")
     html = once(html, "render();\n\n})();\n(() => {\n/* 04 ·",
                 "render();\n" + LIVE_JS + "\n})();\n(() => {\n/* 04 ·", "Live-Abruf")
-    html = once(html, "</style>", MOBILE_CSS + "</style>", "Mobil-CSS")
+    ui = Path(__file__).resolve().parent.parent / "ui"
+    fragen = json.loads((ui.parent / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))
+    kategorien = [{"label": k["label"], "kurz": k["kurz"], "icon": k["icon"], "fragen": [f["frage"] for f in k["fragen"]]}
+                  for k in fragen["kategorien"]]
+    ki_js = (ui / "ki.js").read_text(encoding="utf-8").replace("__KI_KATEGORIEN__", json.dumps(kategorien, ensure_ascii=False))
+    html = once(html, "</style>", MOBILE_CSS + (ui / "ki.css").read_text(encoding="utf-8") + "</style>", "Mobil- und KI-CSS")
+    html = once(html, '  </section>\n  <section id="details-panel" class="details-panel" aria-label="Details zum Marktstress" hidden></section>\n',
+                '   <button id="ki-open" class="details-toggle ki-open" type="button" hidden>Frage stellen</button>\n'
+                '  </section>\n  <section id="details-panel" class="details-panel" aria-label="Details zum Marktstress" hidden></section>\n'
+                + (ui / "ki.html").read_text(encoding="utf-8"), "KI-Bereich")
+    html = once(html, "renderModule();\n\n})();\n})();", "renderModule();\n\n})();\n" + ki_js + "})();", "KI-Skript")
     html = once(html, "img-src data:;", "img-src 'self' data:;", "CSP Bilder")
     html = once(html, '<meta name="application-name" content="InvestTimer">', HEAD_META, "Kopf-Meta")
 

@@ -1,0 +1,41 @@
+{
+  "hinweis": "Einzige Quelle der InvestTimer-Musterfragen. Die Seite (tools/build_public.py) und das Backend lesen dieselbe Datei. Fragen mit quelle=katalog stehen wortgleich im Volafly-Katalog fragen_templates.json; Wortlaut nicht aendern, sonst greift der Token-Sparpfad nicht. Fragen mit quelle=neu gibt es nur fuer InvestTimer.",
+  "kategorien": [
+    {
+      "label": "DER MARKTSTRESS",
+      "kurz": "Marktstress",
+      "icon": "gauge",
+      "fragen": [
+        {"frage": "Wie hoch ist der Marktstress aktuell, und was treibt ihn?", "quelle": "neu", "art": "live"},
+        {"frage": "Wie entsteht der Marktstress-Wert aus den 14 Bestandteilen?", "quelle": "neu", "art": "wissen"},
+        {"frage": "Was bedeutet antizyklisch beim Blick auf den Marktstress?", "quelle": "neu", "art": "wissen"}
+      ]
+    },
+    {
+      "label": "MARKT HEUTE",
+      "kurz": "Markt",
+      "icon": "activity",
+      "fragen": [
+        {"frage": "Wie ist die aktuelle Marktlage in drei Sätzen?", "quelle": "katalog", "art": "live"},
+        {"frage": "Was sagt der aktuelle VIX über die erwarteten Schwankungen aus?", "quelle": "katalog", "art": "live"},
+        {"frage": "Was zeigt die aktuelle VIX-Terminkurve?", "quelle": "katalog", "art": "live"},
+        {"frage": "Wie breit ist die aktuelle Marktbewegung im S&P 500?", "quelle": "katalog", "art": "live"},
+        {"frage": "Wie sind US-Anleiherenditen und MOVE aktuell einzuordnen?", "quelle": "katalog", "art": "live"},
+        {"frage": "Was zeigen die aktuellen Put/Call-Ratios?", "quelle": "katalog", "art": "live"}
+      ]
+    },
+    {
+      "label": "SIGNALE VERSTEHEN",
+      "kurz": "Signale",
+      "icon": "bars",
+      "fragen": [
+        {"frage": "Welche aktuellen Marktsignale widersprechen sich?", "quelle": "katalog", "art": "live"},
+        {"frage": "Welche Indikatoren ergänzen sich – und wo gibt es Überschneidungen?", "quelle": "katalog", "art": "wissen"},
+        {"frage": "Was zeigt VIX/VIX3M zusätzlich zum VIX?", "quelle": "katalog", "art": "wissen"},
+        {"frage": "Wann ist ein hoher VVIX trotz niedrigem VIX auffällig?", "quelle": "katalog", "art": "wissen"},
+        {"frage": "Wie lässt sich ein niedriger Fear-&-Greed-Wert antizyklisch einordnen?", "quelle": "katalog", "art": "wissen"},
+        {"frage": "Welche Lehren liefern VIX-Spitzen über 40?", "quelle": "katalog", "art": "wissen"}
+      ]
+    }
+  ]
+}
