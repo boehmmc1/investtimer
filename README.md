@@ -14,7 +14,10 @@ Statische Seite für investtimer.net. Zeigt den Marktstress (0–100).
 | `deploy/auto-deploy.sh` | Holt `main` alle 2 Minuten |
 | `deploy/cert.sh` | Holt das HTTPS-Zertifikat, sobald DNS stimmt |
 | `deploy/nginx.conf` | nginx-Block |
-| `tools/build_public.py` | Baut `public/index.html` aus einem neuen UI-Export |
+| `public/apple-touch-icon.png`, `public/og-image.png` | Homescreen-Icon, Vorschaubild für geteilte Links |
+| `source/` | Unveränderter UI-Export (wird nicht ausgeliefert) |
+| `tools/build_public.py` | Baut `public/index.html` aus dem UI-Export (Live-Daten, Mobil-Nachschärfung) |
+| `tools/check_mobile.py` | Mobil-Prüfung: 6 Bildschirmgrößen × 9 Ansichten |
 
 ## Ablauf
 
@@ -56,5 +59,9 @@ bash /var/www/investtimer/deploy/setup.sh --force-nginx   # nginx-Block neu eins
 ## Neuer UI-Export
 
 ```bash
-python3 tools/build_public.py NeuerExport.html public/index.html
+python3 tools/build_public.py source/NeuerExport.html public/index.html
+python3 tools/check_mobile.py     # muss "keine Auffaelligkeiten" melden
 ```
+
+Änderungen an der Seite gehören in `tools/build_public.py`, nicht direkt in
+`public/index.html` – sonst gehen sie beim nächsten Export verloren.

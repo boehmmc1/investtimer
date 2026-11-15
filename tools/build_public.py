@@ -16,6 +16,54 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "volafly-api"))
 import marktstress as engine  # noqa: E402
 
 
+LIVE_JS = """/* Live-Wert laden: beim Start und wenn der Tab wieder sichtbar wird (hoechstens alle 5 Minuten). */
+let lastLoad=0,lastSeen=JSON.stringify(result);
+function loadLive(){
+ if(!location.protocol.startsWith('http')||Date.now()-lastLoad<3e5)return;lastLoad=Date.now();
+ fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  const live=normaliseResult(d);if(!live||JSON.stringify(live)===lastSeen||document.querySelector('dialog[open]')){if(live&&JSON.stringify(live)!==lastSeen)lastLoad=0;return}
+  const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
+  result=live;lastSeen=JSON.stringify(live);render();
+  $$('#details-panel details').forEach((e,i)=>{e.open=!!open[i]});window.scrollTo(0,y);
+ }).catch(()=>{lastLoad=0});
+}
+loadLive();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadLive()});
+window.addEventListener('pageshow',e=>{if(e.persisted)loadLive()});
+"""
+
+MOBILE_CSS = """
+/* 05 · Mobil-Nachschaerfung (investtimer.net): Tippflaechen, Lesbarkeit, Querformat */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,summary,select,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.close-button{width:44px;height:44px;margin:-4px -10px -4px 0}
+.clarity-page .details-toggle,.delete-alert,.account-alternative,.account-login,.language-label select{min-height:44px}
+.channels label{min-height:44px;padding-right:8px}
+@media(pointer:coarse){input:not([type=range]):not([type=radio]):not([type=checkbox]),select,textarea{font-size:16px!important}}
+@media(max-width:760px){.scale-ends,.visual-line .scale-ends,.app-footer,.clarity-page .app-footer,.component-count,.delete-alert{font-size:11px}}
+@media(max-height:500px) and (orientation:landscape){
+.clarity-page .app-header{height:58px}
+.clarity-page .first-look{min-height:0;padding:0 0 14px}
+.first-look h1{margin-bottom:0}
+.gauge-stage{width:236px;height:142px;max-width:100%}
+.gauge-stage .score{font-size:104px;letter-spacing:-6px;padding-right:6px}
+.clarity-page .details-toggle{margin-top:6px}
+.modal,.explanation-modal,.account-dialog{max-height:calc(100dvh - 12px)}
+}
+"""
+
+HEAD_META = """<meta name="application-name" content="InvestTimer">
+<meta name="apple-mobile-web-app-title" content="InvestTimer">
+<link rel="canonical" href="https://investtimer.net/">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website"><meta property="og:site_name" content="InvestTimer"><meta property="og:locale" content="de_DE">
+<meta property="og:url" content="https://investtimer.net/">
+<meta property="og:title" content="InvestTimer — Marktstress auf einen Blick">
+<meta property="og:description" content="Ein klarer Wert von 0 bis 100. Details auf Wunsch.">
+<meta property="og:image" content="https://investtimer.net/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">"""
+
+
 def once(text, old, new, label):
     if text.count(old) != 1:
         raise SystemExit("Erwartete genau eine Stelle fuer: %s (gefunden %d)" % (label, text.count(old)))
@@ -89,11 +137,10 @@ function normaliseResult(d){
     html = once(html, "try{result=evaluateSnapshot(JSON.parse(document.getElementById('investtimer-snapshot').textContent))}catch{result=null}",
                 "try{result=normaliseResult(JSON.parse(document.getElementById('investtimer-result').textContent))}catch{result=null}", "Ergebnis laden")
     html = once(html, "render();\n\n})();\n(() => {\n/* 04 ·",
-                "render();\n"
-                "/* Live-Wert nachladen; bei Fehler bleibt der eingebettete Stand stehen. */\n"
-                "if(location.protocol.startsWith('http'))fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject())"
-                ".then(d=>{const live=normaliseResult(d);if(live){result=live;render()}}).catch(()=>{});\n"
-                "\n})();\n(() => {\n/* 04 ·", "Live-Abruf")
+                "render();\n" + LIVE_JS + "\n})();\n(() => {\n/* 04 ·", "Live-Abruf")
+    html = once(html, "</style>", MOBILE_CSS + "</style>", "Mobil-CSS")
+    html = once(html, "img-src data:;", "img-src 'self' data:;", "CSP Bilder")
+    html = once(html, '<meta name="application-name" content="InvestTimer">', HEAD_META, "Kopf-Meta")
 
     for leftover in ("investtimer-snapshot", "evaluateSnapshot", "metricRows", "configRows", "Fear_Greed_Index"):
         if leftover in html:

@@ -5,13 +5,22 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f8f8f3">
 <title>InvestTimer — Marktstress auf einen Blick</title>
 <meta name="application-name" content="InvestTimer">
+<meta name="apple-mobile-web-app-title" content="InvestTimer">
+<link rel="canonical" href="https://investtimer.net/">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website"><meta property="og:site_name" content="InvestTimer"><meta property="og:locale" content="de_DE">
+<meta property="og:url" content="https://investtimer.net/">
+<meta property="og:title" content="InvestTimer — Marktstress auf einen Blick">
+<meta property="og:description" content="Ein klarer Wert von 0 bis 100. Details auf Wunsch.">
+<meta property="og:image" content="https://investtimer.net/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="investtimer-export-version" content="1.0">
 <meta name="description" content="Marktstress auf einen Blick. Ein klarer Wert, Details auf Wunsch. 14 Bestandteile, ein Wert.">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgY29sb3I9IiMyZTZkNWMiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iSW52ZXN0VGltZXIgYXJjIj48ZyBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik02IDM0YTE4IDE4IDAgMCAxIDM2IDAiLz48cGF0aCBkPSJtMjQgMzQtOC0xMyIvPjxjaXJjbGUgY3g9IjI0IiBjeT0iMzQiIHI9IjIuNCIgZmlsbD0iY3VycmVudENvbG9yIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSIxNSIgY3k9IjE4LjQiIHI9IjMuMSIgZmlsbD0iY3VycmVudENvbG9yIiBzdHJva2U9Im5vbmUiLz48L2c+PC9zdmc+" type="image/svg+xml">
 
 
 
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'">
 <!-- 01 · Fully embedded fonts and styles -->
 <style id="investtimer-styles">
 /* latin-ext */
@@ -59,6 +68,24 @@
 /* InvestTimer wordmark stays compact across web and app. */
 .brand-timer{font-weight:450;color:var(--accent)}
 
+
+/* 05 · Mobil-Nachschaerfung (investtimer.net): Tippflaechen, Lesbarkeit, Querformat */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,summary,select,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.close-button{width:44px;height:44px;margin:-4px -10px -4px 0}
+.clarity-page .details-toggle,.delete-alert,.account-alternative,.account-login,.language-label select{min-height:44px}
+.channels label{min-height:44px;padding-right:8px}
+@media(pointer:coarse){input:not([type=range]):not([type=radio]):not([type=checkbox]),select,textarea{font-size:16px!important}}
+@media(max-width:760px){.scale-ends,.visual-line .scale-ends,.app-footer,.clarity-page .app-footer,.component-count,.delete-alert{font-size:11px}}
+@media(max-height:500px) and (orientation:landscape){
+.clarity-page .app-header{height:58px}
+.clarity-page .first-look{min-height:0;padding:0 0 14px}
+.first-look h1{margin-bottom:0}
+.gauge-stage{width:236px;height:142px;max-width:100%}
+.gauge-stage .score{font-size:104px;letter-spacing:-6px;padding-right:6px}
+.clarity-page .details-toggle{margin-top:6px}
+.modal,.explanation-modal,.account-dialog{max-height:calc(100dvh - 12px)}
+}
 </style>
 </head>
 <body>
@@ -513,8 +540,20 @@ $('#alert-form').addEventListener('submit',e=>{e.preventDefault();if(state.alert
 $('#explain-dialog').addEventListener('cancel',e=>{e.preventDefault();closeExplanation()});
 for(const dialog of [$('#alert-dialog'),$('#explain-dialog')])dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){if(dialog.id==='explain-dialog')closeExplanation();else dialog.close()}});
 render();
-/* Live-Wert nachladen; bei Fehler bleibt der eingebettete Stand stehen. */
-if(location.protocol.startsWith('http'))fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{const live=normaliseResult(d);if(live){result=live;render()}}).catch(()=>{});
+/* Live-Wert laden: beim Start und wenn der Tab wieder sichtbar wird (hoechstens alle 5 Minuten). */
+let lastLoad=0,lastSeen=JSON.stringify(result);
+function loadLive(){
+ if(!location.protocol.startsWith('http')||Date.now()-lastLoad<3e5)return;lastLoad=Date.now();
+ fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  const live=normaliseResult(d);if(!live||JSON.stringify(live)===lastSeen||document.querySelector('dialog[open]')){if(live&&JSON.stringify(live)!==lastSeen)lastLoad=0;return}
+  const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
+  result=live;lastSeen=JSON.stringify(live);render();
+  $$('#details-panel details').forEach((e,i)=>{e.open=!!open[i]});window.scrollTo(0,y);
+ }).catch(()=>{lastLoad=0});
+}
+loadLive();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadLive()});
+window.addEventListener('pageshow',e=>{if(e.persisted)loadLive()});
 
 })();
 (() => {
