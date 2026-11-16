@@ -112,8 +112,14 @@ echo "== 5/5 Erster Lauf"
 DATA_OK=nein
 if (set -a; . "$ENV_FILE"; set +a; python3 "$REPO_DIR/server/update_stress.py"); then DATA_OK=ja; fi
 if command -v certbot >/dev/null; then
+    # Der Timer loest den ersten Versuch sofort selbst aus. Kein zweiter Aufruf
+    # daneben, sonst sperren sich zwei certbot-Laeufe gegenseitig.
     systemctl enable --now investtimer-cert.timer >/dev/null
-    "$REPO_DIR/deploy/cert.sh" || true
+    for _ in $(seq 1 30); do
+        [ -d /etc/letsencrypt/live/investtimer.net ] && break
+        systemctl is-active --quiet investtimer-cert.service || [ "$_" -lt 3 ] || break
+        sleep 3
+    done
 else
     echo "certbot fehlt - HTTPS wird nicht automatisch eingerichtet."
 fi
