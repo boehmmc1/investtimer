@@ -1,42 +1,66 @@
 
-/* 06 · InvestTimer KI (Aufbau wie der Volafly-KI-Tab, im hellen InvestTimer-Look) */
-.ki-open{margin-top:2px!important}
-.ki{position:relative;overflow:hidden;margin:26px 0 70px;border:1px solid var(--line);border-radius:20px;background:radial-gradient(circle at 50% 12%,#fff 0%,var(--panel) 62%);color:var(--text);display:flex;flex-direction:column;scroll-margin-top:16px}
+/* 06 · InvestTimer KI. Leitidee: der Halbmond ist das Zeichen des Bots.
+   Er zeigt im Kopf den aktuellen Wert und laeuft als Denk-Anzeige, waehrend eine Antwort entsteht. */
+.ki-open{margin-top:6px!important;display:inline-flex!important;align-items:center;gap:10px;min-height:44px;padding:9px 18px 9px 14px!important;border:1px solid #c8d2c3!important;border-radius:22px!important;background:var(--surface)!important;color:var(--text)!important;font-size:13px!important;text-decoration:none!important;transition:border-color .15s ease,background .15s ease}
+.ki-open:hover{border-color:var(--accent)!important;background:#e7f0ea80!important}
+.ki-open svg{width:22px;height:19px;flex-shrink:0}
+.ki-open strong{font-weight:600}
+.ki-open .ki-open-sub{color:var(--sub)}
+.ki{position:relative;overflow:hidden;margin:26px 0 70px;border:1px solid var(--line);border-radius:20px;background:radial-gradient(120% 70% at 50% 0%,#fff 0%,var(--panel) 70%);color:var(--text);display:flex;flex-direction:column;scroll-margin-top:16px}
 .ki[hidden]{display:none}
-.ki-head{height:62px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.ki-brand{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-.6px;display:flex;align-items:center}
-.ki-brand span{color:var(--accent);font-weight:400}
+.ki ::selection{background:#cfe3d7;color:var(--text)}
+.ki :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+.ki-head{height:62px;padding:0 16px 0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ki-brand{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.6px;display:flex;align-items:center}
+.ki-brand>span{color:var(--accent);font-weight:400}
 .ki-brand b{font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:1.6px;margin-left:10px;padding:3px 6px;border:1px solid #c8d2c3;border-radius:4px;color:var(--sub)}
-.ki-reset{font-size:12px;color:var(--sub);text-decoration:underline;min-height:44px;padding:0 4px}
-.ki-core{position:relative;height:118px;transition:height .35s ease;flex-shrink:0}
-.ki-core canvas{position:absolute;inset:0;width:100%;height:100%}
-.ki-core-note{position:absolute;bottom:2px;width:100%;display:flex;gap:6px;align-items:center;justify-content:center;font-size:11px;letter-spacing:2px;color:var(--sub)}
-.ki-core-note i{width:4px;height:4px;border-radius:50%;background:var(--accent)}
-.ki-chat .ki-core{height:76px}.ki-chat .ki-core-note,.ki-chat .ki-hero,.ki-chat .ki-cards{display:none}
-.ki-body{width:100%;max-width:920px;margin:0 auto;padding:0 52px;text-align:center;display:flex;flex-direction:column}
+.ki-head-actions{display:flex;align-items:center;gap:4px}
+.ki-reset{font-size:12px;color:var(--sub);text-decoration:underline;text-underline-offset:3px;min-height:44px;padding:0 8px}
+.ki-close{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:12px;color:var(--text)}
+.ki-close[hidden],.ki-reset[hidden]{display:none}
+
+/* Halbmond-Zeichen: Spur + Fuellung (Fuellung = aktueller Marktstress) */
+.ki-glyph{width:30px;height:17px;margin-right:10px;flex-shrink:0;overflow:visible}
+.ki-glyph path,.ki-mark path{fill:none;stroke-width:4.2;stroke-linecap:round}
+.ki-glyph-track,.ki-mark-track{stroke:#d3dccf}
+.ki-glyph-fill,.ki-mark-fill{stroke:var(--accent);stroke-dasharray:var(--ki-wert,0) 100;transition:stroke-dasharray .9s cubic-bezier(.16,1,.3,1)}
+.ki-mark.denkt .ki-mark-fill{transition:none;stroke-dasharray:22 100;animation:ki-denkt 1.5s cubic-bezier(.65,0,.35,1) infinite alternate}
+@keyframes ki-denkt{from{stroke-dashoffset:0}to{stroke-dashoffset:-78}}
+
+.ki-body{width:100%;max-width:920px;margin:0 auto;padding:0 52px;text-align:center;display:flex;flex-direction:column;min-height:0}
 .ki-chat .ki-body{max-width:760px}
-.ki-eyebrow{font-size:11px;letter-spacing:2px;font-weight:500;color:var(--accent);margin-top:8px}
-.ki-hero h2{font-family:var(--display);font-size:33px;font-weight:500;letter-spacing:-1.1px;line-height:1.14;margin:10px 0 0}
+.ki-hero{padding-top:20px}
+.ki-hero h2{font-family:var(--display);font-size:36px;font-weight:500;letter-spacing:-1.2px;line-height:1.12;margin:0;text-wrap:balance}
 .ki-hero h2 span{color:var(--sub)}
-.ki-log{display:flex;flex-direction:column;gap:12px;text-align:left;max-height:min(56dvh,560px);overflow-y:auto;overscroll-behavior:contain;padding:4px 4px 0 0}
+.ki-lede{margin:12px auto 0;max-width:46ch;font-size:14px;line-height:1.55;color:var(--sub);text-wrap:pretty}
+.ki-chat .ki-hero,.ki-chat .ki-cards{display:none}
+
+/* Verlauf */
+.ki-log{display:flex;flex-direction:column;gap:16px;text-align:left;max-height:min(56dvh,560px);overflow-y:auto;overscroll-behavior:contain;padding:8px 4px 4px 0;scrollbar-width:thin;scrollbar-color:#c8d2c3 transparent}
 .ki-log[hidden]{display:none}
-.ki-msg{font-size:14px;line-height:1.6;border-radius:14px;padding:12px 16px;max-width:92%;align-self:flex-start;background:var(--surface);border:1px solid var(--line);overflow-wrap:anywhere}
-.ki-msg.user{align-self:flex-end;max-width:78%;background:#e7f0ea;border-color:#bfd3c8;border-radius:14px 14px 4px 14px;padding:9px 15px;line-height:1.5}
+.ki-row{display:flex;gap:10px;align-items:flex-start;max-width:94%}
+.ki-mark{width:28px;height:28px;flex-shrink:0;margin-top:4px;padding:5px 3px 3px;border-radius:50%;background:var(--surface);border:1px solid var(--line);overflow:visible}
+.ki-mark path{stroke-width:5}
+.ki-msg{font-size:14.5px;line-height:1.62;border-radius:4px 16px 16px 16px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);overflow-wrap:anywhere;box-shadow:0 2px 10px #1b33300a;min-width:0}
+.ki-msg.user{align-self:flex-end;max-width:78%;background:#e7f0ea;border-color:#bfd3c8;border-radius:16px 16px 4px 16px;padding:9px 15px;line-height:1.5;box-shadow:none}
+.ki-msg.fehler{background:var(--stress-soft);border-color:#e3d3b8}
 .ki-msg .ki-h{font-size:15px;font-weight:600;margin:4px 0 2px}.ki-msg .ki-li{padding-left:14px}.ki-msg .ki-gap{height:8px}
-.ki-wait{align-self:flex-start;display:flex;gap:8px;align-items:center;padding:9px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-size:12px;color:var(--sub)}
-.ki-wait i{width:11px;height:11px;border:1.5px solid #bfd3c8;border-top-color:var(--accent);border-radius:50%;animation:ki-spin .8s linear infinite}
-@keyframes ki-spin{to{transform:rotate(360deg)}}
-.ki-composer-wrap{position:relative;z-index:3;margin:18px 40px 0}
-.ki-chat .ki-composer-wrap{margin:12px 0 0}
-.ki-composer{position:relative;display:flex;align-items:center;gap:9px;padding:10px 12px 31px;background:var(--surface);border:1px solid #b9c7b6;border-radius:16px;box-shadow:0 5px 30px #1b33300d;text-align:left}
-.ki-composer:focus-within,.ki-composer.open{border-color:var(--accent)}
+.ki-wait{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--sub)}
+.ki-wait .ki-mark{margin-top:0}
+.ki-msg.neu{animation:ki-ein .32s cubic-bezier(.16,1,.3,1)}
+@keyframes ki-ein{from{opacity:0;transform:translateY(6px)}}
+
+/* Eingabe */
+.ki-composer-wrap{position:relative;z-index:3;margin:22px 40px 0}
+.ki-chat .ki-composer-wrap{margin:14px 0 0}
+.ki-composer{position:relative;display:flex;align-items:center;gap:9px;padding:8px 8px 8px 12px;background:var(--surface);border:1px solid #b9c7b6;border-radius:16px;box-shadow:0 6px 28px #1b33300f;text-align:left;transition:border-color .15s ease,box-shadow .15s ease}
+.ki-composer:focus-within,.ki-composer.open{border-color:var(--accent);box-shadow:0 6px 28px #2e6d5c1f}
 .ki-composer.open{border-radius:16px 16px 0 0}
-.ki-composer input{min-width:0;flex:1;min-height:44px;padding:8px;background:transparent;color:var(--text);border:0;outline:0;font-size:16px;font-family:inherit}
-.ki-composer input::placeholder{color:#8c978f}
-.ki-send{width:44px;height:44px;flex-shrink:0;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}
+.ki-composer input{min-width:0;flex:1;min-height:44px;padding:8px;background:transparent;color:var(--text);border:0;outline:0;font-size:16px;font-family:inherit;caret-color:var(--accent)}
+.ki-composer input::placeholder{color:#6f7d75}
+.ki-send{width:44px;height:44px;flex-shrink:0;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .15s ease,transform .1s ease}
+.ki-send:not(:disabled):active{transform:scale(.94)}
 .ki-send:disabled{opacity:.38;cursor:default}
-.ki-meta{position:absolute;left:20px;right:18px;bottom:9px;display:flex;justify-content:space-between;color:var(--sub);font-size:11px;pointer-events:none}
-.ki-meta span{display:flex;gap:6px;align-items:center}
 .ki-ac{position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--accent);border-top-color:var(--line);border-radius:0 0 16px 16px;padding:6px;box-shadow:0 18px 40px #1b333026;text-align:left}
 .ki-ac[hidden]{display:none}
 .ki-ac button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;min-height:44px;border-radius:10px;font-size:14px;line-height:1.4;text-align:left;color:var(--text)}
@@ -44,33 +68,52 @@
 .ki-ac button strong{color:var(--accent);font-weight:600}
 .ki-ac button small{font-size:11px;letter-spacing:1.2px;color:var(--sub);white-space:nowrap}
 .ki-ac-hint{display:flex;justify-content:space-between;padding:8px 12px 4px;margin-top:4px;border-top:1px solid var(--line);font-size:11px;color:var(--sub)}
-.ki-cards{margin-top:18px;transition:opacity .15s ease}
+
+/* Musterfragen: drei Spalten ohne eigene Kartenflaeche */
+.ki-cards{margin-top:26px;transition:opacity .15s ease}
 .ki-cards.dim{opacity:.22}
-.ki-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.ki-card{padding:12px 12px 10px;background:#ffffff8c;border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0}
-.ki-card-top{display:flex;align-items:center;justify-content:space-between;padding-left:2px;min-height:44px}
-.ki-card-top span{display:flex;gap:8px;align-items:center;font-size:11px;letter-spacing:1.3px;font-weight:600;color:var(--sub)}
+.ki-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.ki-card{display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0;border-top:1px solid #d3dccf}
+.ki-card-top{display:flex;align-items:center;justify-content:space-between;min-height:44px}
+.ki-card-top span{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:600;color:var(--sub)}
 .ki-shuffle{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;color:var(--sub)}
-.ki-q{text-align:left;padding:10px 13px;min-height:44px;border:1px solid #c8d2c3;border-radius:20px;color:var(--text);font-size:13.5px;line-height:1.36;transition:border-color .15s ease,background .15s ease}
-.ki-q:hover{border-color:var(--accent);background:#e7f0ea80}
-.ki-dots{display:flex;justify-content:center;gap:6px;padding-top:2px;min-height:5px}
+.ki-q{text-align:left;padding:10px 14px;min-height:44px;border:1px solid #c8d2c3;border-radius:20px;background:#ffffffb3;color:var(--text);font-size:13.5px;line-height:1.36;transition:border-color .15s ease,background .15s ease}
+.ki-q:hover{border-color:var(--accent);background:#e7f0ea}
+.ki-dots{display:flex;justify-content:center;gap:6px;padding-top:4px;min-height:5px}
 .ki-dots i{width:5px;height:5px;border-radius:3px;background:#c8d2c3;transition:width .2s ease}.ki-dots i.on{width:14px;background:var(--accent)}
-.ki-tabs{display:none;gap:6px;margin-bottom:10px}
-.ki-tabs button{padding:8px 13px;min-height:44px;border:1px solid #c8d2c3;border-radius:22px;color:var(--sub);font-size:12px;font-weight:600}
+.ki-tabs{display:none;gap:6px;margin-bottom:6px}
+.ki-tabs button{padding:8px 14px;min-height:44px;border:1px solid #c8d2c3;border-radius:22px;color:var(--sub);font-size:13px;font-weight:600}
 .ki-tabs button[aria-selected=true]{background:#e7f0ea;border-color:var(--accent);color:var(--text)}
-.ki-foot{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--sub);padding:14px 2px 16px}
+.ki-foot{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--sub);padding:18px 2px 16px}
+
 @media(max-width:760px){
 .ki{margin:18px 0 44px;border-radius:18px}
-.ki-head{height:54px;padding:0 16px}
-.ki-core{height:100px}.ki-chat .ki-core{height:64px}
+.ki-head{height:56px;padding:0 6px 0 16px}
 .ki-body{padding:0 14px}
-.ki-hero h2{font-size:27px}
-.ki-composer-wrap{margin:16px 0 0}
-.ki-enter,.ki-ac-hint{display:none}
+.ki-hero{padding-top:8px}
+.ki-hero h2{font-size:28px}
+.ki-lede{font-size:13.5px}
+.ki-composer-wrap{margin:18px 0 0}
+.ki-ac-hint{display:none}
 .ki-tabs{display:flex}
-.ki-grid{display:block}.ki-grid .ki-card{display:none}.ki-grid .ki-card.on{display:flex}
+.ki-grid{display:block}.ki-grid .ki-card{display:none;border-top:0}.ki-grid .ki-card.on{display:flex}
+.ki-card-top{display:none}
 .ki-q{font-size:14px}
 .ki-foot{flex-direction:column;align-items:center;gap:2px;text-align:center}
 .ki-log{max-height:52dvh}
+/* App-Ansicht: laufendes Gespraech als Vollbild, Eingabe unten (Daumenzone) */
+.ki.ki-sheet{position:fixed;inset:0;z-index:60;margin:0;border:0;border-radius:0;height:100dvh;background:var(--bg);box-shadow:0 -8px 30px #1b33301f;animation:ki-sheet .36s cubic-bezier(.32,.72,0,1)}
+.ki-sheet .ki-head{border-bottom:1px solid var(--line);background:var(--bg);padding-top:env(safe-area-inset-top)}
+.ki-sheet .ki-body{flex:1;max-width:none;padding:0}
+.ki-sheet .ki-log{flex:1;min-height:0;max-height:none;padding:16px 14px 8px}
+.ki-sheet .ki-composer-wrap{margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg)}
+.ki-sheet .ki-foot{display:none}
 }
-@media(prefers-reduced-motion:reduce){.ki-core,.ki-cards,.ki-dots i{transition:none}}
+@keyframes ki-sheet{from{transform:translateY(100%)}}
+html.ki-lock,html.ki-lock body{overflow:hidden}
+@media(prefers-reduced-motion:reduce){
+.ki-cards,.ki-dots i,.ki-composer,.ki-send{transition:none}
+.ki-glyph-fill,.ki-mark-fill{transition:none}
+.ki-mark.denkt .ki-mark-fill{animation:none;stroke-dasharray:var(--ki-wert,0) 100}
+.ki-msg.neu,.ki.ki-sheet{animation:none}
+}

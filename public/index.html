@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="InvestTimer">
 <link rel="canonical" href="https://investtimer.net/">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta property="og:type" content="website"><meta property="og:site_name" content="InvestTimer"><meta property="og:locale" content="de_DE">
 <meta property="og:url" content="https://investtimer.net/">
 <meta property="og:title" content="InvestTimer — Marktstress auf einen Blick">
@@ -20,7 +22,7 @@
 
 
 
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <!-- 01 · Fully embedded fonts and styles -->
 <style id="investtimer-styles">
 /* latin-ext */
@@ -87,44 +89,74 @@ button,summary,select,label{touch-action:manipulation;-webkit-tap-highlight-colo
 .modal,.explanation-modal,.account-dialog{max-height:calc(100dvh - 12px)}
 }
 
-/* 06 · InvestTimer KI (Aufbau wie der Volafly-KI-Tab, im hellen InvestTimer-Look) */
-.ki-open{margin-top:2px!important}
-.ki{position:relative;overflow:hidden;margin:26px 0 70px;border:1px solid var(--line);border-radius:20px;background:radial-gradient(circle at 50% 12%,#fff 0%,var(--panel) 62%);color:var(--text);display:flex;flex-direction:column;scroll-margin-top:16px}
+/* 05b · Signalbogen: Fuellung per Skript (rAF), Stufenmarken bei 25/50/75, ruhige Ziffern beim Hochzaehlen */
+.gauge-value{transition:none!important}
+.gauge-tick{stroke:#c9d2c4;stroke-width:2;stroke-linecap:round}
+.gauge-stage .score{font-variant-numeric:tabular-nums}
+.first-look .score:not(.gauge-stage .score){visibility:hidden}
+
+/* 06 · InvestTimer KI. Leitidee: der Halbmond ist das Zeichen des Bots.
+   Er zeigt im Kopf den aktuellen Wert und laeuft als Denk-Anzeige, waehrend eine Antwort entsteht. */
+.ki-open{margin-top:6px!important;display:inline-flex!important;align-items:center;gap:10px;min-height:44px;padding:9px 18px 9px 14px!important;border:1px solid #c8d2c3!important;border-radius:22px!important;background:var(--surface)!important;color:var(--text)!important;font-size:13px!important;text-decoration:none!important;transition:border-color .15s ease,background .15s ease}
+.ki-open:hover{border-color:var(--accent)!important;background:#e7f0ea80!important}
+.ki-open svg{width:22px;height:19px;flex-shrink:0}
+.ki-open strong{font-weight:600}
+.ki-open .ki-open-sub{color:var(--sub)}
+.ki{position:relative;overflow:hidden;margin:26px 0 70px;border:1px solid var(--line);border-radius:20px;background:radial-gradient(120% 70% at 50% 0%,#fff 0%,var(--panel) 70%);color:var(--text);display:flex;flex-direction:column;scroll-margin-top:16px}
 .ki[hidden]{display:none}
-.ki-head{height:62px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.ki-brand{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-.6px;display:flex;align-items:center}
-.ki-brand span{color:var(--accent);font-weight:400}
+.ki ::selection{background:#cfe3d7;color:var(--text)}
+.ki :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+.ki-head{height:62px;padding:0 16px 0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ki-brand{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.6px;display:flex;align-items:center}
+.ki-brand>span{color:var(--accent);font-weight:400}
 .ki-brand b{font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:1.6px;margin-left:10px;padding:3px 6px;border:1px solid #c8d2c3;border-radius:4px;color:var(--sub)}
-.ki-reset{font-size:12px;color:var(--sub);text-decoration:underline;min-height:44px;padding:0 4px}
-.ki-core{position:relative;height:118px;transition:height .35s ease;flex-shrink:0}
-.ki-core canvas{position:absolute;inset:0;width:100%;height:100%}
-.ki-core-note{position:absolute;bottom:2px;width:100%;display:flex;gap:6px;align-items:center;justify-content:center;font-size:11px;letter-spacing:2px;color:var(--sub)}
-.ki-core-note i{width:4px;height:4px;border-radius:50%;background:var(--accent)}
-.ki-chat .ki-core{height:76px}.ki-chat .ki-core-note,.ki-chat .ki-hero,.ki-chat .ki-cards{display:none}
-.ki-body{width:100%;max-width:920px;margin:0 auto;padding:0 52px;text-align:center;display:flex;flex-direction:column}
+.ki-head-actions{display:flex;align-items:center;gap:4px}
+.ki-reset{font-size:12px;color:var(--sub);text-decoration:underline;text-underline-offset:3px;min-height:44px;padding:0 8px}
+.ki-close{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:12px;color:var(--text)}
+.ki-close[hidden],.ki-reset[hidden]{display:none}
+
+/* Halbmond-Zeichen: Spur + Fuellung (Fuellung = aktueller Marktstress) */
+.ki-glyph{width:30px;height:17px;margin-right:10px;flex-shrink:0;overflow:visible}
+.ki-glyph path,.ki-mark path{fill:none;stroke-width:4.2;stroke-linecap:round}
+.ki-glyph-track,.ki-mark-track{stroke:#d3dccf}
+.ki-glyph-fill,.ki-mark-fill{stroke:var(--accent);stroke-dasharray:var(--ki-wert,0) 100;transition:stroke-dasharray .9s cubic-bezier(.16,1,.3,1)}
+.ki-mark.denkt .ki-mark-fill{transition:none;stroke-dasharray:22 100;animation:ki-denkt 1.5s cubic-bezier(.65,0,.35,1) infinite alternate}
+@keyframes ki-denkt{from{stroke-dashoffset:0}to{stroke-dashoffset:-78}}
+
+.ki-body{width:100%;max-width:920px;margin:0 auto;padding:0 52px;text-align:center;display:flex;flex-direction:column;min-height:0}
 .ki-chat .ki-body{max-width:760px}
-.ki-eyebrow{font-size:11px;letter-spacing:2px;font-weight:500;color:var(--accent);margin-top:8px}
-.ki-hero h2{font-family:var(--display);font-size:33px;font-weight:500;letter-spacing:-1.1px;line-height:1.14;margin:10px 0 0}
+.ki-hero{padding-top:20px}
+.ki-hero h2{font-family:var(--display);font-size:36px;font-weight:500;letter-spacing:-1.2px;line-height:1.12;margin:0;text-wrap:balance}
 .ki-hero h2 span{color:var(--sub)}
-.ki-log{display:flex;flex-direction:column;gap:12px;text-align:left;max-height:min(56dvh,560px);overflow-y:auto;overscroll-behavior:contain;padding:4px 4px 0 0}
+.ki-lede{margin:12px auto 0;max-width:46ch;font-size:14px;line-height:1.55;color:var(--sub);text-wrap:pretty}
+.ki-chat .ki-hero,.ki-chat .ki-cards{display:none}
+
+/* Verlauf */
+.ki-log{display:flex;flex-direction:column;gap:16px;text-align:left;max-height:min(56dvh,560px);overflow-y:auto;overscroll-behavior:contain;padding:8px 4px 4px 0;scrollbar-width:thin;scrollbar-color:#c8d2c3 transparent}
 .ki-log[hidden]{display:none}
-.ki-msg{font-size:14px;line-height:1.6;border-radius:14px;padding:12px 16px;max-width:92%;align-self:flex-start;background:var(--surface);border:1px solid var(--line);overflow-wrap:anywhere}
-.ki-msg.user{align-self:flex-end;max-width:78%;background:#e7f0ea;border-color:#bfd3c8;border-radius:14px 14px 4px 14px;padding:9px 15px;line-height:1.5}
+.ki-row{display:flex;gap:10px;align-items:flex-start;max-width:94%}
+.ki-mark{width:28px;height:28px;flex-shrink:0;margin-top:4px;padding:5px 3px 3px;border-radius:50%;background:var(--surface);border:1px solid var(--line);overflow:visible}
+.ki-mark path{stroke-width:5}
+.ki-msg{font-size:14.5px;line-height:1.62;border-radius:4px 16px 16px 16px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);overflow-wrap:anywhere;box-shadow:0 2px 10px #1b33300a;min-width:0}
+.ki-msg.user{align-self:flex-end;max-width:78%;background:#e7f0ea;border-color:#bfd3c8;border-radius:16px 16px 4px 16px;padding:9px 15px;line-height:1.5;box-shadow:none}
+.ki-msg.fehler{background:var(--stress-soft);border-color:#e3d3b8}
 .ki-msg .ki-h{font-size:15px;font-weight:600;margin:4px 0 2px}.ki-msg .ki-li{padding-left:14px}.ki-msg .ki-gap{height:8px}
-.ki-wait{align-self:flex-start;display:flex;gap:8px;align-items:center;padding:9px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-size:12px;color:var(--sub)}
-.ki-wait i{width:11px;height:11px;border:1.5px solid #bfd3c8;border-top-color:var(--accent);border-radius:50%;animation:ki-spin .8s linear infinite}
-@keyframes ki-spin{to{transform:rotate(360deg)}}
-.ki-composer-wrap{position:relative;z-index:3;margin:18px 40px 0}
-.ki-chat .ki-composer-wrap{margin:12px 0 0}
-.ki-composer{position:relative;display:flex;align-items:center;gap:9px;padding:10px 12px 31px;background:var(--surface);border:1px solid #b9c7b6;border-radius:16px;box-shadow:0 5px 30px #1b33300d;text-align:left}
-.ki-composer:focus-within,.ki-composer.open{border-color:var(--accent)}
+.ki-wait{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--sub)}
+.ki-wait .ki-mark{margin-top:0}
+.ki-msg.neu{animation:ki-ein .32s cubic-bezier(.16,1,.3,1)}
+@keyframes ki-ein{from{opacity:0;transform:translateY(6px)}}
+
+/* Eingabe */
+.ki-composer-wrap{position:relative;z-index:3;margin:22px 40px 0}
+.ki-chat .ki-composer-wrap{margin:14px 0 0}
+.ki-composer{position:relative;display:flex;align-items:center;gap:9px;padding:8px 8px 8px 12px;background:var(--surface);border:1px solid #b9c7b6;border-radius:16px;box-shadow:0 6px 28px #1b33300f;text-align:left;transition:border-color .15s ease,box-shadow .15s ease}
+.ki-composer:focus-within,.ki-composer.open{border-color:var(--accent);box-shadow:0 6px 28px #2e6d5c1f}
 .ki-composer.open{border-radius:16px 16px 0 0}
-.ki-composer input{min-width:0;flex:1;min-height:44px;padding:8px;background:transparent;color:var(--text);border:0;outline:0;font-size:16px;font-family:inherit}
-.ki-composer input::placeholder{color:#8c978f}
-.ki-send{width:44px;height:44px;flex-shrink:0;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}
+.ki-composer input{min-width:0;flex:1;min-height:44px;padding:8px;background:transparent;color:var(--text);border:0;outline:0;font-size:16px;font-family:inherit;caret-color:var(--accent)}
+.ki-composer input::placeholder{color:#6f7d75}
+.ki-send{width:44px;height:44px;flex-shrink:0;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .15s ease,transform .1s ease}
+.ki-send:not(:disabled):active{transform:scale(.94)}
 .ki-send:disabled{opacity:.38;cursor:default}
-.ki-meta{position:absolute;left:20px;right:18px;bottom:9px;display:flex;justify-content:space-between;color:var(--sub);font-size:11px;pointer-events:none}
-.ki-meta span{display:flex;gap:6px;align-items:center}
 .ki-ac{position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--accent);border-top-color:var(--line);border-radius:0 0 16px 16px;padding:6px;box-shadow:0 18px 40px #1b333026;text-align:left}
 .ki-ac[hidden]{display:none}
 .ki-ac button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;min-height:44px;border-radius:10px;font-size:14px;line-height:1.4;text-align:left;color:var(--text)}
@@ -132,36 +164,55 @@ button,summary,select,label{touch-action:manipulation;-webkit-tap-highlight-colo
 .ki-ac button strong{color:var(--accent);font-weight:600}
 .ki-ac button small{font-size:11px;letter-spacing:1.2px;color:var(--sub);white-space:nowrap}
 .ki-ac-hint{display:flex;justify-content:space-between;padding:8px 12px 4px;margin-top:4px;border-top:1px solid var(--line);font-size:11px;color:var(--sub)}
-.ki-cards{margin-top:18px;transition:opacity .15s ease}
+
+/* Musterfragen: drei Spalten ohne eigene Kartenflaeche */
+.ki-cards{margin-top:26px;transition:opacity .15s ease}
 .ki-cards.dim{opacity:.22}
-.ki-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.ki-card{padding:12px 12px 10px;background:#ffffff8c;border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0}
-.ki-card-top{display:flex;align-items:center;justify-content:space-between;padding-left:2px;min-height:44px}
-.ki-card-top span{display:flex;gap:8px;align-items:center;font-size:11px;letter-spacing:1.3px;font-weight:600;color:var(--sub)}
+.ki-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.ki-card{display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0;border-top:1px solid #d3dccf}
+.ki-card-top{display:flex;align-items:center;justify-content:space-between;min-height:44px}
+.ki-card-top span{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:600;color:var(--sub)}
 .ki-shuffle{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;color:var(--sub)}
-.ki-q{text-align:left;padding:10px 13px;min-height:44px;border:1px solid #c8d2c3;border-radius:20px;color:var(--text);font-size:13.5px;line-height:1.36;transition:border-color .15s ease,background .15s ease}
-.ki-q:hover{border-color:var(--accent);background:#e7f0ea80}
-.ki-dots{display:flex;justify-content:center;gap:6px;padding-top:2px;min-height:5px}
+.ki-q{text-align:left;padding:10px 14px;min-height:44px;border:1px solid #c8d2c3;border-radius:20px;background:#ffffffb3;color:var(--text);font-size:13.5px;line-height:1.36;transition:border-color .15s ease,background .15s ease}
+.ki-q:hover{border-color:var(--accent);background:#e7f0ea}
+.ki-dots{display:flex;justify-content:center;gap:6px;padding-top:4px;min-height:5px}
 .ki-dots i{width:5px;height:5px;border-radius:3px;background:#c8d2c3;transition:width .2s ease}.ki-dots i.on{width:14px;background:var(--accent)}
-.ki-tabs{display:none;gap:6px;margin-bottom:10px}
-.ki-tabs button{padding:8px 13px;min-height:44px;border:1px solid #c8d2c3;border-radius:22px;color:var(--sub);font-size:12px;font-weight:600}
+.ki-tabs{display:none;gap:6px;margin-bottom:6px}
+.ki-tabs button{padding:8px 14px;min-height:44px;border:1px solid #c8d2c3;border-radius:22px;color:var(--sub);font-size:13px;font-weight:600}
 .ki-tabs button[aria-selected=true]{background:#e7f0ea;border-color:var(--accent);color:var(--text)}
-.ki-foot{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--sub);padding:14px 2px 16px}
+.ki-foot{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--sub);padding:18px 2px 16px}
+
 @media(max-width:760px){
 .ki{margin:18px 0 44px;border-radius:18px}
-.ki-head{height:54px;padding:0 16px}
-.ki-core{height:100px}.ki-chat .ki-core{height:64px}
+.ki-head{height:56px;padding:0 6px 0 16px}
 .ki-body{padding:0 14px}
-.ki-hero h2{font-size:27px}
-.ki-composer-wrap{margin:16px 0 0}
-.ki-enter,.ki-ac-hint{display:none}
+.ki-hero{padding-top:8px}
+.ki-hero h2{font-size:28px}
+.ki-lede{font-size:13.5px}
+.ki-composer-wrap{margin:18px 0 0}
+.ki-ac-hint{display:none}
 .ki-tabs{display:flex}
-.ki-grid{display:block}.ki-grid .ki-card{display:none}.ki-grid .ki-card.on{display:flex}
+.ki-grid{display:block}.ki-grid .ki-card{display:none;border-top:0}.ki-grid .ki-card.on{display:flex}
+.ki-card-top{display:none}
 .ki-q{font-size:14px}
 .ki-foot{flex-direction:column;align-items:center;gap:2px;text-align:center}
 .ki-log{max-height:52dvh}
+/* App-Ansicht: laufendes Gespraech als Vollbild, Eingabe unten (Daumenzone) */
+.ki.ki-sheet{position:fixed;inset:0;z-index:60;margin:0;border:0;border-radius:0;height:100dvh;background:var(--bg);box-shadow:0 -8px 30px #1b33301f;animation:ki-sheet .36s cubic-bezier(.32,.72,0,1)}
+.ki-sheet .ki-head{border-bottom:1px solid var(--line);background:var(--bg);padding-top:env(safe-area-inset-top)}
+.ki-sheet .ki-body{flex:1;max-width:none;padding:0}
+.ki-sheet .ki-log{flex:1;min-height:0;max-height:none;padding:16px 14px 8px}
+.ki-sheet .ki-composer-wrap{margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg)}
+.ki-sheet .ki-foot{display:none}
 }
-@media(prefers-reduced-motion:reduce){.ki-core,.ki-cards,.ki-dots i{transition:none}}
+@keyframes ki-sheet{from{transform:translateY(100%)}}
+html.ki-lock,html.ki-lock body{overflow:hidden}
+@media(prefers-reduced-motion:reduce){
+.ki-cards,.ki-dots i,.ki-composer,.ki-send{transition:none}
+.ki-glyph-fill,.ki-mark-fill{transition:none}
+.ki-mark.denkt .ki-mark-fill{animation:none;stroke-dasharray:var(--ki-wert,0) 100}
+.ki-msg.neu,.ki.ki-sheet{animation:none}
+}
 </style>
 </head>
 <body>
@@ -185,16 +236,20 @@ button,summary,select,label{touch-action:manipulation;-webkit-tap-highlight-colo
   </section>
   <section id="details-panel" class="details-panel" aria-label="Details zum Marktstress" hidden></section>
   <section id="ki" class="ki" aria-labelledby="ki-title" hidden>
-   <div class="ki-head"><span class="ki-brand">Invest<span>Timer</span><b>KI</b></span><button type="button" id="ki-reset" class="ki-reset" hidden>Neu beginnen</button></div>
-   <div class="ki-core"><canvas id="ki-canvas" aria-hidden="true"></canvas><div class="ki-core-note"><i></i>WISSEN. VERNETZT.</div></div>
+   <div class="ki-head">
+    <span class="ki-brand"><svg class="ki-glyph" viewBox="3 13 42 24" aria-hidden="true"><path class="ki-glyph-track" d="M6 34a18 18 0 0 1 36 0" pathLength="100"/><path class="ki-glyph-fill" d="M6 34a18 18 0 0 1 36 0" pathLength="100"/></svg>Invest<span>Timer</span><b>KI</b></span>
+    <span class="ki-head-actions"><button type="button" id="ki-reset" class="ki-reset" hidden>Neu beginnen</button><button type="button" id="ki-close" class="ki-close" aria-label="Chat schließen" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span>
+   </div>
    <div class="ki-body">
-    <div class="ki-hero"><div class="ki-eyebrow">MARKTSTRESS VERSTEHEN.</div><h2 id="ki-title">Was bewegt dich<span> am Markt?</span></h2></div>
+    <div class="ki-hero">
+     <h2 id="ki-title">Was bewegt dich <span>am Markt?</span></h2>
+     <p class="ki-lede">Antworten aus den aktuellen Marktdaten und der Wissensdatenbank, verständlich erklärt.</p>
+    </div>
     <div class="ki-log" id="ki-log" hidden aria-live="polite"></div>
     <div class="ki-composer-wrap">
      <div class="ki-composer" id="ki-composer">
       <input id="ki-input" type="text" maxlength="300" autocomplete="off" enterkeyhint="send" role="combobox" aria-expanded="false" aria-controls="ki-ac" aria-autocomplete="list" placeholder="Frag InvestTimer …" aria-label="Frage an InvestTimer">
       <button type="button" id="ki-send" class="ki-send" aria-label="Frage senden" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-      <div class="ki-meta"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Marktdaten + Wissensdatenbank</span><span class="ki-enter">↵ Enter</span></div>
      </div>
      <div id="ki-ac" class="ki-ac" role="listbox" aria-label="Passende Fragen" hidden></div>
     </div>
@@ -639,7 +694,8 @@ render();
 let lastLoad=0,lastSeen=JSON.stringify(result);
 function loadLive(){
  if(!location.protocol.startsWith('http')||Date.now()-lastLoad<3e5)return;lastLoad=Date.now();
- fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+ document.body.dataset.live='laedt';const fertig=()=>{document.body.dataset.live='fertig'};
+ fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).finally(fertig).then(d=>{
   const live=normaliseResult(d);if(!live||JSON.stringify(live)===lastSeen||document.querySelector('dialog[open]')){if(live&&JSON.stringify(live)!==lastSeen)lastLoad=0;return}
   const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
   result=live;lastSeen=JSON.stringify(live);render();
@@ -684,16 +740,54 @@ const description=document.createElement('span');description.id='scale-descripti
 const module=document.createElement('div');module.className='subscribe-module';module.id='subscribe-module';
 $('.reading').after(module);
 const dialog=document.createElement('dialog');dialog.className='modal account-dialog';dialog.id='account-dialog';dialog.setAttribute('aria-labelledby','account-title');document.body.append(dialog);
+let gaugeShown=null,gaugeFrame=0,gaugeObserver=null,gaugeTarget=null,gaugeWritten=null,gaugeEntrance=null;
+const gaugeEase=k=>1-Math.pow(1-k,3);
+let gaugeDrawn=0;
+function drawGauge(v){
+ gaugeDrawn=v;if(visual==='line')return;
+ const p=Math.max(0,Math.min(100,v)),isArc=visual==='arc',angle=(isArc?180+p*1.8:135+p*2.7)*Math.PI/180,centre=isArc?250:200,r=isArc?200:165;
+ $('.gauge-value').style.strokeDasharray=`${p} 100`;
+ $('.gauge-point').setAttribute('cx',centre+r*Math.cos(angle));$('.gauge-point').setAttribute('cy',(isArc?250:200)+r*Math.sin(angle));
+}
+function gaugeTicks(){
+ const svg=$('.gauge-svg');if(!svg||visual!=='arc'||svg.querySelector('.gauge-tick'))return;
+ [25,50,75].forEach(t=>{const a=(180+t*1.8)*Math.PI/180,l=document.createElementNS(svgNS,'line');l.setAttribute('class','gauge-tick');
+  l.setAttribute('x1',250+212*Math.cos(a));l.setAttribute('y1',250+212*Math.sin(a));l.setAttribute('x2',250+221*Math.cos(a));l.setAttribute('y2',250+221*Math.sin(a));svg.prepend(l)});
+}
+function setScore(text){gaugeWritten=text;if(score.textContent!==text){score.textContent=text;gaugeObserver&&gaugeObserver.takeRecords()}}
 function updateGauge(){
- const raw=Number(score.textContent.trim());const valid=Number.isFinite(raw)&&score.textContent.trim()!=='';
- const p=valid?Math.max(0,Math.min(100,raw)):0;stage.style.setProperty('--value',p);document.body.style.setProperty('--value',p);
- if(visual!=='line'){
-  $('.gauge-value').style.strokeDasharray=`${p} 100`;$('.gauge-value').style.display=valid?'':'none';
-  const isArc=visual==='arc',angle=(isArc?180+p*1.8:135+p*2.7)*Math.PI/180;
-  const centre=isArc?250:200,r=isArc?200:165;
-  $('.gauge-point').setAttribute('cx',centre+r*Math.cos(angle));$('.gauge-point').setAttribute('cy',(isArc?250:200)+r*Math.sin(angle));$('.gauge-point').style.display=valid?'':'none';
- }
+ // Waehrend der Fuellung steht in .score ein Zwischenstand; massgeblich bleibt das Ziel.
+ let text=score.textContent.trim();
+ if(gaugeFrame&&gaugeTarget!==null&&text===gaugeWritten)text=String(gaugeTarget);
+ const raw=Number(text),valid=Number.isFinite(raw)&&text!=='';
+ const p=valid?Math.max(0,Math.min(100,raw)):0;
+ if(gaugeFrame&&valid&&p===gaugeTarget)return;
+ stage.style.setProperty('--value',p);document.body.style.setProperty('--value',p);document.body.dataset.wert=valid?String(p):'';
+ gaugeTicks();
+ if(visual!=='line'){$('.gauge-value').style.display=valid?'':'none';$('.gauge-point').style.display=valid?'':'none'}
  if($('.signal-marker'))$('.signal-marker').style.display=valid?'':'none';
+ document.dispatchEvent(new CustomEvent('investtimer:wert',{detail:valid?p:null}));
+ const laufend=gaugeFrame!==0;cancelAnimationFrame(gaugeFrame);gaugeFrame=0;
+ if(!valid||visual==='line'||matchMedia('(prefers-reduced-motion: reduce)').matches||(!gaugeEntrance&&gaugeShown===p)){
+  gaugeEntrance=null;gaugeTarget=valid?p:null;if(valid)setScore(String(p));drawGauge(p);gaugeShown=valid?p:null;return}
+ // Einstieg (1500 ms ab 0, kurzer Halt auf dem leeren Bogen) oder Gleiten vom angezeigten Stand (700 ms).
+ // Ein neues Ziel waehrend des Einstiegs aendert nur das Ziel, nicht Start und Dauer.
+ if(gaugeShown===null&&!gaugeEntrance){const t=performance.now()+300;gaugeEntrance={t0:t,start:t,dur:1500,k0:0,v0:0}}
+ else if(gaugeEntrance&&laufend){const e=gaugeEntrance;e.k0=Math.max(0,Math.min(1,(performance.now()-e.start)/e.dur));e.v0=gaugeDrawn}
+ const from=gaugeEntrance?0:gaugeShown,glide=gaugeEntrance?null:{start:performance.now(),dur:700};
+ gaugeTarget=p;
+ if(!laufend)drawGauge(from);
+ setScore(String(Math.round(gaugeDrawn)));  // neuer Text von aussen sofort wieder auf den gezeichneten Stand
+ const step=now=>{
+  const e=gaugeEntrance;
+  // Waehrend der Live-Wert noch laedt, bleibt der Bogen hoechstens 600 ms laenger leer.
+  if(e&&document.body.dataset.live==='laedt'&&now<e.t0+600&&now>e.start)e.start=now;
+  const s=e||glide,k=Math.max(0,Math.min(1,(now-s.start)/s.dur));
+  // Nach einem Zielwechsel im Einstieg laeuft die Kurve stetig vom gezeichneten Stand weiter und endet zur selben Zeit.
+  const v=e?e.v0+(p-e.v0)*(e.k0>=1?1:(gaugeEase(k)-gaugeEase(e.k0))/(1-gaugeEase(e.k0))):from+(p-from)*gaugeEase(k);
+  drawGauge(v);setScore(String(Math.round(v)));if(!e)gaugeShown=v;
+  if(k<1)gaugeFrame=requestAnimationFrame(step);else{gaugeFrame=0;gaugeEntrance=null;gaugeShown=p;setScore(String(p))}};
+ gaugeFrame=requestAnimationFrame(step);
 }
 function renderModule(){
  login.textContent=t('login');description.textContent=t('scale');
@@ -717,23 +811,25 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 document.addEventListener('submit',e=>{if(e.target.id==='inline-subscribe'){e.preventDefault();state.email=$('#inline-email').value.trim();open('subscribe',$('#inline-subscribe button'))}else if(e.target.id==='subscribe-concept-form'||e.target.id==='login-concept-form'){e.preventDefault();state.email=$('#account-email').value.trim();if(e.target.id==='subscribe-concept-form'){state.threshold=Number($('#subscription-threshold').value);state.direction=$('#subscription-direction').value;confirmation('subscribe')}else confirmation('login')}});
 document.addEventListener('input',e=>{if(e.target.id==='inline-email'||e.target.id==='account-email')state.email=e.target.value.trim();if(e.target.id==='subscription-threshold')$('#subscription-output').innerHTML=e.target.value+'<small> / 100</small>'});
 dialog.addEventListener('cancel',e=>{e.preventDefault();close()});dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close()});
-new MutationObserver(updateGauge).observe(score,{childList:true,characterData:true,subtree:true});
+gaugeObserver=new MutationObserver(updateGauge);gaugeObserver.observe(score,{childList:true,characterData:true,subtree:true});
 new MutationObserver(renderModule).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 renderModule();
 
 })();
 (() => {
-/* 05 · InvestTimer KI: Fragenkarten, Autocomplete, Chat. Sichtbar nur, wenn /api/chat erreichbar ist. */
+/* 05 · InvestTimer KI: Fragenkarten, Autocomplete, Chat. Sichtbar nur, wenn /api/chat erreichbar ist.
+   Der Halbmond ist das Zeichen des Bots: gefuellt bis zum aktuellen Marktstress, waehrend einer Antwort laeuft er als Denk-Anzeige. */
 'use strict';
 const KATS=[{"label": "DER MARKTSTRESS", "kurz": "Marktstress", "icon": "gauge", "fragen": ["Wie hoch ist der Marktstress aktuell, und was treibt ihn?", "Wie entsteht der Marktstress-Wert aus den 14 Bestandteilen?", "Was bedeutet antizyklisch beim Blick auf den Marktstress?"]}, {"label": "MARKT HEUTE", "kurz": "Markt", "icon": "activity", "fragen": ["Wie ist die aktuelle Marktlage in drei Sätzen?", "Was sagt der aktuelle VIX über die erwarteten Schwankungen aus?", "Was zeigt die aktuelle VIX-Terminkurve?", "Wie breit ist die aktuelle Marktbewegung im S&P 500?", "Wie unruhig ist der Anleihemarkt aktuell (MOVE)?", "Was zeigen die aktuellen Put/Call-Ratios?"]}, {"label": "SIGNALE VERSTEHEN", "kurz": "Signale", "icon": "bars", "fragen": ["Welche aktuellen Marktsignale widersprechen sich?", "Welche Indikatoren ergänzen sich – und wo gibt es Überschneidungen?", "Was zeigt VIX/VIX3M zusätzlich zum VIX?", "Wann ist ein hoher VVIX trotz niedrigem VIX auffällig?", "Wie lässt sich ein niedriger Fear-&-Greed-Wert antizyklisch einordnen?", "Welche Lehren liefern VIX-Spitzen über 40?"]}];
-const API='/api/chat',PRO_SEITE=3,MAX_VERLAUF=6;
+const API='/api/chat',PRO_SEITE=3,MAX_VERLAUF=6,START_FRAGE=KATS[0]?.fragen[0];
 const $=s=>document.querySelector(s);
-const sec=$('#ki'),openBtn=$('#ki-open'),input=$('#ki-input'),sendBtn=$('#ki-send'),log=$('#ki-log'),ac=$('#ki-ac'),cards=$('#ki-cards'),composer=$('#ki-composer'),resetBtn=$('#ki-reset');
+const sec=$('#ki'),openBtn=$('#ki-open'),input=$('#ki-input'),sendBtn=$('#ki-send'),log=$('#ki-log'),ac=$('#ki-ac'),cards=$('#ki-cards'),composer=$('#ki-composer'),resetBtn=$('#ki-reset'),closeBtn=$('#ki-close');
 if(!sec||!input)return;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const seiten=k=>Math.ceil(k.fragen.length/PRO_SEITE);
 const ALLE=KATS.flatMap(k=>k.fragen.map(q=>({q,kat:k.kurz.toUpperCase()})));
-const state={messages:[],loading:false,available:false,seite:KATS.map(k=>Math.floor(Math.random()*seiten(k))),kat:0,acIndex:0,acZu:true,treffer:[]};
+const mobil=matchMedia('(max-width:760px)');
+const state={messages:[],loading:false,available:false,sheet:false,neu:-1,wert:null,seite:KATS.map(k=>Math.floor(Math.random()*seiten(k))),kat:0,acIndex:0,acZu:true,treffer:[]};
 const ICON={
  gauge:'<path d="M4 17a8 8 0 0 1 16 0"/><path d="m12 17-3.5-5.5"/>',
  activity:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
@@ -741,18 +837,48 @@ const ICON={
  rotate:'<path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 8 16 8"/>'
 };
 const icon=n=>`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]||''}</svg>`;
+const BOGEN='d="M6 34a18 18 0 0 1 36 0" pathLength="100"';
+const mark=(denkt=false)=>`<svg class="ki-mark${denkt?' denkt':''}" viewBox="3 13 42 24" aria-hidden="true"><path class="ki-mark-track" ${BOGEN}/><path class="ki-mark-fill" ${BOGEN}/></svg>`;
+
+/* Aktueller Wert aus dem Signalbogen: fuellt die Halbmond-Zeichen und benennt den Einstieg */
+function setzeWert(v){
+ state.wert=Number.isFinite(v)?Math.round(v):null;
+ const fill=state.wert===null?0:state.wert;
+ sec.style.setProperty('--ki-wert',fill);if(openBtn)openBtn.style.setProperty('--ki-wert',fill);
+ renderOpen();
+}
+document.addEventListener('investtimer:wert',e=>setzeWert(e.detail));
+function renderOpen(){
+ if(!openBtn)return;
+ const frage=state.wert===null?'Was steckt hinter dem Marktstress?':`Was treibt die ${state.wert}?`;
+ openBtn.innerHTML=`<svg viewBox="3 13 42 24" aria-hidden="true" class="ki-glyph"><path class="ki-glyph-track" ${BOGEN}/><path class="ki-glyph-fill" ${BOGEN}/></svg><span><strong>${esc(frage)}</strong> <span class="ki-open-sub">KI fragen</span></span>`;
+ openBtn.setAttribute('aria-label',frage+' – InvestTimer KI fragen');
+}
 
 /* Sichtbarkeit: nur mit erreichbarem Backend und in der deutschen Ansicht */
-function syncVisible(){const show=state.available&&document.documentElement.lang!=='en';sec.hidden=!show;if(openBtn)openBtn.hidden=!show}
+function syncVisible(){const show=state.available&&document.documentElement.lang!=='en';sec.hidden=!show;if(openBtn)openBtn.hidden=!show;if(!show)schliesseSheet()}
 new MutationObserver(syncVisible).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 if(location.protocol.startsWith('http'))fetch(API,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{state.available=!!(d&&d.ok);syncVisible()}).catch(()=>{});
-if(openBtn)openBtn.addEventListener('click',()=>{sec.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});input.focus({preventScroll:true})});
+if(openBtn)openBtn.addEventListener('click',()=>{
+ if(!state.messages.length&&START_FRAGE){input.value=START_FRAGE;senden()}
+ if(!state.sheet)sec.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+ if(!state.messages.length)input.focus({preventScroll:true});
+});
+
+/* App-Ansicht (schmale Bildschirme): laufendes Gespraech als Vollbild mit Eingabe unten */
+let scrollVorher=0;
+function oeffneSheet(){if(!mobil.matches||state.sheet)return;state.sheet=true;scrollVorher=window.scrollY;sec.classList.add('ki-sheet');document.documentElement.classList.add('ki-lock');closeBtn.hidden=false}
+/* Schliessen fuehrt dorthin zurueck, wo das Gespraech begonnen wurde */
+function schliesseSheet(){if(!state.sheet)return;state.sheet=false;sec.classList.remove('ki-sheet');document.documentElement.classList.remove('ki-lock');closeBtn.hidden=true;window.scrollTo(0,scrollVorher)}
+closeBtn.addEventListener('click',schliesseSheet);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.sheet&&!state.treffer.length)schliesseSheet()});
+mobil.addEventListener('change',()=>{if(!mobil.matches)schliesseSheet()});
 
 /* Fragenkarten */
 function renderCards(){
  cards.innerHTML=`<div class="ki-tabs" role="tablist" aria-label="Kategorien">${KATS.map((k,i)=>`<button type="button" role="tab" aria-selected="${i===state.kat}" data-ki-tab="${i}">${esc(k.kurz)}</button>`).join('')}</div><div class="ki-grid">${KATS.map((k,i)=>{
   const s=state.seite[i],n=seiten(k),fragen=k.fragen.slice(s*PRO_SEITE,s*PRO_SEITE+PRO_SEITE);
-  return `<div class="ki-card${i===state.kat?' on':''}"><div class="ki-card-top"><span>${icon(k.icon)}${esc(k.label)}</span>${n>1?`<button type="button" class="ki-shuffle" data-ki-shuffle="${i}" aria-label="Andere Fragen zu ${esc(k.kurz)} zeigen" title="Andere Fragen">${icon('rotate')}</button>`:''}</div>${fragen.map(q=>`<button type="button" class="ki-q" data-ki-q="${esc(q)}">${esc(q)}</button>`).join('')}<div class="ki-dots" aria-hidden="true">${n>1?Array.from({length:n},(_,j)=>`<i${j===s?' class="on"':''}></i>`).join(''):''}</div></div>`}).join('')}</div>`;
+  return `<div class="ki-card${i===state.kat?' on':''}"><div class="ki-card-top"><span>${icon(k.icon)}${esc(k.kurz)}</span>${n>1?`<button type="button" class="ki-shuffle" data-ki-shuffle="${i}" aria-label="Andere Fragen zu ${esc(k.kurz)} zeigen" title="Andere Fragen">${icon('rotate')}</button>`:''}</div>${fragen.map(q=>`<button type="button" class="ki-q" data-ki-q="${esc(q)}">${esc(q)}</button>`).join('')}<div class="ki-dots" aria-hidden="true">${n>1?Array.from({length:n},(_,j)=>`<i${j===s?' class="on"':''}></i>`).join(''):''}</div></div>`}).join('')}</div>`;
 }
 let touchX=0;
 cards.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});
@@ -795,46 +921,30 @@ function antwortHtml(text){
  const fett=l=>esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
  return haupt.split('\n').map(l=>l.startsWith('## ')?`<div class="ki-h">${esc(l.slice(3))}</div>`:l.startsWith('- ')?`<div class="ki-li">• ${fett(l.slice(2))}</div>`:!l.trim()?'<div class="ki-gap"></div>':`<div>${fett(l)}</div>`).join('')}
 function renderLog(){
- const chat=state.messages.length>0;sec.classList.toggle('ki-chat',chat);log.hidden=!chat;resetBtn.hidden=!chat;
- log.innerHTML=state.messages.map(m=>m.role==='user'?`<div class="ki-msg user">${esc(m.content)}</div>`:`<div class="ki-msg">${antwortHtml(m.content)}</div>`).join('')+(state.loading?'<div class="ki-wait"><i></i>InvestTimer liest die Daten …</div>':'');
+ const chat=state.messages.length>0;sec.classList.toggle('ki-chat',chat);sec.classList.toggle('ki-busy',state.loading);log.hidden=!chat;resetBtn.hidden=!chat;
+ log.innerHTML=state.messages.map((m,i)=>{const neu=i===state.neu?' neu':'';
+  return m.role==='user'?`<div class="ki-msg user${neu}">${esc(m.content)}</div>`
+   :`<div class="ki-row">${mark()}<div class="ki-msg${m.fehler?' fehler':''}${neu}">${antwortHtml(m.content)}</div></div>`}).join('')
+  +(state.loading?`<div class="ki-wait" role="status">${mark(true)}InvestTimer liest die Daten …</div>`:'');
  log.scrollTop=log.scrollHeight;sendBtn.disabled=state.loading||!input.value.trim();
 }
 async function senden(){
  const frage=input.value.trim();if(!frage||state.loading)return;
  const verlauf=state.messages.slice(-MAX_VERLAUF).map(m=>({role:m.role,content:m.content}));
- state.messages.push({role:'user',content:frage});input.value='';state.acZu=true;state.loading=true;renderAc();renderLog();
- let antwort;
+ state.messages.push({role:'user',content:frage});state.neu=state.messages.length-1;input.value='';state.acZu=true;state.loading=true;
+ oeffneSheet();renderAc();renderLog();
+ let antwort,fehler=false;
  try{
   const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frage,verlauf})});
-  if(res.status===429)antwort='Für heute ist das Fragenkontingent erreicht — morgen geht es weiter.';
+  if(res.status===429){antwort='Für heute ist das Fragenkontingent erreicht — morgen geht es weiter.';fehler=true}
   else if(!res.ok)throw new Error('HTTP '+res.status);
   else antwort=(await res.json()).antwort||'Leere Antwort erhalten.';
- }catch{antwort='Verbindung fehlgeschlagen — bitte in einem Moment erneut versuchen.'}
- state.messages.push({role:'assistant',content:String(antwort)});state.loading=false;renderLog();
+ }catch{antwort='Verbindung fehlgeschlagen — bitte in einem Moment erneut versuchen.';fehler=true}
+ state.messages.push({role:'assistant',content:String(antwort),fehler});state.neu=state.messages.length-1;state.loading=false;renderLog();
 }
-resetBtn.addEventListener('click',()=>{if(state.loading)return;state.messages=[];renderLog();renderCards();input.focus({preventScroll:true})});
+resetBtn.addEventListener('click',()=>{if(state.loading)return;state.messages=[];state.neu=-1;schliesseSheet();renderLog();renderCards();input.focus({preventScroll:true})});
 
-/* Rotierende Kugel (92 Punkte, Fibonacci-Sphaere). Laeuft nur, solange sie sichtbar ist. */
-const canvas=$('#ki-canvas'),ctx=canvas.getContext('2d');
-const nodes=Array.from({length:92},(_,i)=>{const y=1-i/91*2,r=Math.sqrt(1-y*y),a=i*2.39996;return {x:Math.cos(a)*r,y,z:Math.sin(a)*r}});
-const edges=[];nodes.forEach((a,i)=>nodes.forEach((b,j)=>{if(j>i&&Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)<0.45)edges.push([i,j])}));
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,TAU=Math.PI*2;
-let w=0,h=0,time=0,prev=0,raf=0,inView=false;
-function draw(){
- if(!w||!h)return;ctx.clearRect(0,0,w,h);
- const cx=w*0.5,cy=h*0.44,r=Math.min(w*0.19,h*0.34),angle=time*0.11,tilt=0.2;
- const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,r*1.7);glow.addColorStop(0,'rgba(46,109,92,0.10)');glow.addColorStop(1,'rgba(46,109,92,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
- const ps=nodes.map(p=>{const x=p.x*Math.cos(angle)+p.z*Math.sin(angle),z=-p.x*Math.sin(angle)+p.z*Math.cos(angle),y=p.y*Math.cos(tilt)-z*Math.sin(tilt),zz=p.y*Math.sin(tilt)+z*Math.cos(tilt),sc=1+zz*0.12;return {x:cx+x*r*sc,y:cy+y*r*sc,z:zz}});
- edges.forEach(([i,j],n)=>{const a=ps[i],b=ps[j],al=0.08+((a.z+b.z+2)/4)*0.3;
-  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(46,109,92,${al})`;ctx.lineWidth=0.65;ctx.stroke();
-  if(n%29===0){const p=(time*0.15+n*0.079)%1;ctx.beginPath();ctx.arc(a.x+(b.x-a.x)*p,a.y+(b.y-a.y)*p,1.35,0,TAU);ctx.fillStyle='#9b6f32';ctx.fill()}});
- ps.slice().sort((a,b)=>a.z-b.z).forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,0.65+(p.z+1)*0.55,0,TAU);ctx.fillStyle=`rgba(27,74,62,${(p.z+1)*0.3+0.2})`;ctx.fill()});
- ctx.save();ctx.translate(cx,cy);ctx.strokeStyle='rgba(46,109,92,0.16)';ctx.lineWidth=0.7;ctx.beginPath();ctx.ellipse(0,r*0.95,r*1.15,r*0.11,0,0,TAU);ctx.stroke();ctx.restore();
-}
-function frame(ms){const dt=Math.min((ms-prev)/1000,0.05);prev=ms;if(!document.hidden&&!reduce)time+=dt;draw();raf=inView&&!reduce?requestAnimationFrame(frame):0}
-new ResizeObserver(()=>{const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;w=r.width;h=r.height;const d=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0);draw()}).observe(canvas);
-new IntersectionObserver(es=>{inView=es[0].isIntersecting;if(inView&&!raf&&!reduce){prev=performance.now();raf=requestAnimationFrame(frame)}}).observe(canvas);
-
+setzeWert(document.body.dataset.wert?Number(document.body.dataset.wert):null);
 renderCards();renderAc();renderLog();
 })();
 })();

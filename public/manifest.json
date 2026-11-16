@@ -1,0 +1,17 @@
+{
+  "name": "InvestTimer",
+  "short_name": "InvestTimer",
+  "description": "Marktstress am US-Aktienmarkt auf einen Blick, mit KI-Erklärungen.",
+  "lang": "de-DE",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f8f3",
+  "theme_color": "#f8f8f3",
+  "icons": [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

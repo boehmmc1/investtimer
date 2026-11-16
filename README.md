@@ -15,6 +15,7 @@ Statische Seite für investtimer.net. Zeigt den Marktstress (0–100).
 | `deploy/cert.sh` | Holt das HTTPS-Zertifikat, sobald DNS stimmt |
 | `deploy/nginx.conf` | nginx-Block |
 | `public/apple-touch-icon.png`, `public/og-image.png` | Homescreen-Icon, Vorschaubild für geteilte Links |
+| `public/manifest.json`, `public/icon-*.png` | Web-App-Manifest und App-Icons (192, 512, maskable) für „Zum Startbildschirm“ und eine spätere App-Hülle |
 | `ui/ki.html`, `ui/ki.css`, `ui/ki.js` | KI-Bereich (Fragenkarten, Autocomplete, Chat) |
 | `volafly-api/investtimer_fragen.json` | Musterfragen: einzige Quelle für Seite und Backend |
 | `volafly-api/investtimer_prompt.md` | Themen- und Stilprofil des InvestTimer-Chats |

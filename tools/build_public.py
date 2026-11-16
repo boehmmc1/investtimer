@@ -20,7 +20,8 @@ LIVE_JS = """/* Live-Wert laden: beim Start und wenn der Tab wieder sichtbar wir
 let lastLoad=0,lastSeen=JSON.stringify(result);
 function loadLive(){
  if(!location.protocol.startsWith('http')||Date.now()-lastLoad<3e5)return;lastLoad=Date.now();
- fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+ document.body.dataset.live='laedt';const fertig=()=>{document.body.dataset.live='fertig'};
+ fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).finally(fertig).then(d=>{
   const live=normaliseResult(d);if(!live||JSON.stringify(live)===lastSeen||document.querySelector('dialog[open]')){if(live&&JSON.stringify(live)!==lastSeen)lastLoad=0;return}
   const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
   result=live;lastSeen=JSON.stringify(live);render();
@@ -52,10 +53,74 @@ button,summary,select,label{touch-action:manipulation;-webkit-tap-highlight-colo
 }
 """
 
+GAUGE_CSS = """
+/* 05b · Signalbogen: Fuellung per Skript (rAF), Stufenmarken bei 25/50/75, ruhige Ziffern beim Hochzaehlen */
+.gauge-value{transition:none!important}
+.gauge-tick{stroke:#c9d2c4;stroke-width:2;stroke-linecap:round}
+.gauge-stage .score{font-variant-numeric:tabular-nums}
+.first-look .score:not(.gauge-stage .score){visibility:hidden}
+"""
+
+# Ersetzt updateGauge(): der Halbmond fuellt sich beim ersten Anzeigen von 0 auf den Wert, die Zahl zaehlt mit.
+# Neue Live-Werte gleiten vom alten zum neuen Stand. Bei reduzierter Bewegung steht der Wert sofort.
+# Die Zwischenstaende werden in .score geschrieben; die eigenen Aenderungen nimmt takeRecords() dem Observer wieder ab.
+GAUGE_JS = r"""let gaugeShown=null,gaugeFrame=0,gaugeObserver=null,gaugeTarget=null,gaugeWritten=null,gaugeEntrance=null;
+const gaugeEase=k=>1-Math.pow(1-k,3);
+let gaugeDrawn=0;
+function drawGauge(v){
+ gaugeDrawn=v;if(visual==='line')return;
+ const p=Math.max(0,Math.min(100,v)),isArc=visual==='arc',angle=(isArc?180+p*1.8:135+p*2.7)*Math.PI/180,centre=isArc?250:200,r=isArc?200:165;
+ $('.gauge-value').style.strokeDasharray=`${p} 100`;
+ $('.gauge-point').setAttribute('cx',centre+r*Math.cos(angle));$('.gauge-point').setAttribute('cy',(isArc?250:200)+r*Math.sin(angle));
+}
+function gaugeTicks(){
+ const svg=$('.gauge-svg');if(!svg||visual!=='arc'||svg.querySelector('.gauge-tick'))return;
+ [25,50,75].forEach(t=>{const a=(180+t*1.8)*Math.PI/180,l=document.createElementNS(svgNS,'line');l.setAttribute('class','gauge-tick');
+  l.setAttribute('x1',250+212*Math.cos(a));l.setAttribute('y1',250+212*Math.sin(a));l.setAttribute('x2',250+221*Math.cos(a));l.setAttribute('y2',250+221*Math.sin(a));svg.prepend(l)});
+}
+function setScore(text){gaugeWritten=text;if(score.textContent!==text){score.textContent=text;gaugeObserver&&gaugeObserver.takeRecords()}}
+function updateGauge(){
+ // Waehrend der Fuellung steht in .score ein Zwischenstand; massgeblich bleibt das Ziel.
+ let text=score.textContent.trim();
+ if(gaugeFrame&&gaugeTarget!==null&&text===gaugeWritten)text=String(gaugeTarget);
+ const raw=Number(text),valid=Number.isFinite(raw)&&text!=='';
+ const p=valid?Math.max(0,Math.min(100,raw)):0;
+ if(gaugeFrame&&valid&&p===gaugeTarget)return;
+ stage.style.setProperty('--value',p);document.body.style.setProperty('--value',p);document.body.dataset.wert=valid?String(p):'';
+ gaugeTicks();
+ if(visual!=='line'){$('.gauge-value').style.display=valid?'':'none';$('.gauge-point').style.display=valid?'':'none'}
+ if($('.signal-marker'))$('.signal-marker').style.display=valid?'':'none';
+ document.dispatchEvent(new CustomEvent('investtimer:wert',{detail:valid?p:null}));
+ const laufend=gaugeFrame!==0;cancelAnimationFrame(gaugeFrame);gaugeFrame=0;
+ if(!valid||visual==='line'||matchMedia('(prefers-reduced-motion: reduce)').matches||(!gaugeEntrance&&gaugeShown===p)){
+  gaugeEntrance=null;gaugeTarget=valid?p:null;if(valid)setScore(String(p));drawGauge(p);gaugeShown=valid?p:null;return}
+ // Einstieg (1500 ms ab 0, kurzer Halt auf dem leeren Bogen) oder Gleiten vom angezeigten Stand (700 ms).
+ // Ein neues Ziel waehrend des Einstiegs aendert nur das Ziel, nicht Start und Dauer.
+ if(gaugeShown===null&&!gaugeEntrance){const t=performance.now()+300;gaugeEntrance={t0:t,start:t,dur:1500,k0:0,v0:0}}
+ else if(gaugeEntrance&&laufend){const e=gaugeEntrance;e.k0=Math.max(0,Math.min(1,(performance.now()-e.start)/e.dur));e.v0=gaugeDrawn}
+ const from=gaugeEntrance?0:gaugeShown,glide=gaugeEntrance?null:{start:performance.now(),dur:700};
+ gaugeTarget=p;
+ if(!laufend)drawGauge(from);
+ setScore(String(Math.round(gaugeDrawn)));  // neuer Text von aussen sofort wieder auf den gezeichneten Stand
+ const step=now=>{
+  const e=gaugeEntrance;
+  // Waehrend der Live-Wert noch laedt, bleibt der Bogen hoechstens 600 ms laenger leer.
+  if(e&&document.body.dataset.live==='laedt'&&now<e.t0+600&&now>e.start)e.start=now;
+  const s=e||glide,k=Math.max(0,Math.min(1,(now-s.start)/s.dur));
+  // Nach einem Zielwechsel im Einstieg laeuft die Kurve stetig vom gezeichneten Stand weiter und endet zur selben Zeit.
+  const v=e?e.v0+(p-e.v0)*(e.k0>=1?1:(gaugeEase(k)-gaugeEase(e.k0))/(1-gaugeEase(e.k0))):from+(p-from)*gaugeEase(k);
+  drawGauge(v);setScore(String(Math.round(v)));if(!e)gaugeShown=v;
+  if(k<1)gaugeFrame=requestAnimationFrame(step);else{gaugeFrame=0;gaugeEntrance=null;gaugeShown=p;setScore(String(p))}};
+ gaugeFrame=requestAnimationFrame(step);
+}
+"""
+
 HEAD_META = """<meta name="application-name" content="InvestTimer">
 <meta name="apple-mobile-web-app-title" content="InvestTimer">
 <link rel="canonical" href="https://investtimer.net/">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta property="og:type" content="website"><meta property="og:site_name" content="InvestTimer"><meta property="og:locale" content="de_DE">
 <meta property="og:url" content="https://investtimer.net/">
 <meta property="og:title" content="InvestTimer — Marktstress auf einen Blick">
@@ -93,7 +158,7 @@ def main(source, target):
                     "<!-- InvestTimer · investtimer.net · Quelle: UI-Export v1.0 (Signalbogen) -->", "Kopfkommentar")
     html = once(html, " Clarity mit dem Volafly-Modell aus 14 Komponenten und gespeichertem Datenstand.",
                 " 14 Bestandteile, ein Wert.", "Beschreibung")
-    html = once(html, "connect-src 'none'", "connect-src 'self'", "CSP")
+    html = once(html, "connect-src 'none'", "connect-src 'self'; manifest-src 'self'", "CSP")
     html = once(html, '"offline": true', '"offline": false', "Manifest offline")
     html = once(html, '"externalDependencies": []', '"externalDependencies": ["/data/stress.json"]', "Manifest deps")
     html = once(html, '"entryFile": "InvestTimer_UI_Signalbogen_v1.0.html"', '"entryFile": "index.html"', "Manifest Datei")
@@ -143,7 +208,11 @@ function normaliseResult(d){
     kategorien = [{"label": k["label"], "kurz": k["kurz"], "icon": k["icon"], "fragen": [f["frage"] for f in k["fragen"]]}
                   for k in fragen["kategorien"]]
     ki_js = (ui / "ki.js").read_text(encoding="utf-8").replace("__KI_KATEGORIEN__", json.dumps(kategorien, ensure_ascii=False))
-    html = once(html, "</style>", MOBILE_CSS + (ui / "ki.css").read_text(encoding="utf-8") + "</style>", "Mobil- und KI-CSS")
+    html = sub_once(html, r"function updateGauge\(\)\{.*?\n\}\nfunction renderModule\(\)\{",
+                    GAUGE_JS + "function renderModule(){", "updateGauge")
+    html = once(html, "new MutationObserver(updateGauge).observe(score,",
+                "gaugeObserver=new MutationObserver(updateGauge);gaugeObserver.observe(score,", "Gauge-Observer")
+    html = once(html, "</style>", MOBILE_CSS + GAUGE_CSS + (ui / "ki.css").read_text(encoding="utf-8") + "</style>", "Mobil- und KI-CSS")
     html = once(html, '  </section>\n  <section id="details-panel" class="details-panel" aria-label="Details zum Marktstress" hidden></section>\n',
                 '   <button id="ki-open" class="details-toggle ki-open" type="button" hidden>Frage stellen</button>\n'
                 '  </section>\n  <section id="details-panel" class="details-panel" aria-label="Details zum Marktstress" hidden></section>\n'

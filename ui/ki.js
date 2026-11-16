@@ -1,15 +1,17 @@
 (() => {
-/* 05 · InvestTimer KI: Fragenkarten, Autocomplete, Chat. Sichtbar nur, wenn /api/chat erreichbar ist. */
+/* 05 · InvestTimer KI: Fragenkarten, Autocomplete, Chat. Sichtbar nur, wenn /api/chat erreichbar ist.
+   Der Halbmond ist das Zeichen des Bots: gefuellt bis zum aktuellen Marktstress, waehrend einer Antwort laeuft er als Denk-Anzeige. */
 'use strict';
 const KATS=__KI_KATEGORIEN__;
-const API='/api/chat',PRO_SEITE=3,MAX_VERLAUF=6;
+const API='/api/chat',PRO_SEITE=3,MAX_VERLAUF=6,START_FRAGE=KATS[0]?.fragen[0];
 const $=s=>document.querySelector(s);
-const sec=$('#ki'),openBtn=$('#ki-open'),input=$('#ki-input'),sendBtn=$('#ki-send'),log=$('#ki-log'),ac=$('#ki-ac'),cards=$('#ki-cards'),composer=$('#ki-composer'),resetBtn=$('#ki-reset');
+const sec=$('#ki'),openBtn=$('#ki-open'),input=$('#ki-input'),sendBtn=$('#ki-send'),log=$('#ki-log'),ac=$('#ki-ac'),cards=$('#ki-cards'),composer=$('#ki-composer'),resetBtn=$('#ki-reset'),closeBtn=$('#ki-close');
 if(!sec||!input)return;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const seiten=k=>Math.ceil(k.fragen.length/PRO_SEITE);
 const ALLE=KATS.flatMap(k=>k.fragen.map(q=>({q,kat:k.kurz.toUpperCase()})));
-const state={messages:[],loading:false,available:false,seite:KATS.map(k=>Math.floor(Math.random()*seiten(k))),kat:0,acIndex:0,acZu:true,treffer:[]};
+const mobil=matchMedia('(max-width:760px)');
+const state={messages:[],loading:false,available:false,sheet:false,neu:-1,wert:null,seite:KATS.map(k=>Math.floor(Math.random()*seiten(k))),kat:0,acIndex:0,acZu:true,treffer:[]};
 const ICON={
  gauge:'<path d="M4 17a8 8 0 0 1 16 0"/><path d="m12 17-3.5-5.5"/>',
  activity:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
@@ -17,18 +19,48 @@ const ICON={
  rotate:'<path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 8 16 8"/>'
 };
 const icon=n=>`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]||''}</svg>`;
+const BOGEN='d="M6 34a18 18 0 0 1 36 0" pathLength="100"';
+const mark=(denkt=false)=>`<svg class="ki-mark${denkt?' denkt':''}" viewBox="3 13 42 24" aria-hidden="true"><path class="ki-mark-track" ${BOGEN}/><path class="ki-mark-fill" ${BOGEN}/></svg>`;
+
+/* Aktueller Wert aus dem Signalbogen: fuellt die Halbmond-Zeichen und benennt den Einstieg */
+function setzeWert(v){
+ state.wert=Number.isFinite(v)?Math.round(v):null;
+ const fill=state.wert===null?0:state.wert;
+ sec.style.setProperty('--ki-wert',fill);if(openBtn)openBtn.style.setProperty('--ki-wert',fill);
+ renderOpen();
+}
+document.addEventListener('investtimer:wert',e=>setzeWert(e.detail));
+function renderOpen(){
+ if(!openBtn)return;
+ const frage=state.wert===null?'Was steckt hinter dem Marktstress?':`Was treibt die ${state.wert}?`;
+ openBtn.innerHTML=`<svg viewBox="3 13 42 24" aria-hidden="true" class="ki-glyph"><path class="ki-glyph-track" ${BOGEN}/><path class="ki-glyph-fill" ${BOGEN}/></svg><span><strong>${esc(frage)}</strong> <span class="ki-open-sub">KI fragen</span></span>`;
+ openBtn.setAttribute('aria-label',frage+' – InvestTimer KI fragen');
+}
 
 /* Sichtbarkeit: nur mit erreichbarem Backend und in der deutschen Ansicht */
-function syncVisible(){const show=state.available&&document.documentElement.lang!=='en';sec.hidden=!show;if(openBtn)openBtn.hidden=!show}
+function syncVisible(){const show=state.available&&document.documentElement.lang!=='en';sec.hidden=!show;if(openBtn)openBtn.hidden=!show;if(!show)schliesseSheet()}
 new MutationObserver(syncVisible).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 if(location.protocol.startsWith('http'))fetch(API,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{state.available=!!(d&&d.ok);syncVisible()}).catch(()=>{});
-if(openBtn)openBtn.addEventListener('click',()=>{sec.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});input.focus({preventScroll:true})});
+if(openBtn)openBtn.addEventListener('click',()=>{
+ if(!state.messages.length&&START_FRAGE){input.value=START_FRAGE;senden()}
+ if(!state.sheet)sec.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+ if(!state.messages.length)input.focus({preventScroll:true});
+});
+
+/* App-Ansicht (schmale Bildschirme): laufendes Gespraech als Vollbild mit Eingabe unten */
+let scrollVorher=0;
+function oeffneSheet(){if(!mobil.matches||state.sheet)return;state.sheet=true;scrollVorher=window.scrollY;sec.classList.add('ki-sheet');document.documentElement.classList.add('ki-lock');closeBtn.hidden=false}
+/* Schliessen fuehrt dorthin zurueck, wo das Gespraech begonnen wurde */
+function schliesseSheet(){if(!state.sheet)return;state.sheet=false;sec.classList.remove('ki-sheet');document.documentElement.classList.remove('ki-lock');closeBtn.hidden=true;window.scrollTo(0,scrollVorher)}
+closeBtn.addEventListener('click',schliesseSheet);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.sheet&&!state.treffer.length)schliesseSheet()});
+mobil.addEventListener('change',()=>{if(!mobil.matches)schliesseSheet()});
 
 /* Fragenkarten */
 function renderCards(){
  cards.innerHTML=`<div class="ki-tabs" role="tablist" aria-label="Kategorien">${KATS.map((k,i)=>`<button type="button" role="tab" aria-selected="${i===state.kat}" data-ki-tab="${i}">${esc(k.kurz)}</button>`).join('')}</div><div class="ki-grid">${KATS.map((k,i)=>{
   const s=state.seite[i],n=seiten(k),fragen=k.fragen.slice(s*PRO_SEITE,s*PRO_SEITE+PRO_SEITE);
-  return `<div class="ki-card${i===state.kat?' on':''}"><div class="ki-card-top"><span>${icon(k.icon)}${esc(k.label)}</span>${n>1?`<button type="button" class="ki-shuffle" data-ki-shuffle="${i}" aria-label="Andere Fragen zu ${esc(k.kurz)} zeigen" title="Andere Fragen">${icon('rotate')}</button>`:''}</div>${fragen.map(q=>`<button type="button" class="ki-q" data-ki-q="${esc(q)}">${esc(q)}</button>`).join('')}<div class="ki-dots" aria-hidden="true">${n>1?Array.from({length:n},(_,j)=>`<i${j===s?' class="on"':''}></i>`).join(''):''}</div></div>`}).join('')}</div>`;
+  return `<div class="ki-card${i===state.kat?' on':''}"><div class="ki-card-top"><span>${icon(k.icon)}${esc(k.kurz)}</span>${n>1?`<button type="button" class="ki-shuffle" data-ki-shuffle="${i}" aria-label="Andere Fragen zu ${esc(k.kurz)} zeigen" title="Andere Fragen">${icon('rotate')}</button>`:''}</div>${fragen.map(q=>`<button type="button" class="ki-q" data-ki-q="${esc(q)}">${esc(q)}</button>`).join('')}<div class="ki-dots" aria-hidden="true">${n>1?Array.from({length:n},(_,j)=>`<i${j===s?' class="on"':''}></i>`).join(''):''}</div></div>`}).join('')}</div>`;
 }
 let touchX=0;
 cards.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});
@@ -71,45 +103,29 @@ function antwortHtml(text){
  const fett=l=>esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
  return haupt.split('\n').map(l=>l.startsWith('## ')?`<div class="ki-h">${esc(l.slice(3))}</div>`:l.startsWith('- ')?`<div class="ki-li">• ${fett(l.slice(2))}</div>`:!l.trim()?'<div class="ki-gap"></div>':`<div>${fett(l)}</div>`).join('')}
 function renderLog(){
- const chat=state.messages.length>0;sec.classList.toggle('ki-chat',chat);log.hidden=!chat;resetBtn.hidden=!chat;
- log.innerHTML=state.messages.map(m=>m.role==='user'?`<div class="ki-msg user">${esc(m.content)}</div>`:`<div class="ki-msg">${antwortHtml(m.content)}</div>`).join('')+(state.loading?'<div class="ki-wait"><i></i>InvestTimer liest die Daten …</div>':'');
+ const chat=state.messages.length>0;sec.classList.toggle('ki-chat',chat);sec.classList.toggle('ki-busy',state.loading);log.hidden=!chat;resetBtn.hidden=!chat;
+ log.innerHTML=state.messages.map((m,i)=>{const neu=i===state.neu?' neu':'';
+  return m.role==='user'?`<div class="ki-msg user${neu}">${esc(m.content)}</div>`
+   :`<div class="ki-row">${mark()}<div class="ki-msg${m.fehler?' fehler':''}${neu}">${antwortHtml(m.content)}</div></div>`}).join('')
+  +(state.loading?`<div class="ki-wait" role="status">${mark(true)}InvestTimer liest die Daten …</div>`:'');
  log.scrollTop=log.scrollHeight;sendBtn.disabled=state.loading||!input.value.trim();
 }
 async function senden(){
  const frage=input.value.trim();if(!frage||state.loading)return;
  const verlauf=state.messages.slice(-MAX_VERLAUF).map(m=>({role:m.role,content:m.content}));
- state.messages.push({role:'user',content:frage});input.value='';state.acZu=true;state.loading=true;renderAc();renderLog();
- let antwort;
+ state.messages.push({role:'user',content:frage});state.neu=state.messages.length-1;input.value='';state.acZu=true;state.loading=true;
+ oeffneSheet();renderAc();renderLog();
+ let antwort,fehler=false;
  try{
   const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frage,verlauf})});
-  if(res.status===429)antwort='Für heute ist das Fragenkontingent erreicht — morgen geht es weiter.';
+  if(res.status===429){antwort='Für heute ist das Fragenkontingent erreicht — morgen geht es weiter.';fehler=true}
   else if(!res.ok)throw new Error('HTTP '+res.status);
   else antwort=(await res.json()).antwort||'Leere Antwort erhalten.';
- }catch{antwort='Verbindung fehlgeschlagen — bitte in einem Moment erneut versuchen.'}
- state.messages.push({role:'assistant',content:String(antwort)});state.loading=false;renderLog();
+ }catch{antwort='Verbindung fehlgeschlagen — bitte in einem Moment erneut versuchen.';fehler=true}
+ state.messages.push({role:'assistant',content:String(antwort),fehler});state.neu=state.messages.length-1;state.loading=false;renderLog();
 }
-resetBtn.addEventListener('click',()=>{if(state.loading)return;state.messages=[];renderLog();renderCards();input.focus({preventScroll:true})});
+resetBtn.addEventListener('click',()=>{if(state.loading)return;state.messages=[];state.neu=-1;schliesseSheet();renderLog();renderCards();input.focus({preventScroll:true})});
 
-/* Rotierende Kugel (92 Punkte, Fibonacci-Sphaere). Laeuft nur, solange sie sichtbar ist. */
-const canvas=$('#ki-canvas'),ctx=canvas.getContext('2d');
-const nodes=Array.from({length:92},(_,i)=>{const y=1-i/91*2,r=Math.sqrt(1-y*y),a=i*2.39996;return {x:Math.cos(a)*r,y,z:Math.sin(a)*r}});
-const edges=[];nodes.forEach((a,i)=>nodes.forEach((b,j)=>{if(j>i&&Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)<0.45)edges.push([i,j])}));
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,TAU=Math.PI*2;
-let w=0,h=0,time=0,prev=0,raf=0,inView=false;
-function draw(){
- if(!w||!h)return;ctx.clearRect(0,0,w,h);
- const cx=w*0.5,cy=h*0.44,r=Math.min(w*0.19,h*0.34),angle=time*0.11,tilt=0.2;
- const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,r*1.7);glow.addColorStop(0,'rgba(46,109,92,0.10)');glow.addColorStop(1,'rgba(46,109,92,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
- const ps=nodes.map(p=>{const x=p.x*Math.cos(angle)+p.z*Math.sin(angle),z=-p.x*Math.sin(angle)+p.z*Math.cos(angle),y=p.y*Math.cos(tilt)-z*Math.sin(tilt),zz=p.y*Math.sin(tilt)+z*Math.cos(tilt),sc=1+zz*0.12;return {x:cx+x*r*sc,y:cy+y*r*sc,z:zz}});
- edges.forEach(([i,j],n)=>{const a=ps[i],b=ps[j],al=0.08+((a.z+b.z+2)/4)*0.3;
-  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(46,109,92,${al})`;ctx.lineWidth=0.65;ctx.stroke();
-  if(n%29===0){const p=(time*0.15+n*0.079)%1;ctx.beginPath();ctx.arc(a.x+(b.x-a.x)*p,a.y+(b.y-a.y)*p,1.35,0,TAU);ctx.fillStyle='#9b6f32';ctx.fill()}});
- ps.slice().sort((a,b)=>a.z-b.z).forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,0.65+(p.z+1)*0.55,0,TAU);ctx.fillStyle=`rgba(27,74,62,${(p.z+1)*0.3+0.2})`;ctx.fill()});
- ctx.save();ctx.translate(cx,cy);ctx.strokeStyle='rgba(46,109,92,0.16)';ctx.lineWidth=0.7;ctx.beginPath();ctx.ellipse(0,r*0.95,r*1.15,r*0.11,0,0,TAU);ctx.stroke();ctx.restore();
-}
-function frame(ms){const dt=Math.min((ms-prev)/1000,0.05);prev=ms;if(!document.hidden&&!reduce)time+=dt;draw();raf=inView&&!reduce?requestAnimationFrame(frame):0}
-new ResizeObserver(()=>{const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;w=r.width;h=r.height;const d=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0);draw()}).observe(canvas);
-new IntersectionObserver(es=>{inView=es[0].isIntersecting;if(inView&&!raf&&!reduce){prev=performance.now();raf=requestAnimationFrame(frame)}}).observe(canvas);
-
+setzeWert(document.body.dataset.wert?Number(document.body.dataset.wert):null);
 renderCards();renderAc();renderLog();
 })();
