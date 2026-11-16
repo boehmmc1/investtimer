@@ -20,7 +20,7 @@
         {"frage": "Was sagt der aktuelle VIX über die erwarteten Schwankungen aus?", "quelle": "katalog", "art": "live"},
         {"frage": "Was zeigt die aktuelle VIX-Terminkurve?", "quelle": "katalog", "art": "live"},
         {"frage": "Wie breit ist die aktuelle Marktbewegung im S&P 500?", "quelle": "katalog", "art": "live"},
-        {"frage": "Wie sind US-Anleiherenditen und MOVE aktuell einzuordnen?", "quelle": "katalog", "art": "live"},
+        {"frage": "Wie unruhig ist der Anleihemarkt aktuell (MOVE)?", "quelle": "neu", "art": "live", "ersetzt": "q08"},
         {"frage": "Was zeigen die aktuellen Put/Call-Ratios?", "quelle": "katalog", "art": "live"}
       ]
     },
