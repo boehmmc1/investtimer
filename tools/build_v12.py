@@ -13,6 +13,15 @@ an den Betrieb anschliesst:
 
 --vorschau: Seite bekommt noindex. Der Ansichtswechsel "Oeffentlich / Nach Login"
 bleibt in jedem Fall, bis es eine echte Anmeldung gibt.
+
+--anmeldung=<datei>: echte Anmeldung per E-Mail-Link (Supabase-Projekt von
+InvestTimer; Datei mit {"url": ..., "anonKey": ...}, beides oeffentlich). Dann
+  - oeffentlich nur der zeitversetzte Stand, der aktuelle Wert kommt mit
+    Login-Token ueber /api/aktuell, die KI verlangt das Token ebenfalls
+  - der Entwurfs-Umschalter "Oeffentlich / Nach Login" entfaellt
+
+Immer: Halbmond-Fuellung des Signalbogens, Halbmond als Zeichen der KI und als
+Denk-Anzeige, Web-App-Manifest.
 """
 import base64
 import json
@@ -24,7 +33,141 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "volafly-api"))
 sys.path.insert(0, str(ROOT / "tools"))
 import marktstress as engine  # noqa: E402
-from build_public import MOBILE_CSS, once, sub_once  # noqa: E402
+from build_public import GAUGE_CSS, GAUGE_JS, MOBILE_CSS, once, sub_once  # noqa: E402
+
+# Halbmond: Zeichen der KI (gefuellt bis zum angezeigten Wert) und Denk-Anzeige
+MOND = ('<svg class="{cls}" viewBox="3 13 42 24" aria-hidden="true">'
+        '<path class="mond-spur" d="M6 34a18 18 0 0 1 36 0" pathLength="100"/>'
+        '<path class="mond-wert" d="M6 34a18 18 0 0 1 36 0" pathLength="100"/></svg>')
+
+HALBMOND_CSS = """
+/* Halbmond als Zeichen der KI und als Denk-Anzeige */
+.ki-halbmond{overflow:visible}
+.ki-halbmond path{fill:none;stroke-width:4.2;stroke-linecap:round}
+.ki-halbmond .mond-spur{stroke:#d3dccf}
+.ki-halbmond .mond-wert{stroke:var(--accent);stroke-dasharray:var(--value,0) 100;transition:stroke-dasharray .9s cubic-bezier(.16,1,.3,1)}
+.chat-wait .ki-halbmond{width:24px;height:14px;flex:none}
+.chat-wait .ki-halbmond .mond-wert{stroke-dasharray:22 100;transition:none;animation:ki-denkt 1.5s cubic-bezier(.65,0,.35,1) infinite alternate}
+@keyframes ki-denkt{from{stroke-dashoffset:0}to{stroke-dashoffset:-78}}
+@media(prefers-reduced-motion:reduce){.chat-wait .ki-halbmond .mond-wert{animation:none;stroke-dasharray:var(--value,0) 100}.ki-halbmond .mond-wert{transition:none}}
+"""
+
+ANMELDUNG_CSS = """
+/* Anmeldung per E-Mail-Link */
+.access-form{display:grid;gap:8px;margin:20px 0 4px;text-align:left}
+.access-form label{font-size:12px;color:var(--sub)}
+.access-form input{min-height:48px;font-size:16px;padding:0 14px;border:1px solid #b9c7b6;border-radius:12px;background:var(--surface);color:var(--text);font-family:inherit}
+.access-form input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.access-form button:disabled{opacity:.55}
+.access-error{min-height:1.2em;margin:0;font-size:12px;line-height:1.5;color:#9b3d32}
+"""
+
+TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',sendLink:'Anmeldelink senden',"
+                      "linkSentTitle:'Schau in dein Postfach.',"
+                      "linkSent:'Wir haben einen Anmeldelink an {email} geschickt. Ein Klick darauf, und du siehst den aktuellen Marktstress.',"
+                      "emailInvalid:'Bitte gib eine gültige E-Mail-Adresse ein.',"
+                      "linkRate:'Gerade wurden zu viele Links angefordert. Bitte versuche es in ein paar Minuten erneut.',"
+                      "linkFail:'Der Link konnte nicht verschickt werden. Bitte versuche es gleich noch einmal.',"
+                      "linkExpired:'Der Anmeldelink ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen an.',"
+                      "accessLegal:'Kein Passwort nötig: Du bekommst einen Link per E-Mail. Neu hier? Mit dem ersten Link wird dein Zugang angelegt.',"
+                      "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',")
+TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',"
+                      "linkSentTitle:'Check your inbox.',"
+                      "linkSent:'We sent a sign-in link to {email}. One click and you will see the latest market stress.',"
+                      "emailInvalid:'Please enter a valid email address.',"
+                      "linkRate:'Too many links were requested just now. Please try again in a few minutes.',"
+                      "linkFail:'The link could not be sent. Please try again in a moment.',"
+                      "linkExpired:'The sign-in link has expired or was already used. Simply request a new one.',"
+                      "accessLegal:'No password needed: we email you a link. New here? Your access is created with the first link.',"
+                      "loginNeeded:'Please sign in again to keep asking.',")
+
+# Ersetzt LIVE_JS, wenn die Anmeldung aktiv ist. Sitzung im localStorage, Erneuerung ueber das Refresh-Token.
+LIVE_JS_ANMELDUNG = """/* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
+const IT=window.InvestTimer={live:null,pub:result,member:false,chat:null,session:null,
+ get view(){return this.member&&this.live?this.live:this.pub},
+ setMember(v){this.member=!!v;apply()}};
+function apply(){
+ const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
+ result=IT.view;render();
+ $$('#details-panel details').forEach((e,i)=>{e.open=!!open[i]});window.scrollTo(0,y);
+ document.dispatchEvent(new Event('investtimer:update'));
+}
+const AUTH=__AUTH__,SKEY='investtimer-sitzung';
+const merke=s=>{try{s?localStorage.setItem(SKEY,JSON.stringify(s)):localStorage.removeItem(SKEY)}catch{}};
+const gemerkt=()=>{try{return JSON.parse(localStorage.getItem(SKEY)||'null')}catch{return null}};
+const sb=(pfad,opt={})=>fetch(AUTH.url+pfad,{...opt,headers:{apikey:AUTH.key,'Content-Type':'application/json',...(opt.headers||{})}});
+(()=>{/* Rueckkehr aus dem E-Mail-Link: Sitzung uebernehmen, Adresse bereinigen */
+ const h=new URLSearchParams(location.hash.slice(1));if(!h.has('access_token')&&!h.has('error'))return;
+ if(h.get('access_token'))merke({access_token:h.get('access_token'),refresh_token:h.get('refresh_token'),
+  expires_at:Number(h.get('expires_at'))||Math.floor(Date.now()/1000)+Number(h.get('expires_in')||3600)});
+ else IT.anmeldeFehler=h.get('error_description')||h.get('error');
+ history.replaceState(null,'',location.pathname+location.search);
+})();
+let erneuern=null;
+IT.token=async()=>{
+ let s=IT.session||gemerkt();if(!s||!s.access_token)return null;
+ if(Date.now()/1000>(s.expires_at||0)-60){
+  erneuern=erneuern||sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:s.refresh_token})})
+   .then(r=>r.ok?r.json():Promise.reject(r.status)).finally(()=>{erneuern=null});
+  try{const d=await erneuern;s={access_token:d.access_token,refresh_token:d.refresh_token,expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)};merke(s)}
+  catch(e){if(e===400||e===401){merke(null);IT.session=null}return null}
+ }
+ IT.session=s;return s.access_token;
+};
+IT.sendeLink=async email=>{
+ const r=await sb('/auth/v1/otp?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'POST',body:JSON.stringify({email,create_user:true})});
+ if(!r.ok)throw r.status;
+};
+IT.abmelden=async()=>{
+ const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.setMember(false);
+ if(s)sb('/auth/v1/logout',{method:'POST',headers:{Authorization:'Bearer '+s.access_token}}).catch(()=>{});
+};
+let lastLoad=0,lastSeen='';
+function loadLive(force){
+ if(!location.protocol.startsWith('http')||(!force&&Date.now()-lastLoad<3e5))return;lastLoad=Date.now();
+ document.body.dataset.live='laedt';
+ const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject())
+  .then(d=>normaliseResult(d.publicSnapshot)||normaliseResult(d)).catch(()=>null);
+ const aktuell=IT.token().then(tok=>!tok?null:fetch('/api/aktuell',{cache:'no-store',headers:{Authorization:'Bearer '+tok}})
+  .then(r=>{if(r.status===401){IT.abmelden();return null}return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>null);
+ Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
+  document.body.dataset.live='fertig';
+  if(!pub&&!live){lastLoad=0;return}
+  const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
+  if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
+  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(live&&IT.session);apply();
+ });
+}
+IT.loadLive=loadLive;
+if(gemerkt())IT.member=true;
+loadLive();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadLive()});
+window.addEventListener('pageshow',e=>{if(e.persisted)loadLive()});
+if(location.protocol.startsWith('http'))fetch('/api/chat',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{IT.chat=!!(d&&d.ok)}).catch(()=>{IT.chat=false});
+"""
+
+# Anmeldedialog: E-Mail-Adresse -> Anmeldelink (ersetzt den Knopf "Mitgliederansicht ansehen")
+ZUGANG_JS_ANMELDUNG = """let gesendet='',zugangsFehler='';
+function renderAccess(){
+ const kopf='<div class="modal-top"><span class="eyebrow">INVESTTIMER</span><button class="close-button" id="close-access" type="button" aria-label="'+t('close')+'">×</button></div>';
+ access.innerHTML=kopf+(gesendet
+  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t('linkSent')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p><button class="primary full" id="access-done" type="button">'+t('close')+'</button>'
+  :'<h2 id="access-title" tabindex="-1">'+t('accessTitle')+'</h2><p>'+t('accessIntro')+'</p><ul class="access-benefits"><li>'+t('feature1')+'</li><li>'+t('feature2')+'</li><li>'+t('feature3')+'</li></ul>'
+   +'<form id="access-form" class="access-form" novalidate><label for="access-email">'+t('email')+'</label>'
+   +'<input id="access-email" type="email" inputmode="email" autocomplete="email" maxlength="254" required placeholder="'+t('emailPlaceholder')+'">'
+   +'<p class="access-error" id="access-error" role="alert">'+esc(zugangsFehler)+'</p><button class="primary full" type="submit">'+t('sendLink')+'</button></form>'
+   +'<p class="preview-notice">'+t('accessLegal')+'</p>');
+}
+document.addEventListener('click',e=>{if(e.target.closest('#access-done'))closeAccess()});
+document.addEventListener('submit',async e=>{
+ if(e.target.id!=='access-form')return;e.preventDefault();
+ const input=$('#access-email'),fehler=$('#access-error'),knopf=e.target.querySelector('button'),email=input.value.trim();
+ if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)){fehler.textContent=t('emailInvalid');input.focus();return}
+ knopf.disabled=true;fehler.textContent='';zugangsFehler='';
+ try{await IT.sendeLink(email);gesendet=email;renderAccess();$('#access-title').focus({preventScroll:true})}
+ catch(s){fehler.textContent=t(s===429?'linkRate':'linkFail');knopf.disabled=false}
+});
+"""
 
 NORMALISE_JS = """/* 01 · Ergebnis pruefen (Berechnung laeuft serverseitig) */
 function normaliseResult(d){
@@ -71,7 +214,7 @@ function md(text){
  return body.split(/\\n\\s*\\n/).map(block=>{const lines=block.split('\\n').filter(l=>l.trim());if(!lines.length)return '';
   return lines.map(l=>l.startsWith('## ')?'<p class="chat-heading">'+esc(l.slice(3))+'</p>':l.startsWith('- ')?'<p class="chat-point">• '+bold(l.slice(2))+'</p>':'<p>'+bold(l)+'</p>').join('')}).join('');
 }
-function turnMarkup(turn){return '<div class="chat-bubble chat-question">'+esc(turn.text)+'</div><div class="chat-bubble chat-answer">'+(turn.answer===null?'<span class="chat-wait"><i></i>'+t('thinking')+'</span>':md(turn.answer))+'</div>'}
+function turnMarkup(turn){return '<div class="chat-bubble chat-question">'+esc(turn.text)+'</div><div class="chat-bubble chat-answer">'+(turn.answer===null?'<span class="chat-wait" role="status">__MOND_DENKT__'+t('thinking')+'</span>':md(turn.answer))+'</div>'}
 function moreMarkup(){
  if(lang()!=='de'||busy||!turns.length)return '';
  const asked=new Set(turns.map(x=>x.text)),list=FRAGEN[tab].fragen.filter(q=>!asked.has(q)).slice(0,3);
@@ -90,8 +233,9 @@ async function ask(text){
  const turn={text,answer:null};turns.push(turn);busy=true;renderChat(true);
  let answer='';
  try{
-  const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frage:text,verlauf})});
-  if(res.status===429)answer=t('limit');else if(!res.ok)throw new Error('HTTP '+res.status);else answer=String((await res.json()).antwort||'');
+  const tok=IT.token?await IT.token():null;
+  const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{})},body:JSON.stringify({frage:text,verlauf})});
+  if(res.status===401){answer=t('loginNeeded');IT.abmelden&&IT.abmelden()}else if(res.status===429)answer=t('limit');else if(!res.ok)throw new Error('HTTP '+res.status);else answer=String((await res.json()).antwort||'');
  }catch{answer=t(IT.chat===false?'unavailable':'offline')}
  turn.answer=answer||t('offline');busy=false;if(chat.open)renderChat(true);
 }
@@ -143,7 +287,10 @@ KEYS_EN = ("current:'Latest data',sourceLive:'US stock market · Data as of ',"
 def head_meta(preview):
     lines = ['<meta name="application-name" content="InvestTimer">',
              '<meta name="apple-mobile-web-app-title" content="InvestTimer">',
-             '<link rel="apple-touch-icon" href="/apple-touch-icon.png">']
+             '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
+             '<link rel="manifest" href="/manifest.json">',
+             '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">'
+             '<meta name="apple-mobile-web-app-status-bar-style" content="default">']
     if preview:
         lines.append('<meta name="robots" content="noindex,nofollow">')
     else:
@@ -157,8 +304,10 @@ def head_meta(preview):
     return "\n".join(lines)
 
 
-def main(source, target_dir, preview):
+def main(source, target_dir, preview, anmeldung=None):
     html = Path(source).read_text(encoding="utf-8")
+    if anmeldung and not (str(anmeldung.get("url", "")).startswith("https://") and anmeldung.get("anonKey")):
+        raise SystemExit("Anmeldedatei braucht url (https://...) und anonKey")
     target = Path(target_dir)
     (target / "film").mkdir(parents=True, exist_ok=True)
 
@@ -186,7 +335,8 @@ def main(source, target_dir, preview):
                     "<!-- InvestTimer · investtimer.net · Quelle: UI-Export v1.2 (Signalbogen) -->", "Kopfkommentar")
     html = once(html, " Clarity mit dem Volafly-Modell aus 14 Komponenten und gespeichertem Datenstand.",
                 " 14 Bestandteile, ein Wert.", "Beschreibung")
-    html = once(html, "connect-src 'none'", "connect-src 'self'", "CSP Abrufe")
+    html = once(html, "connect-src 'none'", "connect-src 'self'%s; manifest-src 'self'" % (
+        " " + anmeldung["url"].rstrip("/") if anmeldung else ""), "CSP Abrufe")
     html = once(html, "img-src data:;", "img-src 'self' data:;", "CSP Bilder")
     html = once(html, "media-src data:;", "media-src 'self';", "CSP Film")
     html = once(html, '<meta name="application-name" content="InvestTimer">', head_meta(preview), "Kopf-Meta")
@@ -224,7 +374,17 @@ def main(source, target_dir, preview):
                 "const number=", "t()")
     html = once(html, "try{result=evaluateSnapshot(JSON.parse(document.getElementById('investtimer-snapshot').textContent))}catch{result=null}",
                 "try{result=normaliseResult(JSON.parse(document.getElementById('investtimer-result').textContent))}catch{result=null}", "Ergebnis laden")
-    html = once(html, "render();\n\n})();\n(() => {\n/* 04 ·", "render();\n" + LIVE_JS + "\n})();\n(() => {\n/* 04 ·", "Live-Abruf")
+    live_js = LIVE_JS
+    if anmeldung:
+        live_js = LIVE_JS_ANMELDUNG.replace("__AUTH__", json.dumps(
+            {"url": anmeldung["url"].rstrip("/"), "key": anmeldung["anonKey"]}))
+    html = once(html, "render();\n\n})();\n(() => {\n/* 04 ·", "render();\n" + live_js + "\n})();\n(() => {\n/* 04 ·", "Live-Abruf")
+
+    # Signalbogen: Halbmond fuellt sich (gleicher Baustein wie in build_public.py)
+    html = sub_once(html, r"function updateGauge\(\)\{.*?\n\}\nfunction renderModule\(\)\{",
+                    GAUGE_JS + "function renderModule(){", "updateGauge")
+    html = once(html, "new MutationObserver(updateGauge).observe(score,",
+                "gaugeObserver=new MutationObserver(updateGauge);gaugeObserver.observe(score,", "Gauge-Observer")
 
     # Zugangs- und KI-Ansicht an echte Daten und den Chat anschliessen
     html = once(html, "/* UI concept only. No authentication, live feed or remote AI service. */",
@@ -243,8 +403,17 @@ def main(source, target_dir, preview):
         raise SystemExit("Erwartete vier Textstellen mit dem Wert")
     html = html.replace("'+score+'", "{score}")
     html = once(html, "const t=k=>c[lang()][k];", "const t=k=>String(c[lang()][k]).replace('{score}',score());", "Zugang t()")
-    html = once(html, "const c={de:{login:'Anmelden',", "const c={de:{" + KEYS_DE + "login:'Anmelden',", "Texte de")
-    html = once(html, "},en:{login:'Sign in',logout:'Sign out',preview:", "},en:{" + KEYS_EN + "login:'Sign in',logout:'Sign out',preview:", "Texte en")
+    html = once(html, "const c={de:{login:'Anmelden',", "const c={de:{" + KEYS_DE + TEXTE_ANMELDUNG_DE + "login:'Anmelden',", "Texte de")
+    html = once(html, "},en:{login:'Sign in',logout:'Sign out',preview:", "},en:{" + KEYS_EN + TEXTE_ANMELDUNG_EN + "login:'Sign in',logout:'Sign out',preview:", "Texte en")
+    # KI-Zeichen: Halbmond statt Netz-Symbol
+    html = sub_once(html, r"const orbit='<svg class=\"assistant-orbit\".*?</svg>';",
+                    "const orbit='" + MOND.format(cls="assistant-orbit ki-halbmond") + "';", "KI-Zeichen")
+    if anmeldung:
+        html = once(html, "function update(){", "function update(){member=!!IT.member;", "Zugang folgt Anmeldung")
+        html = once(html, "if(member&&b.id==='account-login')switchView(false);else openAccess(b);",
+                    "if(member&&b.id==='account-login')IT.abmelden();else openAccess(b);", "Abmelden")
+        html = once(html, "$('.app').after(review);", "/* Entwurfsansicht entfaellt mit echter Anmeldung */", "Entwurfsansicht")
+        html = sub_once(html, r"function renderAccess\(\)\{access\.innerHTML=[^\n]*\n", ZUGANG_JS_ANMELDUNG, "Anmeldedialog")
     html = once(html, "stamp.textContent=(member?t('saved'):t('preview'))+' · '+date();stamp.title=member?t('memberNote'):t('noCurrent');",
                 "stamp.textContent=(member?t('current'):t('preview'))+' · '+date();stamp.title=member?'':t('noCurrent');", "Stempel")
     html = once(html, "memberNote.textContent=t('memberNote');memberNote.hidden=!member;", "memberNote.hidden=true;", "Mitglieder-Hinweis")
@@ -267,7 +436,7 @@ def main(source, target_dir, preview):
     fragen = json.loads((ROOT / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))
     kategorien = [{"kurz": k["kurz"], "fragen": [f["frage"] for f in k["fragen"]]} for k in fragen["kategorien"]]
     html = sub_once(html, r"function answerMarkup\(kind\)\{.*?function closeChat\(\)\{[^\n]*\n",
-                    CHAT_JS.replace("__FRAGEN__", json.dumps(kategorien, ensure_ascii=False)), "Chat-Kern")
+                    CHAT_JS.replace("__FRAGEN__", json.dumps(kategorien, ensure_ascii=False)).replace("__MOND_DENKT__", MOND.format(cls="ki-halbmond")), "Chat-Kern")
     html = sub_once(html, r"document\.addEventListener\('submit',e=>\{if\(!\['assistant-entry-form'[^\n]*\n", SUBMIT_JS, "Chat-Absenden")
     html = once(html, "else if(b.dataset.ask)openChat(b.dataset.ask,null,b);",
                 "else if(b.dataset.ask)openChat(t(b.dataset.ask==='composition'?'question2':'question1'),b);"
@@ -275,13 +444,15 @@ def main(source, target_dir, preview):
                 "else if(b.dataset.tab!==undefined){tab=Number(b.dataset.tab);renderChat(false);$('.assistant-messages').scrollTop=1e6}", "Chat-Klicks")
     html = once(html, "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\nupdate();",
                 "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\n"
-                "document.addEventListener('investtimer:update',update);\nupdate();", "Zugang Aktualisierung")
+                "document.addEventListener('investtimer:update',update);\nupdate();" + (
+                    "\nif(IT.anmeldeFehler){zugangsFehler=t('linkExpired');openAccess(null)}"
+                    if anmeldung else ""), "Zugang Aktualisierung")
 
     # Stile: Mobil-Nachschaerfung hinter die Export-Stile, Ergaenzungen hinter die Zugangs-Stile
     head, rest = html.split('<style id="investtimer-access-style">', 1)
-    head = once(head, "</style>", MOBILE_CSS + "</style>", "Mobil-CSS")
+    head = once(head, "</style>", MOBILE_CSS + GAUGE_CSS + "</style>", "Mobil-CSS")
     access_css, rest = rest.split("</style>", 1)
-    html = head + '<style id="investtimer-access-style">' + access_css + V12_CSS + "</style>" + rest
+    html = head + '<style id="investtimer-access-style">' + access_css + V12_CSS + HALBMOND_CSS + (ANMELDUNG_CSS if anmeldung else "") + "</style>" + rest
 
     for leftover in ("investtimer-snapshot", "evaluateSnapshot", "metricRows", "configRows", "Fear_Greed_Index",
                      "snapshotScore", "sourceLibraryFileId", "data:video", "answerKind", "BEISPIELANTWORT"):
@@ -294,4 +465,5 @@ def main(source, target_dir, preview):
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    main(args[0], args[1], "--vorschau" in sys.argv)
+    datei = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--anmeldung=")), None)
+    main(args[0], args[1], "--vorschau" in sys.argv, json.loads(Path(datei).read_text()) if datei else None)

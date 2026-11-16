@@ -6,6 +6,8 @@ Umgebungsvariablen (siehe /etc/investtimer.env):
   STRESS_API_URL     Standard https://api.volafly.net/v1/marktstress
   OUTPUT_PATH        Standard /var/lib/investtimer/data/stress.json
   PUBLIC_DELAY_DAYS  Standard 7
+  PUBLIC_ONLY        1 = stress.json enthaelt nur den zeitversetzten Stand
+                     (aktueller Wert nur nach Anmeldung ueber /api/aktuell)
 
 Zusaetzlich fuehrt das Skript einen Tagesverlauf (history.json neben der
 Ausgabedatei, nicht oeffentlich ausgeliefert) und legt in stress.json unter
@@ -104,6 +106,9 @@ def main(argv):
     history = dict(sorted(history.items())[-400:])
     snapshot = public_snapshot(history, payload["asOf"], delay)
     payload["publicSnapshot"] = snapshot
+    if os.environ.get("PUBLIC_ONLY", "").strip() == "1":
+        # Oeffentliche Datei ohne aktuellen Wert: oben steht der zeitversetzte Stand selbst.
+        payload = dict(snapshot, publicSnapshot=snapshot, publicOnly=True)
     print("oeffentlicher Stand: %s vom %s (Verzoegerung %d Tage, %d Tage im Verlauf)" % (
         snapshot["rounded"], snapshot["asOf"], delay, len(history)))
     if "--check" not in argv:
