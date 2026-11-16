@@ -1,0 +1,81 @@
+{
+ "2026-11-15": {
+  "model": "investtimer-us-market-stress",
+  "asOf": "2026-11-15",
+  "rounded": 33,
+  "count": 14,
+  "total": 14,
+  "rows": [
+   {
+    "name": "VIX",
+    "effectiveWeight": 10.0
+   },
+   {
+    "name": "VIX_VXV",
+    "effectiveWeight": 10.0
+   },
+   {
+    "name": "VIX_VX1",
+    "effectiveWeight": 5.0
+   },
+   {
+    "name": "VX1_VX2",
+    "effectiveWeight": 5.0
+   },
+   {
+    "name": "VVIX",
+    "effectiveWeight": 10.0
+   },
+   {
+    "name": "BREADTH_5",
+    "effectiveWeight": 5.0
+   },
+   {
+    "name": "BREADTH_20",
+    "effectiveWeight": 5.0
+   },
+   {
+    "name": "BREADTH_50",
+    "effectiveWeight": 5.0
+   },
+   {
+    "name": "BREADTH_200",
+    "effectiveWeight": 5.0
+   },
+   {
+    "name": "SPX_200D",
+    "effectiveWeight": 10.0
+   },
+   {
+    "name": "MOVE",
+    "effectiveWeight": 10.0
+   },
+   {
+    "name": "EPC",
+    "effectiveWeight": 7.0
+   },
+   {
+    "name": "TPC",
+    "effectiveWeight": 8.0
+   },
+   {
+    "name": "FG",
+    "effectiveWeight": 5.0
+   }
+  ],
+  "blocks": [
+   {
+    "name": "volatility",
+    "effectiveWeight": 40.0
+   },
+   {
+    "name": "price",
+    "effectiveWeight": 30.0
+   },
+   {
+    "name": "positioning",
+    "effectiveWeight": 30.0
+   }
+  ]
+ }
+}

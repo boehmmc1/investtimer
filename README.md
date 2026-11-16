@@ -24,6 +24,27 @@ Statische Seite für investtimer.net. Zeigt den Marktstress (0–100).
 | `tools/build_public.py` | Baut `public/index.html` aus dem UI-Export (Live-Daten, Mobil-Nachschärfung) |
 | `tools/check_mobile.py` | Mobil-Prüfung: 6 Bildschirmgrößen × 9 Ansichten |
 
+## Zwei Seitenstände
+
+| Adresse | Quelle | Build |
+|---|---|---|
+| `/` (live) | UI-Export v1.0 + KI-Bereich aus `ui/` | `tools/build_public.py`, Prüfung `tools/check_mobile.py` |
+| `/neu/` (Vorschau, noindex) | UI-Export v1.2: öffentliche Ansicht mit zeitversetztem Wert, Ansicht nach Login mit aktuellem Wert und KI-Dialog, Erklärfilm | `tools/build_v12.py`, Prüfung `tools/check_v12.py` |
+
+```bash
+python3 tools/build_v12.py source/InvestTimer_UI_Signalbogen_v1.2.html public/neu --vorschau
+python3 tools/check_v12.py neu/
+```
+
+Live schalten: denselben Build ohne `--vorschau` nach `public` schreiben. Solange
+es keine echte Anmeldung gibt, ist „Nach Login" ein Ansichtswechsel und keine
+Zugriffssperre: Der aktuelle Wert steht weiter in `/data/stress.json`.
+
+`stress.json` enthält seit v1.2 zusätzlich `publicSnapshot`: den Stand, der
+mindestens `PUBLIC_DELAY_DAYS` (Standard 7) alt ist. Der Tagesverlauf dafür
+liegt in `/var/lib/investtimer/data/history.json` (nicht ausgeliefert), der
+Startwert in `server/seed_history.json`.
+
 ## Ablauf
 
 - **Deploy:** Push auf `main` → spätestens 2 Minuten später live.
