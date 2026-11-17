@@ -70,6 +70,7 @@ ANMELDUNG_CSS = """
 .access-dialog{overscroll-behavior:contain}
 .access-dialog .preview-notice a{color:inherit}
 @media(max-width:760px){.access-dialog{max-height:calc(100dvh - 12px);overflow-y:auto}.access-benefits{margin-bottom:4px}}
+.rechtliches{font-size:12px;color:var(--sub)}.rechtliches a{color:inherit;display:inline-block;padding:12px 2px}
 /* Ohne Impressum und Datenschutzerklaerung: kein Einstieg in Registrierung oder Anmeldung */
 body.ohne-registrierung:not(.members-layout) #open-subscribe,
 body.ohne-registrierung:not(.members-layout) .public-access-note,
@@ -493,6 +494,11 @@ def main(source, target_dir, preview, anmeldung=None):
                         "databodyPublic:'Historischer Wert vom {datelong}.'", "databodyPublic de ohne Registrierung")
             html = once(html, "databodyPublic:'Historical reading from {datelong}. The latest market stress is available after sign-in.'",
                         "databodyPublic:'Historical reading from {datelong}.'", "databodyPublic en ohne Registrierung")
+        else:
+            html = once(html, '<span data-i18n="tagline">Marktstress verstehen.</span></footer>',
+                        '<span data-i18n="tagline">Marktstress verstehen.</span>'
+                        '<nav class="rechtliches"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a></nav></footer>',
+                        "Fusslinks Rechtstexte")
         print("Registrierung: %s" % ("offen" if offen else "ausgeblendet (Impressum/Datenschutz fehlen)"))
     html = once(html, "stamp.textContent=(member?t('saved'):t('preview'))+' · '+date();stamp.title=member?t('memberNote'):t('noCurrent');",
                 "stamp.textContent=(member?t('current'):t('preview'))+' · '+date();stamp.title=member?'':t('noCurrent');", "Stempel")
