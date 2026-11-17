@@ -46,4 +46,10 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 - Supabase: Projekt `investtimer` (`owcmsgroqhawcjlehcjk`, Frankfurt), öffentliche Werte in `deploy/supabase.json`.
   Eigene deutsche Mailtexte (mit 6-stelligem Code) erst mit eigenem SMTP möglich; dann
   `deploy/supabase_einrichten.py` erneut laufen lassen, setzt `code: true`, Seite neu bauen.
+- Web-App und Push: `public/sw.js` (nur Push, kein Cache), Dialog/Installationshinweis in `tools/alarme.js`.
+  Alarme und Geräte in SQLite `/var/lib/investtimer/alarme.db` (Modul `volafly-api/investtimer_alarme.py`,
+  Kopie neben der API in `/root/volafly-chat/`). Versand `server/push_senden.py` mit Python aus
+  `/opt/investtimer-push` (pywebpush), läuft als ExecStartPost von `investtimer-data.service`
+  (Drop-in `deploy/systemd/investtimer-data-push.conf`). VAPID-Schlüssel `/root/.investtimer/vapid-*`.
+  Push-Test im Browser nur mit festem Profil und Bildschirm: `xvfb-run` + `launch_persistent_context`.
 - Prüfen: `python3 tools/check_v12.py` (mobil) und `deploy/supabase_test.py` (Anmeldung echt, mit Admin-API).
