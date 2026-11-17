@@ -41,6 +41,8 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 - API: `/root/volafly-chat/volafly_chat.py` (systemd `volafly-chat`, Port 8100,
   kein Git, vor Änderungen `.bak-<datum>` anlegen).
 - Seite bauen (live): `python3 tools/build_v12.py source/InvestTimer_UI_Signalbogen_v1.2.html public --anmeldung=deploy/supabase.json`
+- Cloudflare-Token: `/root/.investtimer/cloudflare-token` (DNS + Email-Routing-Regeln für investtimer.net, nur über IPv4 nutzbar: `curl -4`).
+  Email Routing einschalten darf er nicht (Dashboard).
 - Supabase: Projekt `investtimer` (`owcmsgroqhawcjlehcjk`, Frankfurt), öffentliche Werte in `deploy/supabase.json`.
   Eigene deutsche Mailtexte (mit 6-stelligem Code) erst mit eigenem SMTP möglich; dann
   `deploy/supabase_einrichten.py` erneut laufen lassen, setzt `code: true`, Seite neu bauen.
