@@ -80,6 +80,7 @@ body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',sendLink:'Anmeldelink senden',sending:'Wird gesendet …',"
                       "linkSentTitle:'Schau in dein Postfach.',"
                       "linkSent:'Wir haben dir an {email} einen Anmeldelink und einen sechsstelligen Code geschickt. Tippe auf den Link oder gib den Code hier ein.',"
+                      "linkSentLink:'Wir haben dir an {email} einen Anmeldelink geschickt. Ein Tipp darauf, und du siehst den aktuellen Marktstress. Öffne den Link am besten auf diesem Gerät.',"
                       "code:'Code aus der E-Mail',codeSubmit:'Anmelden',checking:'Wird geprüft …',"
                       "codeInvalid:'Der Code stimmt nicht oder ist abgelaufen. Prüfe ihn oder fordere einen neuen an.',"
                       "codeShort:'Bitte gib die sechs Ziffern aus der E-Mail ein.',"
@@ -89,12 +90,13 @@ TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de
                       "linkRate:'Gerade wurden zu viele Links angefordert. Bitte versuche es in ein paar Minuten erneut.',"
                       "linkFail:'Der Link konnte nicht verschickt werden. Bitte versuche es gleich noch einmal.',"
                       "linkExpired:'Der Anmeldelink ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen an.',"
-                      "accessLegal:'Kein Passwort nötig: Du bekommst einen Link und einen Code per E-Mail. Neu hier? Damit wird dein Zugang angelegt.',"
+                      "accessLegal:'Kein Passwort nötig: Du bekommst einen Anmeldelink per E-Mail. Neu hier? Damit wird dein Zugang angelegt.',"
                       "legalLinks:'Mit der Anmeldung gilt unsere <a href=\\\"/datenschutz.html\\\">Datenschutzerklärung</a>.',"
                       "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',")
 TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',sending:'Sending …',"
                       "linkSentTitle:'Check your inbox.',"
                       "linkSent:'We sent a sign-in link and a six-digit code to {email}. Tap the link or enter the code here.',"
+                      "linkSentLink:'We sent a sign-in link to {email}. One tap and you will see the latest market stress. Best open it on this device.',"
                       "code:'Code from the email',codeSubmit:'Sign in',checking:'Checking …',"
                       "codeInvalid:'The code is wrong or has expired. Check it or request a new one.',"
                       "codeShort:'Please enter the six digits from the email.',"
@@ -104,7 +106,7 @@ TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com'
                       "linkRate:'Too many links were requested just now. Please try again in a few minutes.',"
                       "linkFail:'The link could not be sent. Please try again in a moment.',"
                       "linkExpired:'The sign-in link has expired or was already used. Simply request a new one.',"
-                      "accessLegal:'No password needed: we email you a link and a code. New here? That creates your access.',"
+                      "accessLegal:'No password needed: we email you a sign-in link. New here? That creates your access.',"
                       "legalLinks:'Signing in is subject to our <a href=\\\"/datenschutz.html\\\">privacy policy</a>.',"
                       "loginNeeded:'Please sign in again to keep asking.',")
 
@@ -187,10 +189,11 @@ function renderAccess(){
  const kopf='<div class="modal-top"><span class="eyebrow">INVESTTIMER</span><button class="close-button" id="close-access" type="button" aria-label="'+t('close')+'">×</button></div>';
  const recht=REGISTRIERUNG_RECHT?'<p class="preview-notice">'+t('accessLegal')+' '+t('legalLinks')+'</p>':'<p class="preview-notice">'+t('accessLegal')+'</p>';
  access.innerHTML=kopf+(gesendet
-  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t('linkSent')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p>'
-   +'<form id="code-form" class="access-form" novalidate><label for="access-code">'+t('code')+'</label>'
+  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t(CODE_AKTIV?'linkSent':'linkSentLink')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p>'
+   +(CODE_AKTIV?'<form id="code-form" class="access-form" novalidate><label for="access-code">'+t('code')+'</label>'
    +'<input id="access-code" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="000000" required>'
    +'<p class="access-error" id="access-error" role="alert"></p><button class="primary full" type="submit">'+t('codeSubmit')+'</button></form>'
+    :'<p class="access-error" id="access-error" role="alert"></p>')
    +'<div class="access-more"><button type="button" class="text-button" id="access-resend"></button><button type="button" class="text-button" id="access-other">'+t('otherEmail')+'</button></div>'
    +'<p class="preview-notice">'+t('spamHint')+'</p>'
   :'<h2 id="access-title" tabindex="-1">'+t('accessTitle')+'</h2><p>'+t('accessIntro')+'</p><ul class="access-benefits"><li>'+t('feature1')+'</li><li>'+t('feature2')+'</li><li>'+t('feature3')+'</li></ul>'
@@ -482,7 +485,8 @@ def main(source, target_dir, preview, anmeldung=None):
         html = once(html, "$('.app').after(review);", "/* Entwurfsansicht entfaellt mit echter Anmeldung */", "Entwurfsansicht")
         offen = rechtsseiten(target)
         html = sub_once(html, r"function renderAccess\(\)\{access\.innerHTML=[^\n]*\n",
-                        ZUGANG_JS_ANMELDUNG.replace("REGISTRIERUNG_RECHT", "true" if offen else "false"), "Anmeldedialog")
+                        ZUGANG_JS_ANMELDUNG.replace("REGISTRIERUNG_RECHT", "true" if offen else "false")
+                        .replace("CODE_AKTIV", "true" if anmeldung.get("code", True) else "false"), "Anmeldedialog")
         if not offen:
             html = once(html, "<body>", '<body class="ohne-registrierung">', "Registrierung aus")
             html = once(html, "databodyPublic:'Historischer Wert vom {datelong}. Den aktuellen Marktstress siehst du nach der Anmeldung.'",

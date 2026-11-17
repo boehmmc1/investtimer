@@ -91,18 +91,29 @@ def main(ziel):
         "mailer_autoconfirm": False,
         "mailer_otp_exp": 3600,
         "mailer_otp_length": 6,
-        "mailer_subjects_magic_link": "Dein Anmeldelink für InvestTimer",
-        "mailer_templates_magic_link_content": MAIL,
-        "mailer_subjects_confirmation": "Dein Anmeldelink für InvestTimer",
-        "mailer_templates_confirmation_content": MAIL,
     })
-    print("Anmeldung eingestellt: Site URL %s, Weiterleitung %s/**, deutsche Mailtexte" % (SITE, SITE))
+    print("Anmeldung eingestellt: Site URL %s, Weiterleitung %s/**" % (SITE, SITE))
+    # Eigene Mailtexte gibt es im Free-Tarif nur mit eigenem SMTP. Ohne sie enthaelt die Mail keinen Code.
+    code = True
+    try:
+        rufe("PATCH", "/projects/%s/config/auth" % ref, {
+            "mailer_subjects_magic_link": "Dein Anmeldelink für InvestTimer",
+            "mailer_templates_magic_link_content": MAIL,
+            "mailer_subjects_confirmation": "Dein Anmeldelink für InvestTimer",
+            "mailer_templates_confirmation_content": MAIL,
+        })
+        print("Deutsche Mailtexte mit Link und Code gesetzt")
+    except SystemExit as fehler:
+        if "entitlement_required" not in str(fehler):
+            raise
+        code = False
+        print("Mailtexte nicht moeglich (Free-Tarif ohne eigenes SMTP): Supabase-Standardmail, nur Link, kein Code")
     schluessel = rufe("GET", "/projects/%s/api-keys" % ref)
     anon = next((k["api_key"] for k in schluessel if k.get("name") == "anon"), None)
     if not anon:
         raise SystemExit("anon key nicht gefunden")
     with open(ziel, "w") as datei:
-        json.dump({"url": "https://%s.supabase.co" % ref, "anonKey": anon}, datei, indent=1)
+        json.dump({"url": "https://%s.supabase.co" % ref, "anonKey": anon, "code": code}, datei, indent=1)
         datei.write("\n")
     print("geschrieben: %s (URL und anon key, beide oeffentlich)" % ziel)
 

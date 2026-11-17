@@ -4,6 +4,9 @@ Prueft 6 Bildschirmgroessen x 15 Ansichten (oeffentlich, Film, Zugang, nach Logi
 Spielt /data/stress.json und /api/chat nach. Braucht playwright und Chrome.
 
 Aufruf: python3 tools/check_v12.py [seitenpfad] [--shots]     (Endet mit 1 bei Auffaelligkeiten)
+
+Bei einem Build mit --anmeldung wird die Anmeldung ueber die Rueckkehr aus dem
+E-Mail-Link nachgespielt (Test-Token), /api/aktuell liefert dann den aktuellen Wert.
 """
 import asyncio, functools, http.server, json, os, sys, threading
 from playwright.async_api import async_playwright
@@ -14,6 +17,7 @@ SEED = json.load(open(os.path.join(PUBLIC, '..', 'server', 'seed_history.json'),
 PUBLIC_SNAPSHOT = list(SEED.values())[0]
 CHROME = os.environ.get('CHROME', '/usr/bin/google-chrome')
 SHOTS = '--shots' in sys.argv
+ANMELDUNG = 'investtimer-sitzung' in open(os.path.join(PUBLIC, PAGE.strip('/'), 'index.html'), encoding='utf-8').read()
 VIEWPORTS = [(320, 568), (360, 740), (390, 844), (430, 932), (844, 390), (768, 1024)]
 
 CHECK = """() => {
@@ -54,6 +58,12 @@ async def main():
         def do_GET(self):
             if self.path == '/api/chat':
                 return self._json({'ok': True})
+            if self.path == '/api/aktuell':
+                if self.headers.get('Authorization') != 'Bearer test-token':
+                    self.send_response(401); self.end_headers(); return
+                return self._json(dict(PUBLIC_SNAPSHOT, asOf='2026-11-16', rounded=36))
+            if self.path == '/data/stress.json' and ANMELDUNG:
+                return self._json(dict(PUBLIC_SNAPSHOT, publicSnapshot=PUBLIC_SNAPSHOT, publicOnly=True))
             if self.path == '/data/stress.json':
                 return self._json(dict(PUBLIC_SNAPSHOT, asOf='2026-11-16', updatedAt='2026-11-16T13:00:00Z', rounded=36,
                                        publicSnapshot=PUBLIC_SNAPSHOT))
@@ -65,7 +75,7 @@ async def main():
     handler = functools.partial(Quiet, directory=PUBLIC)
     server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    URL = 'http://127.0.0.1:%d/%s' % (server.server_address[1], PAGE)
+    URL = 'http://127.0.0.1:%d/%s' % (server.server_address[1], PAGE.lstrip('/'))
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path=CHROME, args=['--no-sandbox'])
         totals = {}
@@ -89,16 +99,21 @@ async def main():
                     totals[k] = totals.get(k, 0) + (len(v) if isinstance(v, list) else 1)
 
             # Werte: oeffentlich zeitversetzt, nach Login aktuell
-            assert (await pg.inner_text('.score')).strip() == '33', 'oeffentlich muss der zeitversetzte Wert stehen'
+            await pg.wait_for_function("() => document.querySelector('.score')?.textContent.trim() === '33'", timeout=8000)
             await state('oeffentlich')
             await pg.click('#details-toggle'); await state('details')
             await pg.click('#details-toggle')
             await pg.evaluate('window.scrollTo(0,0)')
             await pg.click('#open-market-film'); await state('film')
             await pg.click('#close-market-film')
-            await pg.click('#account-login'); await state('zugang')
-            await pg.click('#enter-member-preview'); await pg.wait_for_timeout(300)
-            assert (await pg.inner_text('.score')).strip() == '36', 'nach Login muss der aktuelle Wert stehen'
+            if ANMELDUNG:
+                await pg.evaluate("() => { const b = document.getElementById('account-login'); return b && getComputedStyle(b).display; }")
+                await pg.goto('about:blank')
+                await pg.goto(URL + '#access_token=test-token&refresh_token=r1&expires_in=3600&type=magiclink')
+            else:
+                await pg.click('#account-login'); await state('zugang')
+                await pg.click('#enter-member-preview')
+            await pg.wait_for_function("() => document.querySelector('.score')?.textContent.trim() === '36'", timeout=8000)
             await state('mitglied')
             await pg.click('[data-ask="reading"]'); await pg.wait_for_selector('.chat-answer p'); await state('ki-antwort')
             await pg.click('.chat-more-tabs button:nth-child(3)'); await state('ki-weitere')
@@ -113,8 +128,8 @@ async def main():
             await pg.click('#close-alert')
             await pg.evaluate('window.scrollTo(0,0)')
             await pg.select_option('#header-language', 'en'); await state('englisch')
-            await pg.click('#review-public'); await pg.wait_for_timeout(300)
-            assert (await pg.inner_text('.score')).strip() == '33', 'zurueck in der oeffentlichen Ansicht'
+            await pg.click('#account-login' if ANMELDUNG else '#review-public')
+            await pg.wait_for_function("() => document.querySelector('.score')?.textContent.trim() === '33'", timeout=8000)
             await state('englisch-oeffentlich')
             if errors:
                 print(w, 'JS-Fehler', errors)
