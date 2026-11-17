@@ -24,10 +24,21 @@ REGION = "eu-central-1"
 SITE = "https://investtimer.net"
 
 MAIL = """<h2>Dein Zugang zu InvestTimer</h2>
-<p>Klicke auf den Link, um dich anzumelden und den aktuellen Marktstress zu sehen:</p>
+<p>Klicke auf den Link, um dich ohne Passwort anzumelden:</p>
 <p><a href="{{ .ConfirmationURL }}">Bei InvestTimer anmelden</a></p>
 <p>Oder gib diesen Code auf der Seite ein: <strong style="font-size:20px;letter-spacing:3px">{{ .Token }}</strong></p>
 <p>Link und Code sind eine Stunde gültig und funktionieren einmal. Hast du sie nicht angefordert, kannst du diese E-Mail ignorieren.</p>"""
+
+_STIL = '<p style="font-size:13px;color:#5b6b66">Hast du das nicht angefordert, kannst du diese E-Mail ignorieren. Fragen? info@investtimer.net</p>'
+_CODE = '<p style="font-size:26px;letter-spacing:6px;font-weight:700;margin:16px 0">{{ .Token }}</p>'
+MAIL_REGISTRIERUNG = ("<h2>Willkommen bei InvestTimer</h2><p>Bitte bestätige deine E-Mail-Adresse. Gib diesen Code auf der Seite ein:</p>"
+                      + _CODE + '<p>Oder bestätige mit einem Klick: <a href="{{ .ConfirmationURL }}">E-Mail-Adresse bestätigen</a></p>'
+                      "<p>Code und Link sind eine Stunde gültig.</p>" + _STIL)
+MAIL_ZURUECKSETZEN = ("<h2>Neues Passwort für InvestTimer</h2><p>Du hast ein neues Passwort angefordert. Gib diesen Code auf der Seite ein:</p>"
+                      + _CODE + '<p>Oder öffne diesen Link, um direkt ein neues Passwort festzulegen: <a href="{{ .ConfirmationURL }}">Passwort zurücksetzen</a></p>'
+                      "<p>Code und Link sind eine Stunde gültig und funktionieren einmal. Dein bisheriges Passwort gilt, bis du ein neues festlegst.</p>" + _STIL)
+MAIL_BESTAETIGEN = ("<h2>Bestätigungscode für InvestTimer</h2><p>Mit diesem Code bestätigst du die Änderung deines Passworts:</p>"
+                    + _CODE + "<p>Der Code ist eine Stunde gültig.</p>" + _STIL)
 
 TOKEN_DATEI = "/root/.investtimer/supabase-token"
 SMTP_DATEI = "/root/.investtimer/resend-smtp-key"  # Resend-Schluessel nur zum Senden fuer investtimer.net
@@ -104,6 +115,8 @@ def main(ziel):
         "mailer_autoconfirm": False,
         "mailer_otp_exp": 3600,
         "mailer_otp_length": 6,
+        "password_min_length": 10,
+        "security_update_password_require_reauthentication": True,
         **smtp(),
     })
     print("Anmeldung eingestellt: Site URL %s, Weiterleitung %s/**" % (SITE, SITE))
@@ -113,8 +126,12 @@ def main(ziel):
         rufe("PATCH", "/projects/%s/config/auth" % ref, {
             "mailer_subjects_magic_link": "Dein Anmeldelink für InvestTimer",
             "mailer_templates_magic_link_content": MAIL,
-            "mailer_subjects_confirmation": "Dein Anmeldelink für InvestTimer",
-            "mailer_templates_confirmation_content": MAIL,
+            "mailer_subjects_confirmation": "Bestätige deine E-Mail-Adresse für InvestTimer",
+            "mailer_templates_confirmation_content": MAIL_REGISTRIERUNG,
+            "mailer_subjects_recovery": "Neues Passwort für InvestTimer",
+            "mailer_templates_recovery_content": MAIL_ZURUECKSETZEN,
+            "mailer_subjects_reauthentication": "Dein Bestätigungscode für InvestTimer",
+            "mailer_templates_reauthentication_content": MAIL_BESTAETIGEN,
             **smtp(),
         })
         print("Deutsche Mailtexte mit Link und Code gesetzt")

@@ -10,6 +10,7 @@ Am Ende wird der Testnutzer geloescht. Der service_role-Schluessel wird nur zur
 Laufzeit ueber die Management-API geholt und nirgends gespeichert oder ausgegeben.
 """
 import json
+import secrets
 import sys
 import time
 import urllib.error
@@ -74,6 +75,16 @@ def main():
         code, sitzung, _ = http("POST", AUTH["url"] + "/auth/v1/verify",
                                 {"type": "email", "email": email, "token": link2.get("email_otp")}, anon)
         alles &= pruefe("Code-Anmeldung", code == 200 and sitzung.get("access_token"), str(sitzung)[:200])
+        # Passwort: setzen (wie nach Registrierung/Zuruecksetzen), anmelden, falsches Passwort, Mindestlaenge
+        pw = "Test-Passwort-" + secrets.token_hex(4)
+        code, _, _ = http("PUT", AUTH["url"] + "/auth/v1/user", {"password": pw}, {"apikey": AUTH["anonKey"], "Authorization": "Bearer " + sitzung.get("access_token", "")})
+        alles &= pruefe("Passwort setzen", code == 200, str(code))
+        code, d, _ = http("POST", AUTH["url"] + "/auth/v1/token?grant_type=password", {"email": email, "password": pw}, {"apikey": AUTH["anonKey"]})
+        alles &= pruefe("Anmeldung mit Passwort", code == 200 and d.get("access_token"), str(code))
+        code, d, _ = http("POST", AUTH["url"] + "/auth/v1/token?grant_type=password", {"email": email, "password": pw + "x"}, {"apikey": AUTH["anonKey"]})
+        alles &= pruefe("Falsches Passwort abgelehnt", code == 400, str(code))
+        code, d, _ = http("POST", AUTH["url"] + "/auth/v1/signup", {"email": "kurz-" + email, "password": "kurz"}, {"apikey": AUTH["anonKey"]})
+        alles &= pruefe("Zu kurzes Passwort abgelehnt (min. 10)", code == 422 and "weak_password" in str(d), "%s %s" % (code, str(d)[:120]))
         tok = sitzung.get("access_token") or hash_.get("access_token")
         # Seite mit Token und ohne
         code, d, _ = http("GET", SEITE + "/api/aktuell", kopf={"Authorization": "Bearer " + tok})

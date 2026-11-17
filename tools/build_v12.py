@@ -53,6 +53,16 @@ HALBMOND_CSS = """
 """
 
 ANMELDUNG_CSS = """
+.zugang-reiter{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:4px 0 16px;border-radius:12px;background:var(--panel)}
+.zugang-reiter button{min-height:44px;border-radius:9px;font-size:15px;color:var(--sub)}
+.zugang-reiter button[aria-selected=true]{background:var(--surface,#fff);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pw-feld{position:relative;display:flex;min-width:0}.pw-feld input{flex:1;min-width:0;width:100%;box-sizing:border-box;padding-right:96px!important}
+.pw-zeigen{position:absolute;right:4px;top:50%;transform:translateY(-50%);min-height:40px;min-width:44px;padding:0 10px;font-size:13px;color:var(--accent);border-radius:8px}
+.pw-hinweis{font-size:12px;color:var(--sub);margin:4px 0 0;line-height:1.5}
+.konto-pw{margin-top:18px;border-top:1px solid var(--line);padding-top:12px;font-size:14px}
+.konto-pw summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--sub)}
+.konto-pw form{display:grid;gap:6px;margin-top:6px}.konto-pw input{width:100%;box-sizing:border-box;min-height:44px;font-size:16px;border-radius:10px;border:1px solid var(--line);padding:0 12px;background:transparent;color:var(--text)}
+.konto-pw .ok{color:var(--accent)}
 /* Anmeldung per E-Mail-Link */
 .access-form{display:grid;gap:8px;margin:20px 0 4px;text-align:left}
 .access-form label{font-size:12px;color:var(--sub)}
@@ -103,7 +113,10 @@ body.ohne-registrierung:not(.members-layout) #account-login,
 body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 """
 
-TEXTE_KONTO_DE = ("kontoLink:'Mein Konto',premiumFreischalten:'Premium freischalten',kontoEyebrow:'DEIN KONTO',kontoTitel:'Mein Abonnement',"
+TEXTE_KONTO_DE = ("pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',pwAendernKnopf:'Passwort ändern',"
+                  "pwOhneAlt:'Noch kein Passwort oder vergessen? Code per E-Mail',pwCodeText:'Wir haben dir einen Bestätigungscode geschickt. Gib ihn ein und wähle dein neues Passwort.',"
+                  "pwCodeGesendet:'Code ist unterwegs.',pwAltFalsch:'Das aktuelle Passwort stimmt nicht.',pwGeaendert:'Dein Passwort ist geändert.',"
+                  "kontoLink:'Mein Konto',premiumFreischalten:'Premium freischalten',kontoEyebrow:'DEIN KONTO',kontoTitel:'Mein Abonnement',"
                   "kontoFreiTitel:'Kostenloser Zugang',kontoFreiOffen:'Aktueller Wert, KI-Fragen und Alarme sind mit deiner Anmeldung derzeit freigeschaltet.',"
                   "kontoFrei:'Du siehst den zeitversetzten Wert. Aktueller Wert, ganze Historie, KI-Analysen und Alarme gehören zu Premium.',"
                   "kontoAbgelaufen:'Premium endete am',premiumAnsehen:'Premium ansehen',"
@@ -132,7 +145,10 @@ TEXTE_KONTO_DE = ("kontoLink:'Mein Konto',premiumFreischalten:'Premium freischal
                   "paywallFuss:'Preise inkl. USt. Keine Anlageberatung.',agb:'Abo-Bedingungen',datenschutz:'Datenschutz',zurueck:'Zurück',"
                   "fehlerSchonPremium:'Du hast Premium bereits. Details siehst du unter „Mein Konto“.',fehlerAbbruch:'Der Kauf wurde abgebrochen.',"
                   "fehlerInaktiv:'Abos sind gerade nicht verfügbar.',")
-TEXTE_KONTO_EN = ("kontoLink:'My account',premiumFreischalten:'Unlock Premium',kontoEyebrow:'YOUR ACCOUNT',kontoTitel:'My subscription',"
+TEXTE_KONTO_EN = ("pwAendernTitel:'Change password',pwAlt:'Current password',pwAendernKnopf:'Change password',"
+                  "pwOhneAlt:'No password yet or forgotten? Get a code by email',pwCodeText:'We sent you a confirmation code. Enter it and choose your new password.',"
+                  "pwCodeGesendet:'Code is on its way.',pwAltFalsch:'The current password is incorrect.',pwGeaendert:'Your password has been changed.',"
+                  "kontoLink:'My account',premiumFreischalten:'Unlock Premium',kontoEyebrow:'YOUR ACCOUNT',kontoTitel:'My subscription',"
                   "kontoFreiTitel:'Free access',kontoFreiOffen:'The latest reading, AI questions and alerts are currently included with your sign-in.',"
                   "kontoFrei:'You see the delayed reading. The latest reading, full history, AI analysis and alerts are part of Premium.',"
                   "kontoAbgelaufen:'Premium ended on',premiumAnsehen:'See Premium',"
@@ -236,38 +252,60 @@ TEXTE_ALARM_EN = ("alarmEyebrow:'YOUR ALERTS',alarmTitle:'Your threshold. Your a
                   "installAndere:'In Chrome or Edge: open the menu ⋮ and choose “Install app” or “Add to Home screen”. In Safari on Mac: File → “Add to Dock”.',"
                   "installPush:'In the app you can set up alerts with push notifications.',")
 
-TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',sendLink:'Anmeldelink senden',sending:'Wird gesendet …',"
+TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',pw:'Passwort',pwNeu:'Passwort festlegen',"
+                      "pwZeigen:'Passwort anzeigen',pwZeigenKurz:'Anzeigen',pwVerbergenKurz:'Verbergen',"
+                      "pwRegel:'Mindestens 10 Zeichen. Am sichersten ist ein Satz, den nur du kennst.',pwLeer:'Bitte gib dein Passwort ein.',"
+                      "pwFalsch:'E-Mail-Adresse oder Passwort stimmen nicht.',pwSchwach:'Dieses Passwort ist zu schwach. Bitte wähle ein längeres.',"
+                      "pwGleich:'Das neue Passwort muss sich vom bisherigen unterscheiden.',"
+                      "loginSubmit:'Anmelden',registerTab:'Registrieren',registerTitle:'Konto anlegen.',registerSubmit:'Konto anlegen',"
+                      "confirmTitle:'Bestätige deine E-Mail-Adresse.',confirmText:'Wir haben dir an {email} einen sechsstelligen Code geschickt. Gib ihn hier ein, dann ist dein Konto fertig.',"
+                      "confirmSubmit:'Bestätigen',notConfirmed:'Deine E-Mail-Adresse ist noch nicht bestätigt. Wir haben dir einen neuen Code geschickt.',"
+                      "alreadyRegistered:'Schon registriert? Dann melde dich an oder setze dein Passwort zurück.',"
+                      "forgotLink:'Passwort vergessen?',forgotTitle:'Passwort zurücksetzen.',forgotText:'Gib deine E-Mail-Adresse ein. Wir schicken dir einen Code, mit dem du ein neues Passwort festlegst.',"
+                      "forgotSubmit:'Code senden',resetTitle:'Neues Passwort festlegen.',resetText:'Wir haben dir an {email} einen Code geschickt, falls es dazu ein Konto gibt. Gib ihn ein und wähle ein neues Passwort.',"
+                      "newPwText:'Wähle ein neues Passwort für dein Konto.',resetSubmit:'Passwort speichern',backToLogin:'Zurück zur Anmeldung',"
+                      "codeLoginLink:'Mit E-Mail-Code anmelden',codeLoginTitle:'Anmelden ohne Passwort.',codeLoginText:'Wir schicken dir einen einmaligen Code an deine E-Mail-Adresse.',"
+                      "sendLink:'Code senden',sending:'Wird gesendet …',"
                       "linkSentTitle:'Schau in dein Postfach.',"
-                      "linkSent:'Wir haben dir an {email} einen Anmeldelink und einen sechsstelligen Code geschickt. Tippe auf den Link oder gib den Code hier ein.',"
-                      "linkSentLink:'Wir haben dir an {email} einen Anmeldelink geschickt. Ein Tipp darauf, und du siehst den aktuellen Marktstress. Öffne den Link am besten auf diesem Gerät.',"
+                      "linkSent:'Falls es zu {email} ein Konto gibt, haben wir dir einen sechsstelligen Code geschickt. Gib ihn hier ein.',"
                       "code:'Code aus der E-Mail',codeSubmit:'Anmelden',checking:'Wird geprüft …',"
                       "codeInvalid:'Der Code stimmt nicht oder ist abgelaufen. Prüfe ihn oder fordere einen neuen an.',"
                       "codeShort:'Bitte gib die sechs Ziffern aus der E-Mail ein.',"
-                      "resend:'Neu senden',resendIn:'Neu senden in {s} s',resent:'Neue E-Mail ist unterwegs.',otherEmail:'Andere Adresse',"
+                      "resend:'Neu senden',resendIn:'Neu senden in {s} s',resent:'Neue E-Mail ist unterwegs.',"
                       "spamHint:'Keine E-Mail da? Sieh im Spam-Ordner nach. Die Zustellung kann eine Minute dauern.',"
                       "emailInvalid:'Bitte gib eine gültige E-Mail-Adresse ein.',"
-                      "linkRate:'Gerade wurden zu viele Links angefordert. Bitte versuche es in ein paar Minuten erneut.',"
-                      "linkFail:'Der Link konnte nicht verschickt werden. Bitte versuche es gleich noch einmal.',"
-                      "linkExpired:'Der Anmeldelink ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen an.',"
-                      "accessLegal:'Kein Passwort nötig: Du bekommst einen Anmeldelink per E-Mail. Neu hier? Damit wird dein Zugang angelegt.',"
-                      "legalLinks:'Mit der Anmeldung gilt unsere <a href=\\\"/datenschutz.html\\\">Datenschutzerklärung</a>.',"
+                      "linkRate:'Gerade wurden zu viele Anfragen gestellt. Bitte versuche es in ein paar Minuten erneut.',"
+                      "linkFail:'Das hat nicht geklappt. Bitte versuche es gleich noch einmal.',"
+                      "linkExpired:'Der Link ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen Code an.',"
+                      "legalLinks:'Es gilt unsere <a href=\\\"/datenschutz.html\\\">Datenschutzerklärung</a>.',"
                       "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',"
                       + TEXTE_ALARM_DE + TEXTE_KONTO_DE + TEXTE_VERLAUF_DE)
-TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',sending:'Sending …',"
+TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',pw:'Password',pwNeu:'Choose a password',"
+                      "pwZeigen:'Show password',pwZeigenKurz:'Show',pwVerbergenKurz:'Hide',"
+                      "pwRegel:'At least 10 characters. A sentence only you know works best.',pwLeer:'Please enter your password.',"
+                      "pwFalsch:'Email address or password is incorrect.',pwSchwach:'This password is too weak. Please choose a longer one.',"
+                      "pwGleich:'The new password must differ from the current one.',"
+                      "loginSubmit:'Sign in',registerTab:'Register',registerTitle:'Create your account.',registerSubmit:'Create account',"
+                      "confirmTitle:'Confirm your email address.',confirmText:'We sent a six-digit code to {email}. Enter it here to finish your account.',"
+                      "confirmSubmit:'Confirm',notConfirmed:'Your email address is not confirmed yet. We sent you a new code.',"
+                      "alreadyRegistered:'Already registered? Sign in or reset your password.',"
+                      "forgotLink:'Forgot password?',forgotTitle:'Reset your password.',forgotText:'Enter your email address. We will send you a code to set a new password.',"
+                      "forgotSubmit:'Send code',resetTitle:'Set a new password.',resetText:'If an account exists, we sent a code to {email}. Enter it and choose a new password.',"
+                      "newPwText:'Choose a new password for your account.',resetSubmit:'Save password',backToLogin:'Back to sign-in',"
+                      "codeLoginLink:'Sign in with an email code',codeLoginTitle:'Sign in without a password.',codeLoginText:'We will email you a one-time code.',"
+                      "sendLink:'Send code',sending:'Sending …',"
                       "linkSentTitle:'Check your inbox.',"
-                      "linkSent:'We sent a sign-in link and a six-digit code to {email}. Tap the link or enter the code here.',"
-                      "linkSentLink:'We sent a sign-in link to {email}. One tap and you will see the latest market stress. Best open it on this device.',"
+                      "linkSent:'If an account exists for {email}, we sent a six-digit code. Enter it here.',"
                       "code:'Code from the email',codeSubmit:'Sign in',checking:'Checking …',"
                       "codeInvalid:'The code is wrong or has expired. Check it or request a new one.',"
                       "codeShort:'Please enter the six digits from the email.',"
-                      "resend:'Resend',resendIn:'Resend in {s} s',resent:'A new email is on its way.',otherEmail:'Different address',"
+                      "resend:'Resend',resendIn:'Resend in {s} s',resent:'A new email is on its way.',"
                       "spamHint:'No email? Check your spam folder. Delivery can take a minute.',"
                       "emailInvalid:'Please enter a valid email address.',"
-                      "linkRate:'Too many links were requested just now. Please try again in a few minutes.',"
-                      "linkFail:'The link could not be sent. Please try again in a moment.',"
-                      "linkExpired:'The sign-in link has expired or was already used. Simply request a new one.',"
-                      "accessLegal:'No password needed: we email you a sign-in link. New here? That creates your access.',"
-                      "legalLinks:'Signing in is subject to our <a href=\\\"/datenschutz.html\\\">privacy policy</a>.',"
+                      "linkRate:'Too many requests just now. Please try again in a few minutes.',"
+                      "linkFail:'That did not work. Please try again in a moment.',"
+                      "linkExpired:'The link has expired or was already used. Simply request a new code.',"
+                      "legalLinks:'Our <a href=\\\"/datenschutz.html\\\">privacy policy</a> applies.',"
                       "loginNeeded:'Please sign in again to keep asking.',"
                       + TEXTE_ALARM_EN + TEXTE_KONTO_EN + TEXTE_VERLAUF_EN)
 
@@ -290,6 +328,7 @@ const sb=(pfad,opt={})=>fetch(AUTH.url+pfad,{...opt,headers:{apikey:AUTH.key,'Co
  const h=new URLSearchParams(location.hash.slice(1));if(!h.has('access_token')&&!h.has('error'))return;
  if(h.get('access_token'))merke({access_token:h.get('access_token'),refresh_token:h.get('refresh_token'),
   expires_at:Number(h.get('expires_at'))||Math.floor(Date.now()/1000)+Number(h.get('expires_in')||3600)});
+ if(h.get('type')==='recovery')IT.neuesPasswort=true;
  else IT.anmeldeFehler=h.get('error_description')||h.get('error');
  history.replaceState(null,'',location.pathname+location.search);
 })();
@@ -304,18 +343,44 @@ IT.token=async()=>{
  }
  IT.session=s;return s.access_token;
 };
+const fehlerVon=async r=>{const d=await r.json().catch(()=>({}));return d.error_code||d.code||d.error||r.status};
+const uebernehme=d=>{const s={access_token:d.access_token,refresh_token:d.refresh_token,expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)};
+ merke(s);IT.session=s;IT.member=true;lastSeen='';loadLive(true);return s};
+const zurueck='?redirect_to='+encodeURIComponent(location.origin+'/');
 IT.sendeLink=async email=>{
- const r=await sb('/auth/v1/otp?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'POST',body:JSON.stringify({email,create_user:true})});
- if(!r.ok)throw r.status;
+ const r=await sb('/auth/v1/otp'+zurueck,{method:'POST',body:JSON.stringify({email,create_user:false})});
+ if(!r.ok)throw await fehlerVon(r);
 };
-IT.pruefeCode=async(email,code)=>{
- const r=await sb('/auth/v1/verify',{method:'POST',body:JSON.stringify({type:'email',email,token:code})});
- if(!r.ok)throw r.status;const d=await r.json();
- const s={access_token:d.access_token,refresh_token:d.refresh_token,expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)};
- merke(s);IT.session=s;IT.member=true;loadLive(true);
+IT.pruefeCode=async(email,code,typ)=>{
+ const r=await sb('/auth/v1/verify',{method:'POST',body:JSON.stringify({type:typ||'email',email,token:code})});
+ if(!r.ok)throw await fehlerVon(r);return uebernehme(await r.json());
 };
+IT.mitPasswort=async(email,password)=>{
+ const r=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+ if(!r.ok)throw await fehlerVon(r);return uebernehme(await r.json());
+};
+IT.registrieren=async(email,password)=>{
+ const r=await sb('/auth/v1/signup'+zurueck,{method:'POST',body:JSON.stringify({email,password})});
+ if(!r.ok)throw await fehlerVon(r);const d=await r.json();if(d.access_token)uebernehme(d);return d;
+};
+IT.erneutSenden=async(typ,email)=>{
+ const r=typ==='recovery'?await sb('/auth/v1/recover'+zurueck,{method:'POST',body:JSON.stringify({email})})
+  :typ==='email'?await sb('/auth/v1/otp'+zurueck,{method:'POST',body:JSON.stringify({email,create_user:false})})
+  :await sb('/auth/v1/resend'+zurueck,{method:'POST',body:JSON.stringify({type:typ,email})});
+ if(!r.ok)throw await fehlerVon(r);
+};
+IT.passwortSetzen=async(password,nonce)=>{
+ const tok=await IT.token();if(!tok)throw 'login';
+ const r=await sb('/auth/v1/user',{method:'PUT',headers:{Authorization:'Bearer '+tok},body:JSON.stringify(nonce?{password,nonce}:{password})});
+ if(!r.ok)throw await fehlerVon(r);
+};
+IT.codeFuerAenderung=async()=>{
+ const tok=await IT.token();if(!tok)throw 'login';
+ const r=await sb('/auth/v1/reauthenticate',{headers:{Authorization:'Bearer '+tok}});if(!r.ok)throw await fehlerVon(r);
+};
+IT.emailVonSitzung=()=>{try{return JSON.parse(atob((IT.session||gemerkt()).access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email}catch{return ''}};
 IT.abmelden=async()=>{
- const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.setMember(false);
+ const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;lastSeen='';IT.setMember(false);
  if(s)sb('/auth/v1/logout',{method:'POST',headers:{Authorization:'Bearer '+s.access_token}}).catch(()=>{});
 };
 let lastLoad=0,lastSeen='';
@@ -343,57 +408,7 @@ if(location.protocol.startsWith('http'))fetch('/api/chat',{cache:'no-store'}).th
 """
 
 # Anmeldedialog: E-Mail-Adresse -> Anmeldelink (ersetzt den Knopf "Mitgliederansicht ansehen")
-ZUGANG_JS_ANMELDUNG = """let gesendet='',zugangsFehler='',sperreBis=0,uhr=null;
-const warte=()=>Math.max(0,Math.ceil((sperreBis-Date.now())/1000));
-function neuKnopf(){const k=$('#access-resend');if(!k)return;const s=warte();k.disabled=s>0;k.textContent=s?t('resendIn').replace('{s}',s):t('resend');if(!s){clearInterval(uhr);uhr=null}}
-function renderAccess(){
- const kopf='<div class="modal-top"><span class="eyebrow">INVESTTIMER</span><button class="close-button" id="close-access" type="button" aria-label="'+t('close')+'">×</button></div>';
- const recht=REGISTRIERUNG_RECHT?'<p class="preview-notice">'+t('accessLegal')+' '+t('legalLinks')+'</p>':'<p class="preview-notice">'+t('accessLegal')+'</p>';
- access.innerHTML=kopf+(gesendet
-  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t(CODE_AKTIV?'linkSent':'linkSentLink')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p>'
-   +(CODE_AKTIV?'<form id="code-form" class="access-form" novalidate><label for="access-code">'+t('code')+'</label>'
-   +'<input id="access-code" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="000000" required>'
-   +'<p class="access-error" id="access-error" role="alert"></p><button class="primary full" type="submit">'+t('codeSubmit')+'</button></form>'
-    :'<p class="access-error" id="access-error" role="alert"></p>')
-   +'<div class="access-more"><button type="button" class="text-button" id="access-resend"></button><button type="button" class="text-button" id="access-other">'+t('otherEmail')+'</button></div>'
-   +'<p class="preview-notice">'+t('spamHint')+'</p>'
-  :'<h2 id="access-title" tabindex="-1">'+t('accessTitle')+'</h2><p>'+t('accessIntro')+'</p><ul class="access-benefits"><li>'+t('feature1')+'</li><li>'+t('feature2')+'</li><li>'+t('feature3')+'</li></ul>'
-   +'<form id="access-form" class="access-form" novalidate><label for="access-email">'+t('email')+'</label>'
-   +'<input id="access-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="send" maxlength="254" required placeholder="'+t('emailPlaceholder')+'">'
-   +'<p class="access-error" id="access-error" role="alert">'+esc(zugangsFehler)+'</p><button class="primary full" type="submit">'+t('sendLink')+'</button></form>'
-   +recht);
- if(gesendet){neuKnopf();if(warte()&&!uhr)uhr=setInterval(neuKnopf,1000)}
-}
-async function sende(email,fehler,knopf,text){
- knopf.disabled=true;const alt=knopf.textContent;if(text)knopf.textContent=text;
- try{await IT.sendeLink(email);sperreBis=Date.now()+60000;return true}
- catch(s){fehler.textContent=t(s===429?'linkRate':'linkFail');if(s===429)sperreBis=Date.now()+60000;return false}
- finally{knopf.textContent=alt;knopf.disabled=false}
-}
-document.addEventListener('click',async e=>{
- if(e.target.closest('#access-done'))closeAccess();
- else if(e.target.closest('#access-other')){gesendet='';renderAccess();$('#access-email').focus()}
- else if(e.target.closest('#access-resend')){const f=$('#access-error');f.textContent='';
-  f.classList.remove('ok');if(await sende(gesendet,f,e.target.closest('button'),t('sending'))){f.textContent=t('resent');f.classList.add('ok')}
-  neuKnopf();if(!uhr&&warte())uhr=setInterval(neuKnopf,1000)}
-});
-document.addEventListener('input',e=>{if(e.target.id!=='access-code')return;const v=e.target.value.replace(/\\D/g,'').slice(0,6);e.target.value=v;
- if(v.length===6)e.target.form.requestSubmit()});
-document.addEventListener('submit',async e=>{
- if(e.target.id==='code-form'){e.preventDefault();
-  const input=$('#access-code'),fehler=$('#access-error'),knopf=e.target.querySelector('button'),code=input.value.trim();
-  fehler.classList.remove('ok');if(!/^\\d{6}$/.test(code)){fehler.textContent=t('codeShort');input.focus();return}
-  if(knopf.disabled)return;knopf.disabled=true;knopf.textContent=t('checking');fehler.textContent='';
-  try{await IT.pruefeCode(gesendet,code);gesendet='';closeAccess()}
-  catch(s){fehler.textContent=t(s===429?'linkRate':'codeInvalid');knopf.disabled=false;knopf.textContent=t('codeSubmit');input.select()}
-  return}
- if(e.target.id!=='access-form')return;e.preventDefault();
- const input=$('#access-email'),fehler=$('#access-error'),knopf=e.target.querySelector('button'),email=input.value.trim().toLowerCase();
- if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)){fehler.textContent=t('emailInvalid');input.focus();return}
- fehler.textContent='';zugangsFehler='';
- if(await sende(email,fehler,knopf,t('sending'))){gesendet=email;renderAccess();$('#access-title').focus({preventScroll:true})}
-});
-"""
+ZUGANG_JS_ANMELDUNG = (ROOT / "tools" / "zugang.js").read_text(encoding="utf-8") + "\n"
 
 NORMALISE_JS = """/* 01 · Ergebnis pruefen (Berechnung laeuft serverseitig) */
 function normaliseResult(d){
@@ -642,7 +657,7 @@ def main(source, target_dir, preview, anmeldung=None):
     if anmeldung:
         html = once(html, "function update(){", "function update(){member=!!IT.member;", "Zugang folgt Anmeldung")
         html = once(html, "if(member&&b.id==='account-login')switchView(false);else openAccess(b);",
-                    "if(member&&b.id==='account-login')IT.abmelden();else openAccess(b);", "Abmelden")
+                    "if(member&&b.id==='account-login')IT.abmelden();else{IT.zugangModus&&IT.zugangModus(b.id==='account-login'?'anmelden':'registrieren');openAccess(b)}", "Abmelden")
         html = once(html, "$('.app').after(review);", "/* Entwurfsansicht entfaellt mit echter Anmeldung */", "Entwurfsansicht")
         offen = rechtsseiten(target)
         html = sub_once(html, r"function renderAccess\(\)\{access\.innerHTML=[^\n]*\n",
@@ -694,7 +709,7 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\nupdate();",
                 "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\n"
                 "document.addEventListener('investtimer:update',update);\nupdate();" + (
-                    "\nif(IT.anmeldeFehler){zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS
+                    "\nif(IT.neuesPasswort){IT.zugangModus('neu');openAccess(null)}else if(IT.anmeldeFehler){IT.zugangModus('code-email');zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS
                     if anmeldung else ""), "Zugang Aktualisierung")
 
     # Stile: Mobil-Nachschaerfung hinter die Export-Stile, Ergaenzungen hinter die Zugangs-Stile

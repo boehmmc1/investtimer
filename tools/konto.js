@@ -40,12 +40,39 @@ function paywall(){
   +(app()?'<button type="button" class="text-button" id="abo-wiederherstellen">'+t('wiederherstellen')+'</button>':'')
   +'<p class="preview-notice">'+t('paywallFuss')+' <a href="/agb.html" target="_blank" rel="noopener">'+t('agb')+'</a> · <a href="/datenschutz.html" target="_blank" rel="noopener">'+t('datenschutz')+'</a></p>';
 }
+let pwCode=false,pwMeldung='',pwIstOk=false;
+function pwBox(){
+ const feld=(id,k,auto)=>'<label for="'+id+'">'+t(k)+'</label><div class="pw-feld"><input id="'+id+'" type="password" autocomplete="'+auto+'" maxlength="72"><button type="button" class="pw-zeigen" data-zeige-konto="'+id+'" aria-pressed="false" aria-label="'+t('pwZeigen')+'">'+t('pwZeigenKurz')+'</button></div>';
+ return '<details class="konto-pw"'+(pwMeldung?' open':'')+'><summary>'+t('pwAendernTitel')+'</summary><form id="pw-form" novalidate>'
+  +'<input type="email" autocomplete="username" value="'+esc(IT.emailVonSitzung?IT.emailVonSitzung():'')+'" hidden readonly>'
+  +(pwCode?'<p>'+t('pwCodeText')+'</p><label for="pw-code">'+t('code')+'</label><input id="pw-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">':feld('pw-alt','pwAlt','current-password'))
+  +feld('pw-neu','pwNeu','new-password')+'<p class="pw-hinweis">'+t('pwRegel')+'</p>'
+  +'<p class="'+(pwIstOk?'ok':'access-error')+'" id="pw-meldung" role="status">'+esc(pwMeldung)+'</p><button type="submit" class="primary full">'+t('pwAendernKnopf')+'</button>'
+  +(pwCode?'':'<button type="button" class="text-button" id="pw-per-code">'+t('pwOhneAlt')+'</button>')+'</form></details>';
+}
+function pwAnzeigen(text,ok){pwMeldung=text;pwIstOk=!!ok;const m=$('#pw-meldung');if(m){m.textContent=text;m.className=ok?'ok':'access-error'}}
+async function pwCodeAnfordern(){try{await IT.codeFuerAenderung();pwCode=true;pwMeldung=t('pwCodeGesendet');pwIstOk=true;renderKonto();$('#pw-code')?.focus()}catch(c){pwAnzeigen(t(c===429?'linkRate':'linkFail'))}}
+kontoDlg.addEventListener('submit',async e=>{if(e.target.id!=='pw-form')return;e.preventDefault();
+ const neu=$('#pw-neu').value,alt=$('#pw-alt'),code=$('#pw-code'),k=e.target.querySelector('button[type=submit]');
+ if(neu.length<10||neu.length>72)return pwAnzeigen(t('pwRegel'));
+ if(code&&!/^\d{6}$/.test(code.value.trim()))return pwAnzeigen(t('codeShort'));
+ if(alt&&!alt.value)return pwAnzeigen(t('pwLeer'));
+ k.disabled=true;
+ try{
+  if(alt){try{await IT.mitPasswort(IT.emailVonSitzung(),alt.value)}catch(c){k.disabled=false;return pwAnzeigen(t(c===429?'linkRate':'pwAltFalsch'))}}
+  await IT.passwortSetzen(neu,code?code.value.trim():undefined);
+  pwCode=false;pwMeldung=t('pwGeaendert');pwIstOk=true;renderKonto();
+ }catch(c){k.disabled=false;
+  if(c==='reauthentication_needed'){await pwCodeAnfordern();return}
+  pwAnzeigen(t(c==='same_password'?'pwGleich':c==='weak_password'?'pwSchwach':c==='reauthentication_not_valid'?'codeInvalid':c===429?'linkRate':'alarmFehler'))}
+});
 function renderKonto(){
  if(kontoAnsicht==='geloescht'){kontoDlg.innerHTML='<div class="modal-top"><span class="eyebrow">'+t('kontoEyebrow')+'</span><button class="close-button" id="close-konto" type="button" aria-label="'+t('close')+'">×</button></div><h2 id="konto-title" tabindex="-1">'+t('geloeschtTitel')+'</h2><p>'+t('geloeschtText')+'</p>';return}
  const k=konto,ki=k&&k.ki;
  const inhalt=kontoAnsicht==='paywall'?paywall()
   :'<div class="push-box">'+aboBox()+'</div>'
   +(ki&&ki.tag?'<p class="konto-ki">'+t('kontoKi').replace('{n}',ki.heute).replace('{max}',ki.tag)+'</p>':'')
+  +pwBox()
   +'<details class="konto-loeschen"><summary>'+t('loeschenTitel')+'</summary><p>'+t('loeschenText')+'</p>'
   +'<label for="loeschen-wort">'+t('loeschenEingabe')+'</label><input id="loeschen-wort" autocomplete="off" autocapitalize="off" spellcheck="false">'
   +'<p class="access-error" id="loeschen-fehler" role="alert">'+(kontoAnsicht==='konto'?esc(kontoHinweis):'')+'</p><button type="button" class="danger full" id="konto-loeschen">'+t('loeschenKnopf')+'</button></details>';
@@ -58,7 +85,7 @@ async function ladeKonto(abgleich){
  kontoLink();
 }
 async function oeffneKonto(opener,ansicht,abgleich){
- kontoOpener=opener;kontoHinweis='';kontoAnsicht=ansicht||'konto';if(!konto)renderKonto();
+ kontoOpener=opener;kontoHinweis='';pwCode=false;pwMeldung='';kontoAnsicht=ansicht||'konto';if(!konto)renderKonto();
  if(!kontoDlg.open){kontoDlg.showModal();document.body.classList.add('access-open')}
  await ladeKonto(abgleich);if(kontoAnsicht==='paywall'&&konto&&konto.premium)kontoAnsicht='konto';renderKonto();$('#konto-title').focus({preventScroll:true});
 }
@@ -84,6 +111,8 @@ kontoDlg.addEventListener('click',async e=>{
  if(e.target===kontoDlg){const r=kontoDlg.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)schliesseKonto();return}
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='close-konto')schliesseKonto();
+ else if(b.dataset.zeigeKonto){const i=$('#'+b.dataset.zeigeKonto),an=i.type==='password';i.type=an?'text':'password';b.setAttribute('aria-pressed',an);b.textContent=t(an?'pwVerbergenKurz':'pwZeigenKurz')}
+ else if(b.id==='pw-per-code'){b.disabled=true;await pwCodeAnfordern()}
  else if(b.id==='paywall-auf'){kontoAnsicht='paywall';kontoHinweis='';renderKonto();$('#konto-title').focus({preventScroll:true})}
  else if(b.id==='paywall-zurueck'){kontoAnsicht='konto';kontoHinweis='';renderKonto();$('#konto-title').focus({preventScroll:true})}
  else if(b.id==='abo-start')aboStarten(b);
