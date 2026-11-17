@@ -7,7 +7,7 @@ const konfig = existsSync("app.json") ? JSON.parse(readFileSync("app.json", "utf
 rmSync(ZIEL, { recursive: true, force: true });
 mkdirSync(ZIEL, { recursive: true });
 for (const d of ["index.html", "impressum.html", "datenschutz.html", "agb.html", "manifest.json", "icon-192.png", "icon-512.png",
-                 "apple-touch-icon.png", "og-image.png", "film"]) {
+                 "apple-touch-icon.png", "og-image.png", "media"]) {
   if (existsSync(`${QUELLE}/${d}`)) cpSync(`${QUELLE}/${d}`, `${ZIEL}/${d}`, { recursive: true });
 }
 cpSync("app-bruecke.js", `${ZIEL}/app-bruecke.js`);

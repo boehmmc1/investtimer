@@ -86,7 +86,8 @@ ANMELDUNG_CSS = """
 /* Angemeldet: Einstieg zu den Alarmen direkt unter dem Wert (im Entwurf nur tief in den Details) */
 .members-layout .score-column .subscribe-module{display:block;margin-top:18px}
 .alarm-erklaerung{font-size:13px;line-height:1.55;color:var(--text);margin:8px 0 2px;min-height:2.6em}
-.alarm-kanal{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:10px 0 4px;display:grid;gap:2px}.alarm-kanal legend{font-size:13px;color:var(--sub);padding:0 4px}.alarm-kanal .wahl{display:flex;gap:10px;align-items:center;min-height:40px;font-size:15px}.alarm-kanal input{accent-color:var(--accent);width:20px;height:20px;margin:0}.alarm-mailhinweis{font-size:12px;color:var(--sub);margin:4px 0 0;line-height:1.5;overflow-wrap:anywhere}.alarm-kanal-wahl{min-height:40px;font-size:14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);padding:0 6px;max-width:150px}
+.alarm-kanal{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:10px 0 4px;display:grid;gap:2px}.alarm-kanal legend{font-size:13px;color:var(--sub);padding:0 4px}.alarm-kanal .wahl{display:flex;gap:10px;align-items:center;min-height:40px;font-size:15px}.alarm-kanal input{accent-color:var(--accent);width:20px;height:20px;margin:0}.alarm-mailhinweis{font-size:12px;color:var(--sub);margin:4px 0 0;line-height:1.5;overflow-wrap:anywhere}.alarm-kanal-wahl{min-height:40px;font-size:14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);padding:0 6px;flex:1;min-width:0;max-width:200px}
+.alarm-eintrag .alarm-text{flex:1 1 100%}
 .push-test-status{font-size:13px;line-height:1.55;margin-top:6px}.push-test-status:empty{display:none}.push-test-status.ok b{color:var(--accent)}.push-test-status.fehler,.push-test-status.warnung b{color:#b3261e}.push-test-status ul{margin:6px 0 0;padding-left:18px}.push-test-status li{margin:4px 0}.push-test-status summary{cursor:pointer;min-height:36px;display:flex;align-items:center;color:var(--sub)}
 .push-box{margin:18px 0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:14px;line-height:1.6}
 .push-box p{margin:0 0 8px;color:var(--text)}.push-box p:last-child{margin-bottom:0}.push-box .primary{margin-top:6px}.push-box .access-more{margin:4px 0 0}
@@ -592,7 +593,7 @@ def main(source, target_dir, preview, anmeldung=None):
     if anmeldung and not (str(anmeldung.get("url", "")).startswith("https://") and anmeldung.get("anonKey")):
         raise SystemExit("Anmeldedatei braucht url (https://...) und anonKey")
     target = Path(target_dir)
-    (target / "film").mkdir(parents=True, exist_ok=True)
+    (target / "media").mkdir(parents=True, exist_ok=True)
 
     # Ergebnis des gespeicherten Stands (oeffentlicher Rueckfall mit echtem Datum)
     snapshot = json.loads(re.search(
@@ -607,11 +608,11 @@ def main(source, target_dir, preview, anmeldung=None):
 
     # Film als Dateien
     film = json.loads(re.search(r'<script type="application/json" id="investtimer-film-config">(.*?)</script>', html, re.S).group(1))
-    (target / "film" / "investtimer-49s.mp4").write_bytes(base64.b64decode(film["src"].split(",", 1)[1]))
-    (target / "film" / "poster.jpg").write_bytes(base64.b64decode(film["poster"].split(",", 1)[1]))
+    (target / "media" / "invest-timer.mp4").write_bytes(base64.b64decode(film["src"].split(",", 1)[1]))
+    (target / "media" / "invest-timer-poster.jpg").write_bytes(base64.b64decode(film["poster"].split(",", 1)[1]))
     html = sub_once(html, r'<script type="application/json" id="investtimer-film-config">.*?</script>',
                     '<script type="application/json" id="investtimer-film-config">'
-                    '{"src":"film/investtimer-49s.mp4","poster":"film/poster.jpg"}</script>', "Film-Daten")
+                    '{"src":"/media/invest-timer.mp4","poster":"/media/invest-timer-poster.jpg"}</script>', "Film-Daten")
 
     # Kopf
     html = sub_once(html, r"<!--\nINVESTTIMER · COMPLETE SINGLE-FILE UI EXPORT.*?-->",
@@ -759,10 +760,67 @@ def main(source, target_dir, preview, anmeldung=None):
                      "snapshotScore", "sourceLibraryFileId", "data:video", "answerKind", "BEISPIELANTWORT"):
         if leftover in html:
             raise SystemExit("Rest gefunden: " + leftover)
+    html = entwurfsreste_entfernen(html)
+    html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
     print("ok: oeffentlicher Rueckfall %s vom %s, %d Bytes HTML, Film %d Bytes" % (
-        fallback["rounded"], fallback["asOf"], len(html.encode()), (target / "film" / "investtimer-49s.mp4").stat().st_size))
+        fallback["rounded"], fallback["asOf"], len(html.encode()), (target / "media" / "invest-timer.mp4").stat().st_size))
 
+
+
+# Entwurfsreste der UI-Vorlage (Demo-Dialoge, Entwurfsschalter, Export-Manifest) aus der ausgelieferten Seite entfernen.
+# Die Demo-Dialoge sind seit der echten Anmeldung nicht mehr erreichbar; ihre Texte werden neutral, Kennungen umbenannt.
+ENTWURF_TEXTE = {  # Schluessel: (de, en)
+    "alertdemo": ("", ""), "savealert": ("Alarm speichern", "Save alert"), "saved": ("Alarm gespeichert.", "Alert saved."),
+    "resumed": ("Alarm aktiviert.", "Alert activated."), "stored": ("", ""),
+    "maxalerts": ("Du kannst bis zu fünf Alarme anlegen.", "You can create up to five alerts."),
+    "localonly": ("Alarm gespeichert.", "Alert saved."), "confirm": ("Bestätigen", "Confirm"), "demo": ("", ""),
+    "savedTitle": ("Deine Auswahl.", "Your selection."), "hint": ("", ""), "accessDemo": ("", ""),
+    "review": ("", ""), "public": ("", ""), "members": ("", ""), "reviewNote": ("", ""),
+    "accessAction": ("Anmelden", "Sign in"), "preview": ("Historischer Einblick", "Historical reading"),
+    "draft": ("Historische Stresswerte im Film noch nicht geprüft", "Historical stress values in the film not yet verified"),
+}
+ENTWURF_WORTE = re.compile(r"(?i)demo|entwurf|vorschau|beispielantwort")
+
+
+def entwurfsreste_entfernen(html):
+    html = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    html = re.sub(r"/\*(?:(?!\*/).)*?\*/", lambda m: "" if ENTWURF_WORTE.search(m.group(0)) else m.group(0), html, flags=re.S)
+    html = re.sub(r'<script type="application/json" id="investtimer-export-manifest">.*?</script>', "", html, flags=re.S)
+    html = re.sub(r'<meta name="investtimer-export-version"[^>]*>', "", html)
+    for schluessel, (de, en) in ENTWURF_TEXTE.items():
+        treffer = list(re.finditer(r"(?<=[,{])%s:'(?:[^'\\]|\\.)*'" % schluessel, html))
+        for m, wert in reversed(list(zip(treffer, [de, en]))):
+            html = html[:m.start()] + "%s:'%s'" % (schluessel, wert) + html[m.end():]
+    for alt, neu in (("investtimer-standalone-v1-demo-alerts", "investtimer-alarme-lokal"), ("accessDemo", "accessHinweis"),
+                     ("alertdemo", "alerthinweis"), ("demo-note", "kopf-hinweis"), (">Demo-Alarm speichern<", ">Alarm speichern<"),
+                     ("${t('demo')}", "${t('demoText')}".replace("demo", "zusatz")), (",demo:''", ",zusatz:''"),
+                     ("/* Entwurfsansicht entfaellt mit echter Anmeldung */", ""), ("'UI preview states'", "'Ansicht'")):
+        html = html.replace(alt, neu)
+    html = html.replace("</style>", ".ui-review{display:none!important}</style>", 1)
+    rest = [html[max(0, m.start() - 60):m.end() + 60] for m in ENTWURF_WORTE.finditer(html)]
+    if rest:
+        raise SystemExit("Entwurfsreste in der Seite:\n" + "\n".join(rest[:20]))
+    return html
+
+
+def base64_auslagern(html, target):
+    """Schriften und Bilder aus data:-URIs als eigene Dateien unter /media/ ausliefern (Name = Inhalts-Hash)."""
+    import hashlib
+    endung = {"font/woff2": "woff2", "font/ttf": "ttf", "image/svg+xml": "svg", "image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4"}
+    def ersetze(m):
+        daten = base64.b64decode(m.group(2))
+        name = "%s.%s" % (hashlib.sha256(daten).hexdigest()[:12], endung[m.group(1)])
+        (target / "media" / name).write_bytes(daten)
+        return "/media/" + name
+    html = re.sub(r"data:([a-z/0-9.+-]+);base64,([A-Za-z0-9+/=]+)", ersetze, html)
+    for alt, neu in (("img-src 'self' data:", "img-src 'self'"), ("font-src data:", "font-src 'self'")):
+        if alt not in html:
+            raise SystemExit("CSP-Stelle fehlt: " + alt)
+        html = html.replace(alt, neu)
+    if re.search(r"(?i)base64,", html):
+        raise SystemExit("Base64 in der Seite")
+    return html
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
