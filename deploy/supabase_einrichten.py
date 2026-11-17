@@ -30,6 +30,19 @@ MAIL = """<h2>Dein Zugang zu InvestTimer</h2>
 <p>Link und Code sind eine Stunde gültig und funktionieren einmal. Hast du sie nicht angefordert, kannst du diese E-Mail ignorieren.</p>"""
 
 TOKEN_DATEI = "/root/.investtimer/supabase-token"
+SMTP_DATEI = "/root/.investtimer/resend-smtp-key"  # Resend-Schluessel nur zum Senden fuer investtimer.net
+
+
+def smtp():
+    """Eigener Versand ueber Resend (Irland). Supabase setzt SMTP zurueck, wenn ein PATCH ihn nicht mitschickt."""
+    try:
+        with open(SMTP_DATEI) as datei:
+            schluessel = datei.read().strip()
+    except OSError:
+        return {}
+    return {"smtp_host": "smtp.resend.com", "smtp_port": "465", "smtp_user": "resend", "smtp_pass": schluessel,
+            "smtp_admin_email": "anmeldung@investtimer.net", "smtp_sender_name": "InvestTimer",
+            "smtp_max_frequency": 60, "rate_limit_email_sent": 30}
 
 
 def token():
@@ -91,6 +104,7 @@ def main(ziel):
         "mailer_autoconfirm": False,
         "mailer_otp_exp": 3600,
         "mailer_otp_length": 6,
+        **smtp(),
     })
     print("Anmeldung eingestellt: Site URL %s, Weiterleitung %s/**" % (SITE, SITE))
     # Eigene Mailtexte gibt es im Free-Tarif nur mit eigenem SMTP. Ohne sie enthaelt die Mail keinen Code.
@@ -101,6 +115,7 @@ def main(ziel):
             "mailer_templates_magic_link_content": MAIL,
             "mailer_subjects_confirmation": "Dein Anmeldelink für InvestTimer",
             "mailer_templates_confirmation_content": MAIL,
+            **smtp(),
         })
         print("Deutsche Mailtexte mit Link und Code gesetzt")
     except SystemExit as fehler:

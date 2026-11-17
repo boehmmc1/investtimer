@@ -155,6 +155,7 @@ button,summary,select,label{touch-action:manipulation;-webkit-tap-highlight-colo
 .access-dialog{overscroll-behavior:contain}
 .access-dialog .preview-notice a{color:inherit}
 @media(max-width:760px){.access-dialog{max-height:calc(100dvh - 12px);overflow-y:auto}.access-benefits{margin-bottom:4px}}
+.rechtliches{font-size:12px;color:var(--sub)}.rechtliches a{color:inherit;display:inline-block;padding:12px 2px}
 /* Ohne Impressum und Datenschutzerklaerung: kein Einstieg in Registrierung oder Anmeldung */
 body.ohne-registrierung:not(.members-layout) #open-subscribe,
 body.ohne-registrierung:not(.members-layout) .public-access-note,
@@ -1051,8 +1052,8 @@ function renderAccess(){
  const kopf='<div class="modal-top"><span class="eyebrow">INVESTTIMER</span><button class="close-button" id="close-access" type="button" aria-label="'+t('close')+'">×</button></div>';
  const recht=false?'<p class="preview-notice">'+t('accessLegal')+' '+t('legalLinks')+'</p>':'<p class="preview-notice">'+t('accessLegal')+'</p>';
  access.innerHTML=kopf+(gesendet
-  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t(false?'linkSent':'linkSentLink')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p>'
-   +(false?'<form id="code-form" class="access-form" novalidate><label for="access-code">'+t('code')+'</label>'
+  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t(true?'linkSent':'linkSentLink')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p>'
+   +(true?'<form id="code-form" class="access-form" novalidate><label for="access-code">'+t('code')+'</label>'
    +'<input id="access-code" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="000000" required>'
    +'<p class="access-error" id="access-error" role="alert"></p><button class="primary full" type="submit">'+t('codeSubmit')+'</button></form>'
     :'<p class="access-error" id="access-error" role="alert"></p>')

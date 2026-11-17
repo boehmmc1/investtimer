@@ -18,6 +18,9 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 - Geheimnisse nie ausgeben, nie committen, nie in Logs. Ablage nur root-lesbar (0600):
   - Supabase-Zugriffstoken (Management-API): `/root/.investtimer/supabase-token`
   - Datenbank-Passwort: `/root/.investtimer-supabase-db`
+  - Resend: voller Schlüssel `/root/.investtimer/resend-key`, Sende-Schlüssel für Supabase-SMTP
+    `/root/.investtimer/resend-smtp-key` (Supabase löscht SMTP bei jedem Auth-PATCH ohne SMTP-Felder,
+    `supabase_einrichten.py` schickt sie deshalb immer mit)
   - Der `service_role`-Schlüssel wird nicht gespeichert, nur zur Laufzeit über die
     Management-API geholt (Tests mit Admin-API, z. B. `generate_link`).
 - Registrieren/Anmelden bleibt öffentlich ausgeblendet, solange
