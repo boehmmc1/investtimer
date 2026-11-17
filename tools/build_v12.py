@@ -60,25 +60,52 @@ ANMELDUNG_CSS = """
 .access-form input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 .access-form button:disabled{opacity:.55}
 .access-error{min-height:1.2em;margin:0;font-size:12px;line-height:1.5;color:#9b3d32}
+.access-error.ok{color:var(--accent)}
+.access-form .code-input{font-size:24px;letter-spacing:.42em;text-align:center;font-variant-numeric:tabular-nums;padding-left:.42em}
+.access-form .code-input::placeholder{color:#c9d3c6}
+.access-form button[type=submit]{min-height:48px}
+.access-more{display:flex;justify-content:space-between;gap:12px;margin:14px 0 0}
+.text-button{min-height:44px;padding:0 4px;border:0;background:none;color:var(--accent);font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.text-button:disabled{color:var(--sub);text-decoration:none;cursor:default}
+.access-dialog{overscroll-behavior:contain}
+.access-dialog .preview-notice a{color:inherit}
+@media(max-width:760px){.access-dialog{max-height:calc(100dvh - 12px);overflow-y:auto}.access-benefits{margin-bottom:4px}}
+/* Ohne Impressum und Datenschutzerklaerung: kein Einstieg in Registrierung oder Anmeldung */
+body.ohne-registrierung:not(.members-layout) #open-subscribe,
+body.ohne-registrierung:not(.members-layout) .public-access-note,
+body.ohne-registrierung:not(.members-layout) #account-login,
+body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 """
 
-TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',sendLink:'Anmeldelink senden',"
+TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',sendLink:'Anmeldelink senden',sending:'Wird gesendet …',"
                       "linkSentTitle:'Schau in dein Postfach.',"
-                      "linkSent:'Wir haben einen Anmeldelink an {email} geschickt. Ein Klick darauf, und du siehst den aktuellen Marktstress.',"
+                      "linkSent:'Wir haben dir an {email} einen Anmeldelink und einen sechsstelligen Code geschickt. Tippe auf den Link oder gib den Code hier ein.',"
+                      "code:'Code aus der E-Mail',codeSubmit:'Anmelden',checking:'Wird geprüft …',"
+                      "codeInvalid:'Der Code stimmt nicht oder ist abgelaufen. Prüfe ihn oder fordere einen neuen an.',"
+                      "codeShort:'Bitte gib die sechs Ziffern aus der E-Mail ein.',"
+                      "resend:'Neu senden',resendIn:'Neu senden in {s} s',resent:'Neue E-Mail ist unterwegs.',otherEmail:'Andere Adresse',"
+                      "spamHint:'Keine E-Mail da? Sieh im Spam-Ordner nach. Die Zustellung kann eine Minute dauern.',"
                       "emailInvalid:'Bitte gib eine gültige E-Mail-Adresse ein.',"
                       "linkRate:'Gerade wurden zu viele Links angefordert. Bitte versuche es in ein paar Minuten erneut.',"
                       "linkFail:'Der Link konnte nicht verschickt werden. Bitte versuche es gleich noch einmal.',"
                       "linkExpired:'Der Anmeldelink ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen an.',"
-                      "accessLegal:'Kein Passwort nötig: Du bekommst einen Link per E-Mail. Neu hier? Mit dem ersten Link wird dein Zugang angelegt.',"
+                      "accessLegal:'Kein Passwort nötig: Du bekommst einen Link und einen Code per E-Mail. Neu hier? Damit wird dein Zugang angelegt.',"
+                      "legalLinks:'Mit der Anmeldung gilt unsere <a href=\\\"/datenschutz.html\\\">Datenschutzerklärung</a>.',"
                       "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',")
-TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',"
+TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',sending:'Sending …',"
                       "linkSentTitle:'Check your inbox.',"
-                      "linkSent:'We sent a sign-in link to {email}. One click and you will see the latest market stress.',"
+                      "linkSent:'We sent a sign-in link and a six-digit code to {email}. Tap the link or enter the code here.',"
+                      "code:'Code from the email',codeSubmit:'Sign in',checking:'Checking …',"
+                      "codeInvalid:'The code is wrong or has expired. Check it or request a new one.',"
+                      "codeShort:'Please enter the six digits from the email.',"
+                      "resend:'Resend',resendIn:'Resend in {s} s',resent:'A new email is on its way.',otherEmail:'Different address',"
+                      "spamHint:'No email? Check your spam folder. Delivery can take a minute.',"
                       "emailInvalid:'Please enter a valid email address.',"
                       "linkRate:'Too many links were requested just now. Please try again in a few minutes.',"
                       "linkFail:'The link could not be sent. Please try again in a moment.',"
                       "linkExpired:'The sign-in link has expired or was already used. Simply request a new one.',"
-                      "accessLegal:'No password needed: we email you a link. New here? Your access is created with the first link.',"
+                      "accessLegal:'No password needed: we email you a link and a code. New here? That creates your access.',"
+                      "legalLinks:'Signing in is subject to our <a href=\\\"/datenschutz.html\\\">privacy policy</a>.',"
                       "loginNeeded:'Please sign in again to keep asking.',")
 
 # Ersetzt LIVE_JS, wenn die Anmeldung aktiv ist. Sitzung im localStorage, Erneuerung ueber das Refresh-Token.
@@ -118,6 +145,12 @@ IT.sendeLink=async email=>{
  const r=await sb('/auth/v1/otp?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'POST',body:JSON.stringify({email,create_user:true})});
  if(!r.ok)throw r.status;
 };
+IT.pruefeCode=async(email,code)=>{
+ const r=await sb('/auth/v1/verify',{method:'POST',body:JSON.stringify({type:'email',email,token:code})});
+ if(!r.ok)throw r.status;const d=await r.json();
+ const s={access_token:d.access_token,refresh_token:d.refresh_token,expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)};
+ merke(s);IT.session=s;IT.member=true;loadLive(true);
+};
 IT.abmelden=async()=>{
  const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.setMember(false);
  if(s)sb('/auth/v1/logout',{method:'POST',headers:{Authorization:'Bearer '+s.access_token}}).catch(()=>{});
@@ -147,25 +180,54 @@ if(location.protocol.startsWith('http'))fetch('/api/chat',{cache:'no-store'}).th
 """
 
 # Anmeldedialog: E-Mail-Adresse -> Anmeldelink (ersetzt den Knopf "Mitgliederansicht ansehen")
-ZUGANG_JS_ANMELDUNG = """let gesendet='',zugangsFehler='';
+ZUGANG_JS_ANMELDUNG = """let gesendet='',zugangsFehler='',sperreBis=0,uhr=null;
+const warte=()=>Math.max(0,Math.ceil((sperreBis-Date.now())/1000));
+function neuKnopf(){const k=$('#access-resend');if(!k)return;const s=warte();k.disabled=s>0;k.textContent=s?t('resendIn').replace('{s}',s):t('resend');if(!s){clearInterval(uhr);uhr=null}}
 function renderAccess(){
  const kopf='<div class="modal-top"><span class="eyebrow">INVESTTIMER</span><button class="close-button" id="close-access" type="button" aria-label="'+t('close')+'">×</button></div>';
+ const recht=REGISTRIERUNG_RECHT?'<p class="preview-notice">'+t('accessLegal')+' '+t('legalLinks')+'</p>':'<p class="preview-notice">'+t('accessLegal')+'</p>';
  access.innerHTML=kopf+(gesendet
-  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t('linkSent')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p><button class="primary full" id="access-done" type="button">'+t('close')+'</button>'
+  ?'<h2 id="access-title" tabindex="-1">'+t('linkSentTitle')+'</h2><p>'+esc(t('linkSent')).replace('{email}','<b>'+esc(gesendet)+'</b>')+'</p>'
+   +'<form id="code-form" class="access-form" novalidate><label for="access-code">'+t('code')+'</label>'
+   +'<input id="access-code" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="000000" required>'
+   +'<p class="access-error" id="access-error" role="alert"></p><button class="primary full" type="submit">'+t('codeSubmit')+'</button></form>'
+   +'<div class="access-more"><button type="button" class="text-button" id="access-resend"></button><button type="button" class="text-button" id="access-other">'+t('otherEmail')+'</button></div>'
+   +'<p class="preview-notice">'+t('spamHint')+'</p>'
   :'<h2 id="access-title" tabindex="-1">'+t('accessTitle')+'</h2><p>'+t('accessIntro')+'</p><ul class="access-benefits"><li>'+t('feature1')+'</li><li>'+t('feature2')+'</li><li>'+t('feature3')+'</li></ul>'
    +'<form id="access-form" class="access-form" novalidate><label for="access-email">'+t('email')+'</label>'
-   +'<input id="access-email" type="email" inputmode="email" autocomplete="email" maxlength="254" required placeholder="'+t('emailPlaceholder')+'">'
+   +'<input id="access-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="send" maxlength="254" required placeholder="'+t('emailPlaceholder')+'">'
    +'<p class="access-error" id="access-error" role="alert">'+esc(zugangsFehler)+'</p><button class="primary full" type="submit">'+t('sendLink')+'</button></form>'
-   +'<p class="preview-notice">'+t('accessLegal')+'</p>');
+   +recht);
+ if(gesendet){neuKnopf();if(warte()&&!uhr)uhr=setInterval(neuKnopf,1000)}
 }
-document.addEventListener('click',e=>{if(e.target.closest('#access-done'))closeAccess()});
+async function sende(email,fehler,knopf,text){
+ knopf.disabled=true;const alt=knopf.textContent;if(text)knopf.textContent=text;
+ try{await IT.sendeLink(email);sperreBis=Date.now()+60000;return true}
+ catch(s){fehler.textContent=t(s===429?'linkRate':'linkFail');if(s===429)sperreBis=Date.now()+60000;return false}
+ finally{knopf.textContent=alt;knopf.disabled=false}
+}
+document.addEventListener('click',async e=>{
+ if(e.target.closest('#access-done'))closeAccess();
+ else if(e.target.closest('#access-other')){gesendet='';renderAccess();$('#access-email').focus()}
+ else if(e.target.closest('#access-resend')){const f=$('#access-error');f.textContent='';
+  f.classList.remove('ok');if(await sende(gesendet,f,e.target.closest('button'),t('sending'))){f.textContent=t('resent');f.classList.add('ok')}
+  neuKnopf();if(!uhr&&warte())uhr=setInterval(neuKnopf,1000)}
+});
+document.addEventListener('input',e=>{if(e.target.id!=='access-code')return;const v=e.target.value.replace(/\\D/g,'').slice(0,6);e.target.value=v;
+ if(v.length===6)e.target.form.requestSubmit()});
 document.addEventListener('submit',async e=>{
+ if(e.target.id==='code-form'){e.preventDefault();
+  const input=$('#access-code'),fehler=$('#access-error'),knopf=e.target.querySelector('button'),code=input.value.trim();
+  fehler.classList.remove('ok');if(!/^\\d{6}$/.test(code)){fehler.textContent=t('codeShort');input.focus();return}
+  if(knopf.disabled)return;knopf.disabled=true;knopf.textContent=t('checking');fehler.textContent='';
+  try{await IT.pruefeCode(gesendet,code);gesendet='';closeAccess()}
+  catch(s){fehler.textContent=t(s===429?'linkRate':'codeInvalid');knopf.disabled=false;knopf.textContent=t('codeSubmit');input.select()}
+  return}
  if(e.target.id!=='access-form')return;e.preventDefault();
- const input=$('#access-email'),fehler=$('#access-error'),knopf=e.target.querySelector('button'),email=input.value.trim();
+ const input=$('#access-email'),fehler=$('#access-error'),knopf=e.target.querySelector('button'),email=input.value.trim().toLowerCase();
  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)){fehler.textContent=t('emailInvalid');input.focus();return}
- knopf.disabled=true;fehler.textContent='';zugangsFehler='';
- try{await IT.sendeLink(email);gesendet=email;renderAccess();$('#access-title').focus({preventScroll:true})}
- catch(s){fehler.textContent=t(s===429?'linkRate':'linkFail');knopf.disabled=false}
+ fehler.textContent='';zugangsFehler='';
+ if(await sende(email,fehler,knopf,t('sending'))){gesendet=email;renderAccess();$('#access-title').focus({preventScroll:true})}
 });
 """
 
@@ -304,6 +366,11 @@ def head_meta(preview):
     return "\n".join(lines)
 
 
+def rechtsseiten(target):
+    """Registrierung erst, wenn Impressum und Datenschutzerklaerung ausgeliefert werden."""
+    return all((Path(target) / n).is_file() for n in ("impressum.html", "datenschutz.html"))
+
+
 def main(source, target_dir, preview, anmeldung=None):
     html = Path(source).read_text(encoding="utf-8")
     if anmeldung and not (str(anmeldung.get("url", "")).startswith("https://") and anmeldung.get("anonKey")):
@@ -413,7 +480,16 @@ def main(source, target_dir, preview, anmeldung=None):
         html = once(html, "if(member&&b.id==='account-login')switchView(false);else openAccess(b);",
                     "if(member&&b.id==='account-login')IT.abmelden();else openAccess(b);", "Abmelden")
         html = once(html, "$('.app').after(review);", "/* Entwurfsansicht entfaellt mit echter Anmeldung */", "Entwurfsansicht")
-        html = sub_once(html, r"function renderAccess\(\)\{access\.innerHTML=[^\n]*\n", ZUGANG_JS_ANMELDUNG, "Anmeldedialog")
+        offen = rechtsseiten(target)
+        html = sub_once(html, r"function renderAccess\(\)\{access\.innerHTML=[^\n]*\n",
+                        ZUGANG_JS_ANMELDUNG.replace("REGISTRIERUNG_RECHT", "true" if offen else "false"), "Anmeldedialog")
+        if not offen:
+            html = once(html, "<body>", '<body class="ohne-registrierung">', "Registrierung aus")
+            html = once(html, "databodyPublic:'Historischer Wert vom {datelong}. Den aktuellen Marktstress siehst du nach der Anmeldung.'",
+                        "databodyPublic:'Historischer Wert vom {datelong}.'", "databodyPublic de ohne Registrierung")
+            html = once(html, "databodyPublic:'Historical reading from {datelong}. The latest market stress is available after sign-in.'",
+                        "databodyPublic:'Historical reading from {datelong}.'", "databodyPublic en ohne Registrierung")
+        print("Registrierung: %s" % ("offen" if offen else "ausgeblendet (Impressum/Datenschutz fehlen)"))
     html = once(html, "stamp.textContent=(member?t('saved'):t('preview'))+' · '+date();stamp.title=member?t('memberNote'):t('noCurrent');",
                 "stamp.textContent=(member?t('current'):t('preview'))+' · '+date();stamp.title=member?'':t('noCurrent');", "Stempel")
     html = once(html, "memberNote.textContent=t('memberNote');memberNote.hidden=!member;", "memberNote.hidden=true;", "Mitglieder-Hinweis")
