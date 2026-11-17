@@ -45,7 +45,7 @@ class KeinFolgen(urllib.request.HTTPRedirectHandler):
 
 def pruefe(name, bedingung, info=""):
     print(("ok    " if bedingung else "FEHLER") + "  " + name + (("  (" + info + ")") if info and not bedingung else ""))
-    return bedingung
+    return bool(bedingung)
 
 
 def main():
