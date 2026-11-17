@@ -70,3 +70,9 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 - Timer: `investtimer-sicherung` (03:15, `/var/backups/investtimer`), `investtimer-abo-erinnerung` (stuendlich).
 - Entwuerfe Abo-Rechtstexte: `docs/rechtstexte/entwurf/` (nicht veroeffentlichen ohne Anwaltspruefung).
 
+- Alarme: Ueberqueren mit Ruecklauf (Spalte `scharf`), Kanal push/email/beide, E-Mail ueber Resend von alarm@investtimer.net
+  mit signiertem Abmeldelink `/api/alarm-abmelden` (Schluessel `/root/.investtimer/alarm-abmelde-key`). Tests:
+  `/opt/investtimer-push/bin/python -m unittest tests/test_alarm_mail.py`. Die Alarm-Endpunkte liegen ausserhalb der
+  eingebauten Bloecke direkt in `volafly_chat.py` (vor Aenderungen sichern).
+- UI-Vorlage ist jetzt `source/InvestTimer_UI_Signalbogen_v1.3.html`. Der Build lagert alle Base64-Daten nach `public/media/`
+  aus und bricht ab, wenn Demo/Entwurf/Vorschau/Beispielantwort oder Base64 in der Seite stehen.
