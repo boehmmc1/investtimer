@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f8f8f3">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<title>Vertrag widerrufen · InvestTimer</title>
+<style>
+:root{--bg:#f8f8f3;--text:#1c2f2b;--sub:#5b6b66;--line:#dfe5dc;--accent:#2f6b5c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:680px;margin:0 auto;padding:28px 20px 64px}
+a{color:var(--accent);text-underline-offset:3px}
+.zurueck{display:inline-flex;min-height:44px;align-items:center;font-size:14px;text-decoration:none}
+h1{font-size:32px;line-height:1.25;letter-spacing:-.5px;margin:18px 0 8px}
+h2{font-size:19px;line-height:1.35;margin:36px 0 8px}
+h3{font-size:16px;margin:22px 0 4px}
+p,li{color:var(--text)}
+.klein{font-size:13px;color:var(--sub)}
+mark{background:#fff1b8;padding:0 3px;border-radius:3px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;display:flex;gap:20px;flex-wrap:wrap}
+footer a{display:inline-flex;min-height:44px;align-items:center}
+</style>
+<meta name="robots" content="noindex">
+<style>
+form{display:grid;gap:14px;margin-top:20px}
+label{font-weight:600;font-size:15px}
+input,select,textarea{accent-color:var(--accent);font:inherit;font-size:16px;width:100%;min-height:48px;padding:10px 12px;border:1px solid #b8c4bd;border-radius:10px;background:#fff;color:var(--text)}
+textarea{min-height:110px}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0;display:grid;gap:8px}
+legend{font-weight:600;font-size:15px;padding:0 4px}
+.wahl{display:flex;gap:10px;align-items:center;font-weight:400;min-height:44px}.wahl input{width:22px;min-height:22px;height:22px;margin:0}
+.knopf{min-height:52px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:17px;font-family:inherit;cursor:pointer;padding:0 18px}
+.knopf.leise{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.fehler{color:#b3261e;font-size:14px;min-height:1em;margin:0}
+.bestaetigung{border:2px solid var(--accent);border-radius:12px;padding:16px 18px;margin-top:20px}
+.bestaetigung dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:10px 0}.bestaetigung dt{color:var(--sub)}.bestaetigung dd{margin:0}
+@media print{.zurueck,footer,.knopf{display:none}}
+</style></head>
+<body><main>
+<a class="zurueck" href="/">← Zurück zu InvestTimer</a>
+<h1>Vertrag widerrufen</h1>
+<p>Hier widerrufst du deinen Vertrag über „InvestTimer Premium“ – ohne Anmeldung. Nach dem Klick auf „Widerruf bestätigen“ siehst du sofort eine Eingangsbestätigung und bekommst sie zusätzlich per E-Mail.</p>
+<p class="klein">Käufe in der iOS-App wickelt Apple ab. Dafür gilt das Verfahren von Apple (reportaproblem.apple.com).</p>
+<form id="erklaerung" data-ziel="/api/vertrag/widerrufen" novalidate>
+<label for="name">Vor- und Nachname</label><input id="name" name="name" autocomplete="name" required maxlength="120">
+<label for="email">E-Mail-Adresse deines InvestTimer-Kontos</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254">
+<label for="bestelldatum">Bestellt am (wenn bekannt)</label><input id="bestelldatum" name="bestelldatum" type="date">
+<p class="klein">Vertrag: InvestTimer Premium (monatlich oder jährlich).</p>
+<p class="fehler" id="fehler" role="alert"></p>
+<button class="knopf" type="submit">Widerruf bestätigen</button>
+</form>
+<div id="ergebnis"></div><script>
+(function(){
+ const f=document.getElementById('erklaerung'),fehler=document.getElementById('fehler'),aus=document.getElementById('ergebnis');
+ const T={name:'Bitte gib deinen Namen an.',email:'Bitte gib eine gültige E-Mail-Adresse an.',grund:'Bitte nenne den Grund für die außerordentliche Kündigung.',
+  datum:'Bitte wähle ein Datum.',inaktiv:'Diese Funktion ist gerade nicht verfügbar. Schreib uns bitte an info@investtimer.net.',limit:'Zu viele Versuche. Bitte versuche es morgen noch einmal oder schreib an info@investtimer.net.'};
+ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ function sichtbar(){const a=f.querySelector('[name=kuendigungsart]:checked'),g=document.getElementById('grund-feld'),z=f.querySelector('[name=zeitpunkt]:checked'),d=document.getElementById('datum-feld');
+  if(g)g.hidden=!(a&&a.value==='ausserordentlich');if(d)d.hidden=!(z&&z.value==='datum')}
+ f.addEventListener('change',sichtbar);sichtbar();
+ f.addEventListener('submit',async e=>{e.preventDefault();fehler.textContent='';const k=f.querySelector('button[type=submit]');k.disabled=true;
+  const daten=Object.fromEntries(new FormData(f).entries());
+  if(!daten.name||daten.name.trim().length<2){fehler.textContent=T.name;k.disabled=false;f.name.focus();return}
+  if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(daten.email||'')){fehler.textContent=T.email;k.disabled=false;f.email.focus();return}
+  try{const r=await fetch(f.dataset.ziel,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(daten)});const d=await r.json().catch(()=>({}));
+   if(!r.ok)throw d.error||'fehler';
+   const a=d.angaben||{},z=[['Eingang',d.eingang+' (Nr. '+d.nummer+')'],['Name',d.name],['E-Mail',d.email],['Vertrag',a.vertrag]];
+   if(d.art==='kuendigung'){z.push(['Art',a.kuendigungsart==='ordentlich'?'ordentliche Kündigung':'außerordentliche Kündigung']);if(a.grund)z.push(['Grund',a.grund]);
+    z.push(['Zeitpunkt',a.zeitpunkt==='datum'?'zum '+a.datum:'zum nächstmöglichen Zeitpunkt']);if(d.ende)z.push(['Vertragsende',d.ende])}
+   else if(a.bestelldatum)z.push(['Bestellt am',a.bestelldatum]);
+   aus.innerHTML='<div class="bestaetigung" role="status" tabindex="-1"><h2>'+(d.art==='kuendigung'?'Deine Kündigung ist eingegangen.':'Dein Widerruf ist eingegangen.')+'</h2><dl>'
+    +z.map(([k,v])=>'<dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd>').join('')+'</dl><p>Eine Bestätigung mit diesen Angaben schicken wir dir per E-Mail an '+esc(d.email)+'.'
+    +(d.art==='kuendigung'&&!d.ende?' Das Vertragsende bestätigen wir dir, sobald wir die Kündigung bearbeitet haben.':'')+'</p>'
+    +'<button type="button" class="knopf leise" onclick="window.print()">Bestätigung drucken oder als PDF speichern</button></div>';
+   f.hidden=true;aus.firstChild.focus();
+  }catch(x){fehler.textContent=T[x]||'Das hat nicht geklappt. Bitte versuche es noch einmal oder schreib an info@investtimer.net.';k.disabled=false}
+ });
+})();
+</script><footer><a href="/impressum.html">Impressum</a><a href="/datenschutz.html">Datenschutz</a></footer>
+</main></body></html>

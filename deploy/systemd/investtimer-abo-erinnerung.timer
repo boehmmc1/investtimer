@@ -1,0 +1,9 @@
+[Unit]
+Description=InvestTimer: stuendlich Testphasen pruefen
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

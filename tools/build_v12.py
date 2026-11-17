@@ -657,7 +657,10 @@ def main(source, target_dir, preview, anmeldung=None):
         else:
             html = once(html, '<span data-i18n="tagline">Marktstress verstehen.</span></footer>',
                         '<span data-i18n="tagline">Marktstress verstehen.</span>'
-                        '<nav class="rechtliches"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a></nav></footer>',
+                        '<nav class="rechtliches"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a>'
+                        + (' · <a href="/vertrag-kuendigen.html">Verträge hier kündigen</a> · <a href="/vertrag-widerrufen.html">Vertrag widerrufen</a>'
+                           if json.loads((ROOT / "deploy" / "abo.json").read_text()).get("vertragsseiten") else "")
+                        + '</nav></footer>',
                         "Fusslinks Rechtstexte")
         print("Registrierung: %s" % ("offen" if offen else "ausgeblendet (Impressum/Datenschutz fehlen)"))
     html = once(html, "stamp.textContent=(member?t('saved'):t('preview'))+' · '+date();stamp.title=member?t('memberNote'):t('noCurrent');",

@@ -14,7 +14,7 @@ _it_sr_cache = {"t": 0.0, "key": None}
 
 
 def _it_geheim(name):
-    pfad = "/root/.investtimer/%s.json" % name
+    pfad = os.path.join(os.environ.get("IT_GEHEIM_DIR", "/root/.investtimer"), name + ".json")
     try:
         st = os.stat(pfad)
         c = _it_geheim_cache.get(name)
@@ -54,13 +54,17 @@ def _it_premium_noetig(uid):
     return _JSONResp({"error": "premium"}, status_code=403)
 
 
+def _it_rc_api():
+    return _it_geheim("revenuecat").get("api", "https://api.revenuecat.com")
+
+
 def _it_rc_abgleich(uid):
     """Abonnenten bei RevenueCat abrufen und speichern. Bei Ausfall bleibt der letzte Stand."""
     rc = _it_geheim("revenuecat")
     if not rc.get("secret"):
         return None
     try:
-        r = _rq.get("https://api.revenuecat.com/v1/subscribers/" + _rq.utils.quote(uid, safe=""),
+        r = _rq.get(_it_rc_api() + "/v1/subscribers/" + _rq.utils.quote(uid, safe=""),
                     headers={"Authorization": "Bearer " + rc["secret"]}, timeout=8)
         if r.status_code != 200:
             print(f"[investtimer] revenuecat: HTTP {r.status_code}", flush=True)
@@ -148,7 +152,7 @@ async def it_konto_loeschen(request: Request):
     rc = _it_geheim("revenuecat")
     if rc.get("secret"):
         try:  # Kundendaten bei RevenueCat entfernen (Kaufbelege bleiben bei Apple/Stripe)
-            _rq.delete("https://api.revenuecat.com/v1/subscribers/" + _rq.utils.quote(uid, safe=""),
+            _rq.delete(_it_rc_api() + "/v1/subscribers/" + _rq.utils.quote(uid, safe=""),
                        headers={"Authorization": "Bearer " + rc["secret"]}, timeout=8)
         except Exception as e:
             print(f"[investtimer] revenuecat loeschen: {type(e).__name__}", flush=True)
@@ -157,7 +161,7 @@ async def it_konto_loeschen(request: Request):
 
 
 def _it_stripe_post(s, pfad, felder):
-    r = _rq.post("https://api.stripe.com/v1/" + pfad, data=felder, auth=(s["secret"], ""), timeout=15)
+    r = _rq.post(s.get("api", "https://api.stripe.com") + "/v1/" + pfad, data=felder, auth=(s["secret"], ""), timeout=15)
     if r.status_code >= 300:
         print(f"[investtimer] stripe {pfad}: HTTP {r.status_code} {r.json().get('error', {}).get('code')}", flush=True)
         return None
@@ -266,7 +270,7 @@ async def it_stripe_webhook(request: Request):
         rc = _it_geheim("revenuecat")
         if uid and o.get("subscription") and rc.get("stripe_public"):
             try:
-                _rq.post("https://api.revenuecat.com/v1/receipts", timeout=10,
+                _rq.post(_it_rc_api() + "/v1/receipts", timeout=10,
                          headers={"Authorization": "Bearer " + rc["stripe_public"], "X-Platform": "stripe"},
                          json={"app_user_id": uid, "fetch_token": o["subscription"]})
             except Exception as ex:
@@ -282,12 +286,20 @@ async def it_rc_webhook(request: Request):
     if not erwartet or not _hmac.compare_digest(request.headers.get("authorization", ""), "Bearer " + erwartet):
         return _JSONResp({"error": "auth"}, status_code=401)
     try:
-        uid = _konto.rc_ereignis(json.loads(await request.body()))
+        roh = json.loads(await request.body())
+        e = roh.get("event") or roh
+        vorher = (_konto.roh(e.get("app_user_id") or "") or {}).get("status")
+        uid = _konto.rc_ereignis(roh)
     except Exception as e:
         print(f"[investtimer] revenuecat webhook: {type(e).__name__}", flush=True)
         return _JSONResp({"error": "ereignis"}, status_code=400)
     if uid:
         _it_rc_abgleich(uid)  # verlaesslicher Stand; scheitert er, gilt das Ereignis
+        try:
+            stand = _konto.status(uid)
+            _it_abo_mail(uid, _vertrag.abo_anlass(e.get("type"), e.get("period_type"), vorher, stand.get("kanal")), stand)
+        except Exception as ex:
+            print(f"[investtimer] abo-mail: {type(ex).__name__}", flush=True)
     return {"ok": True}
 
 

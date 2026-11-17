@@ -20,8 +20,9 @@
     try { return s && JSON.parse(atob(s.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).sub; } catch { return null; }
   }
 
-  // --- Push (APNs) ---
-  const P = () => plugin("PushNotifications");
+  const plattform = C().getPlatform();
+  // --- Push: iOS ueber APNs; Android erst mit Firebase-Konfiguration (cfg.fcm, Versand noch nicht gebaut) ---
+  const P = () => (plattform === "ios" || cfg.fcm) ? plugin("PushNotifications") : null;
   const push = {
     async status() {
       const p = await P().checkPermissions();
@@ -50,8 +51,9 @@
   async function rc() {
     const uid = nutzer();
     if (!uid) throw "login";
-    if (!cfg.revenuecatApple || !RC()) throw "zahlung_inaktiv";
-    if (!rcNutzer) await RC().configure({ apiKey: cfg.revenuecatApple, appUserID: uid });
+    const schluessel = plattform === "android" ? cfg.revenuecatGoogle : cfg.revenuecatApple;
+    if (!schluessel || !RC()) throw "zahlung_inaktiv";
+    if (!rcNutzer) await RC().configure({ apiKey: schluessel, appUserID: uid });
     else if (rcNutzer !== uid) await RC().logIn({ appUserID: uid });
     rcNutzer = uid;
     return RC();
@@ -71,5 +73,6 @@
   // Apple-Abos verwalten: Systemseite der Apple-ID oeffnen
   async function verwaltenApple() { try { await (await rc()).showManageSubscriptions(); } catch { location.href = "https://apps.apple.com/account/subscriptions"; } }
 
-  window.InvestTimerApp = { push, kaufen, wiederherstellen, abmelden, verwaltenApple, kaufBereit: !!(cfg.revenuecatApple && RC()), plattform: C().getPlatform() };
+  window.InvestTimerApp = { push: P() ? push : null, kaufen, wiederherstellen, abmelden, verwaltenApple,
+    kaufBereit: !!((plattform === "android" ? cfg.revenuecatGoogle : cfg.revenuecatApple) && RC()), plattform };
 })();

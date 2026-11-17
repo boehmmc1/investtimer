@@ -1,4 +1,6 @@
 {
   "api": "https://investtimer.net",
-  "revenuecatApple": ""
+  "revenuecatApple": "",
+  "revenuecatGoogle": "",
+  "fcm": false
 }

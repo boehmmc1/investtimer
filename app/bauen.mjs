@@ -12,7 +12,8 @@ for (const d of ["index.html", "impressum.html", "datenschutz.html", "agb.html",
 }
 cpSync("app-bruecke.js", `${ZIEL}/app-bruecke.js`);
 let html = readFileSync(`${ZIEL}/index.html`, "utf8");
-const einstellungen = { api: konfig.api || "https://investtimer.net", revenuecatApple: konfig.revenuecatApple || "" };
+const einstellungen = { api: konfig.api || "https://investtimer.net", revenuecatApple: konfig.revenuecatApple || "",
+  revenuecatGoogle: konfig.revenuecatGoogle || "", fcm: !!konfig.fcm };
 const kopf = `<script>window.INVESTTIMER_APP=${JSON.stringify(einstellungen)};</script><script src="app-bruecke.js"></script>`;
 if (!html.includes("<head>")) throw new Error("kein <head> in index.html");
 html = html.replace("<head>", "<head>" + kopf);

@@ -1,0 +1,6 @@
+[Unit]
+Description=InvestTimer: Erinnerung vor Ende der Testphase (nur mit IT_ABO_MAILS=1)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/curl -fsS -X POST http://127.0.0.1:8100/v1/investtimer/abo/erinnerungen

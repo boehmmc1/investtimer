@@ -1,0 +1,37 @@
+# Android-App bauen (Debug-APK, unsigniert fuer den Store). Vorbereitung FR-029, keine Veroeffentlichung.
+name: Android-App
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", "public/index.html", "tools/konto.js", "tools/alarme.js", ".github/workflows/android.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  debug-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: node bauen.mjs
+      - run: npx cap sync android
+      - name: Gradle-Build (Debug)
+        working-directory: app/android
+        run: ./gradlew --no-daemon assembleDebug
+      - name: APK pruefen
+        run: |
+          A=android/app/build/outputs/apk/debug/app-debug.apk
+          test -f "$A"
+          unzip -l "$A" | grep -q "assets/public/index.html"
+          unzip -p "$A" assets/public/index.html | grep -q "app-bruecke.js"
