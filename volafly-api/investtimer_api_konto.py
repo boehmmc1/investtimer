@@ -290,3 +290,20 @@ async def it_rc_webhook(request: Request):
         _it_rc_abgleich(uid)  # verlaesslicher Stand; scheitert er, gilt das Ereignis
     return {"ok": True}
 
+
+@app.get("/v1/investtimer/historie")
+def it_historie(request: Request):
+    """Tagesverlauf des Marktstress (Premium bzw. mit Anmeldung, solange die Pflicht aus ist)."""
+    uid, fehler = _it_nutzer_oder_fehler(request)
+    if fehler:
+        return fehler
+    sperre = _it_premium_noetig(uid)
+    if sperre:
+        return sperre
+    try:
+        with open("/var/lib/investtimer/data/history.json") as f:
+            verlauf = json.load(f)
+    except (OSError, ValueError):
+        return _it_aus()
+    punkte = [{"d": tag, "w": v.get("rounded")} for tag, v in sorted(verlauf.items()) if isinstance(v.get("rounded"), int)]
+    return _JSONResp({"punkte": punkte}, headers={"Cache-Control": "no-store"})

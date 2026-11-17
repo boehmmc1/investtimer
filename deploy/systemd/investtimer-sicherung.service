@@ -1,0 +1,6 @@
+[Unit]
+Description=InvestTimer: Datensicherung (Konten, Alarme, Verlauf)
+
+[Service]
+Type=oneshot
+ExecStart=/var/www/investtimer/server/sichern.sh

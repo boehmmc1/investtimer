@@ -161,7 +161,13 @@ TEXTE_KONTO_EN = ("kontoLink:'My account',premiumFreischalten:'Unlock Premium',k
                   "paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Subscription terms',datenschutz:'Privacy',zurueck:'Back',"
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
-KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8")
+KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8")
+TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufAria:'Verlauf des Marktstress, {n} Tageswerte',verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',"
+                    "verlaufNote:'{n} Tageswerte, zwischen {min} und {max}. Aufgezeichnet seit {seit}, je ein Wert pro Tag.',"
+                    "verlaufPremium:'Den vollständigen Verlauf siehst du mit Premium.',verlaufFehlt:'Der Verlauf ist gerade nicht verfügbar.',")
+TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufAria:'Market stress history, {n} daily readings',verlaufSpanne:'Period',verlaufAlle:'All',"
+                    "verlaufNote:'{n} daily readings, between {min} and {max}. Recorded since {seit}, one reading per day.',"
+                    "verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'The history is not available right now.',")
 KONTO_CSS = """
 .konto-daten{margin:10px 0 12px;display:grid;gap:6px}.konto-zeile{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .konto-zeile dt{color:var(--sub)}.konto-zeile dd{margin:0;text-align:right;color:var(--text)}
@@ -182,6 +188,7 @@ a.primary.full{display:flex;align-items:center;justify-content:center;text-decor
 .tarif-badge{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--text);color:var(--bg,#fff)}
 .tarif-bedingung{font-size:13px;line-height:1.55;color:var(--sub)}
 @media (min-width:560px){.tarife{grid-template-columns:1fr 1fr}}
+.verlauf{margin:0 0 40px}.verlauf h3{font-size:13px;font-weight:500;margin:0 0 14px}.verlauf-knoepfe{display:flex;gap:6px;margin:0 0 12px}.verlauf-spanne{min-height:36px;min-width:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--sub)}.verlauf-spanne.aktiv{background:var(--text);color:var(--bg);border-color:var(--text)}.verlauf .primary{margin-top:10px}
 """
 
 # Alarme, Push und Installation (tools/alarme.js)
@@ -245,7 +252,7 @@ TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de
                       "accessLegal:'Kein Passwort nötig: Du bekommst einen Anmeldelink per E-Mail. Neu hier? Damit wird dein Zugang angelegt.',"
                       "legalLinks:'Mit der Anmeldung gilt unsere <a href=\\\"/datenschutz.html\\\">Datenschutzerklärung</a>.',"
                       "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',"
-                      + TEXTE_ALARM_DE + TEXTE_KONTO_DE)
+                      + TEXTE_ALARM_DE + TEXTE_KONTO_DE + TEXTE_VERLAUF_DE)
 TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',sending:'Sending …',"
                       "linkSentTitle:'Check your inbox.',"
                       "linkSent:'We sent a sign-in link and a six-digit code to {email}. Tap the link or enter the code here.',"
@@ -262,7 +269,7 @@ TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com'
                       "accessLegal:'No password needed: we email you a sign-in link. New here? That creates your access.',"
                       "legalLinks:'Signing in is subject to our <a href=\\\"/datenschutz.html\\\">privacy policy</a>.',"
                       "loginNeeded:'Please sign in again to keep asking.',"
-                      + TEXTE_ALARM_EN + TEXTE_KONTO_EN)
+                      + TEXTE_ALARM_EN + TEXTE_KONTO_EN + TEXTE_VERLAUF_EN)
 
 # Ersetzt LIVE_JS, wenn die Anmeldung aktiv ist. Sitzung im localStorage, Erneuerung ueber das Refresh-Token.
 LIVE_JS_ANMELDUNG = """/* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
@@ -583,10 +590,10 @@ def main(source, target_dir, preview, anmeldung=None):
 
     # Datumsangaben der Hauptansicht
     html = once(html, "databody:'Diese Ansicht verwendet den gespeicherten Datenstand vom 15. November 2026. Eine laufende Aktualisierung und ein historischer Verlauf sind noch nicht verbunden.'",
-                "databody:'Datenstand: {datelong}. Der Wert wird regelmäßig aktualisiert. Ein historischer Verlauf ist noch nicht verbunden.',"
+                "databody:'Datenstand: {datelong}. Der Wert wird regelmäßig aktualisiert. Den Tagesverlauf siehst du nach der Anmeldung oben im Detailbereich.',"
                 "databodyPublic:'Historischer Wert vom {datelong}. Den aktuellen Marktstress siehst du nach der Anmeldung.'", "databody de")
     html = once(html, "databody:'This view uses the saved data snapshot from 15 November 2026. Continuous updates and a historical chart are not connected yet.'",
-                "databody:'Data as of {datelong}. The score is updated regularly. A historical chart is not connected yet.',"
+                "databody:'Data as of {datelong}. The score is updated regularly. After sign-in, the daily history appears at the top of this section.',"
                 "databodyPublic:'Historical reading from {datelong}. The latest market stress is available after sign-in.'", "databody en")
     html = once(html, "<p>${t('databody')}</p>", "<p>${t(window.InvestTimer?.member?'databody':'databodyPublic')}</p>", "databody Auswahl")
     html = once(html, "timestamp:'US-Aktienmarkt · Datenstand 15. Nov. 2026'", "timestamp:'US-Aktienmarkt · Datenstand {date}'", "timestamp de")
