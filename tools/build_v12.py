@@ -71,12 +71,82 @@ ANMELDUNG_CSS = """
 .access-dialog .preview-notice a{color:inherit}
 @media(max-width:760px){.access-dialog{max-height:calc(100dvh - 12px);overflow-y:auto}.access-benefits{margin-bottom:4px}}
 .rechtliches{font-size:12px;color:var(--sub)}.rechtliches a{color:inherit;display:inline-block;padding:12px 2px}
+/* Alarme, Push, Installation */
+#saved-alerts{display:none}
+/* Angemeldet: Einstieg zu den Alarmen direkt unter dem Wert (im Entwurf nur tief in den Details) */
+.members-layout .score-column .subscribe-module{display:block;margin-top:18px}
+.push-box{margin:18px 0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:14px;line-height:1.6}
+.push-box p{margin:0 0 8px;color:var(--text)}.push-box p:last-child{margin-bottom:0}.push-box .primary{margin-top:6px}.push-box .access-more{margin:4px 0 0}
+.alarm-liste{list-style:none;margin:6px 0 14px;padding:0;display:grid;gap:8px}
+.alarm-eintrag{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.alarm-eintrag.pausiert .alarm-text{opacity:.6}
+.alarm-text{flex:1;display:grid;gap:2px}.alarm-text b{font-size:15px;font-weight:500}.alarm-text small{font-size:12px;color:var(--sub)}
+.alarm-schalter{position:relative;display:inline-flex;align-items:center;min-height:44px;flex:none;cursor:pointer}
+.alarm-schalter input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.alarm-schalter .spur{position:relative;display:block;width:46px;height:28px;border-radius:14px;background:#cfd8cc;transition:background .2s}
+.alarm-schalter .spur::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.alarm-schalter input:checked+.spur{background:var(--accent)}.alarm-schalter input:checked+.spur::after{transform:translateX(18px)}
+.alarm-schalter input:focus-visible+.spur{outline:2px solid var(--accent);outline-offset:2px}
+.alarm-leer{font-size:14px;color:var(--sub);margin:6px 0 14px}
+.alarm-form select{min-height:48px;font-size:16px;padding:0 12px;border:1px solid #b9c7b6;border-radius:12px;background:var(--surface);color:var(--text);font-family:inherit}
+.alarm-schwelle{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+.alarm-schwelle output{font-size:28px;font-variant-numeric:tabular-nums;color:var(--text)}
+.alarm-form input[type=range]{width:100%;min-height:44px;accent-color:var(--accent)}
+.install-schritte{margin:8px 0 0;padding-left:22px;display:grid;gap:8px;font-size:14px;line-height:1.55}
+.install-schritte .teilen{width:18px;height:18px;vertical-align:-3px;color:var(--accent)}
+.install-link{font-size:12px;color:var(--sub);min-height:44px}
+@media(prefers-reduced-motion:reduce){.alarm-schalter .spur,.alarm-schalter .spur::after{transition:none}}
 /* Ohne Impressum und Datenschutzerklaerung: kein Einstieg in Registrierung oder Anmeldung */
 body.ohne-registrierung:not(.members-layout) #open-subscribe,
 body.ohne-registrierung:not(.members-layout) .public-access-note,
 body.ohne-registrierung:not(.members-layout) #account-login,
 body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 """
+
+# Alarme, Push und Installation (tools/alarme.js)
+ALARM_JS = (ROOT / "tools" / "alarme.js").read_text(encoding="utf-8")
+TEXTE_ALARM_DE = ("alarmEyebrow:'DEINE ALARME',alarmTitle:'Deine Schwelle. Dein Hinweis.',"
+                  "alarmIntro:'Lege fest, bei welchem Marktstress du eine Nachricht aufs Handy bekommst.',"
+                  "alarmWenn:'Benachrichtigen, wenn der Marktstress',alarmSteigt:'über die Schwelle steigt',alarmFaellt:'unter die Schwelle fällt',"
+                  "alarmSchwelle:'Schwelle',alarmSpeichern:'Alarm speichern',alarmUeber:'Steigt über',alarmUnter:'Fällt unter',"
+                  "alarmAktiv:'aktiv',alarmPausiert:'pausiert',alarmLoeschen:'Löschen',alarmKeine:'Noch kein Alarm angelegt.',"
+                  "alarmLaedt:'Wird geladen …',alarmFehler:'Das hat nicht geklappt. Bitte versuche es gleich noch einmal.',"
+                  "alarmDoppelt:'Diesen Alarm gibt es schon.',alarmMax:'Du kannst bis zu fünf Alarme anlegen.',"
+                  "alarmRegel:'Ein Alarm meldet sich, wenn der Wert die Schwelle überschreitet, höchstens einmal am Tag. Der Hinweis beschreibt nur den Stand und ist keine Anlageberatung.',"
+                  "pushAktiv:'Push ist auf diesem Gerät eingeschaltet.',pushTest:'Testnachricht senden',pushTestGesendet:'Testnachricht ist unterwegs',"
+                  "pushTestWarten:'Bitte eine Minute warten',pushAus:'Push ausschalten',"
+                  "pushAusText:'Damit dich ein Alarm erreicht, schalte Mitteilungen auf diesem Gerät ein.',pushAn:'Mitteilungen einschalten',"
+                  "pushBlockiert:'Mitteilungen sind für InvestTimer blockiert. Erlaube sie in den Einstellungen deines Geräts oder Browsers, dann klappt es.',"
+                  "pushNein:'Dieser Browser kann keine Mitteilungen empfangen. Nutze ein aktuelles Chrome, Edge, Firefox oder Safari.',"
+                  "iosTitel:'Auf dem iPhone kommen Mitteilungen nur in der installierten App an:',"
+                  "ios1:'Tippe in Safari unten auf Teilen {teilen}.',ios2:'Wähle „Zum Home-Bildschirm“ und tippe auf „Hinzufügen“.',"
+                  "ios3:'Öffne InvestTimer vom Home-Bildschirm und melde dich dort mit dem Code aus der E-Mail an.',"
+                  "installLink:'App installieren',installTitel:'InvestTimer als App',"
+                  "installIOS:'Ohne App Store, in drei Schritten (iPhone und iPad ab iOS 16.4):',"
+                  "installAndroid:'InvestTimer lässt sich direkt installieren und startet dann wie eine App.',installJetzt:'Jetzt installieren',"
+                  "installAndere:'In Chrome oder Edge: Menü ⋮ öffnen und „App installieren“ oder „Zum Startbildschirm hinzufügen“ wählen. In Safari auf dem Mac: Ablage → „Zum Dock hinzufügen“.',"
+                  "installPush:'In der App kannst du Alarme mit Push-Mitteilung einrichten.',")
+TEXTE_ALARM_EN = ("alarmEyebrow:'YOUR ALERTS',alarmTitle:'Your threshold. Your alert.',"
+                  "alarmIntro:'Choose at which market stress level you get a notification.',"
+                  "alarmWenn:'Notify me when market stress',alarmSteigt:'rises above the threshold',alarmFaellt:'falls below the threshold',"
+                  "alarmSchwelle:'Threshold',alarmSpeichern:'Save alert',alarmUeber:'Rises above',alarmUnter:'Falls below',"
+                  "alarmAktiv:'active',alarmPausiert:'paused',alarmLoeschen:'Delete',alarmKeine:'No alerts yet.',"
+                  "alarmLaedt:'Loading …',alarmFehler:'That did not work. Please try again in a moment.',"
+                  "alarmDoppelt:'This alert already exists.',alarmMax:'You can create up to five alerts.',"
+                  "alarmRegel:'An alert fires when the score crosses the threshold, at most once a day. It only describes the reading and is not investment advice.',"
+                  "pushAktiv:'Push is on for this device.',pushTest:'Send test notification',pushTestGesendet:'Test notification is on its way',"
+                  "pushTestWarten:'Please wait a minute',pushAus:'Turn off push',"
+                  "pushAusText:'Turn on notifications on this device so alerts can reach you.',pushAn:'Turn on notifications',"
+                  "pushBlockiert:'Notifications are blocked for InvestTimer. Allow them in your device or browser settings.',"
+                  "pushNein:'This browser cannot receive notifications. Use a current Chrome, Edge, Firefox or Safari.',"
+                  "iosTitel:'On iPhone, notifications only arrive in the installed app:',"
+                  "ios1:'In Safari, tap Share {teilen} at the bottom.',ios2:'Choose “Add to Home Screen” and tap “Add”.',"
+                  "ios3:'Open InvestTimer from your Home Screen and sign in there with the code from the email.',"
+                  "installLink:'Install app',installTitel:'InvestTimer as an app',"
+                  "installIOS:'No App Store needed, three steps (iPhone and iPad with iOS 16.4 or later):',"
+                  "installAndroid:'InvestTimer can be installed directly and then starts like an app.',installJetzt:'Install now',"
+                  "installAndere:'In Chrome or Edge: open the menu ⋮ and choose “Install app” or “Add to Home screen”. In Safari on Mac: File → “Add to Dock”.',"
+                  "installPush:'In the app you can set up alerts with push notifications.',")
 
 TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',sendLink:'Anmeldelink senden',sending:'Wird gesendet …',"
                       "linkSentTitle:'Schau in dein Postfach.',"
@@ -93,7 +163,8 @@ TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de
                       "linkExpired:'Der Anmeldelink ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen an.',"
                       "accessLegal:'Kein Passwort nötig: Du bekommst einen Anmeldelink per E-Mail. Neu hier? Damit wird dein Zugang angelegt.',"
                       "legalLinks:'Mit der Anmeldung gilt unsere <a href=\\\"/datenschutz.html\\\">Datenschutzerklärung</a>.',"
-                      "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',")
+                      "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',"
+                      + TEXTE_ALARM_DE)
 TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',sending:'Sending …',"
                       "linkSentTitle:'Check your inbox.',"
                       "linkSent:'We sent a sign-in link and a six-digit code to {email}. Tap the link or enter the code here.',"
@@ -109,7 +180,8 @@ TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com'
                       "linkExpired:'The sign-in link has expired or was already used. Simply request a new one.',"
                       "accessLegal:'No password needed: we email you a sign-in link. New here? That creates your access.',"
                       "legalLinks:'Signing in is subject to our <a href=\\\"/datenschutz.html\\\">privacy policy</a>.',"
-                      "loginNeeded:'Please sign in again to keep asking.',")
+                      "loginNeeded:'Please sign in again to keep asking.',"
+                      + TEXTE_ALARM_EN)
 
 # Ersetzt LIVE_JS, wenn die Anmeldung aktiv ist. Sitzung im localStorage, Erneuerung ueber das Refresh-Token.
 LIVE_JS_ANMELDUNG = """/* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
@@ -406,7 +478,7 @@ def main(source, target_dir, preview, anmeldung=None):
                     "<!-- InvestTimer · investtimer.net · Quelle: UI-Export v1.2 (Signalbogen) -->", "Kopfkommentar")
     html = once(html, " Clarity mit dem Volafly-Modell aus 14 Komponenten und gespeichertem Datenstand.",
                 " 14 Bestandteile, ein Wert.", "Beschreibung")
-    html = once(html, "connect-src 'none'", "connect-src 'self'%s; manifest-src 'self'" % (
+    html = once(html, "connect-src 'none'", "connect-src 'self'%s; manifest-src 'self'; worker-src 'self'" % (
         " " + anmeldung["url"].rstrip("/") if anmeldung else ""), "CSP Abrufe")
     html = once(html, "img-src data:;", "img-src 'self' data:;", "CSP Bilder")
     html = once(html, "media-src data:;", "media-src 'self';", "CSP Film")
@@ -531,7 +603,7 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\nupdate();",
                 "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\n"
                 "document.addEventListener('investtimer:update',update);\nupdate();" + (
-                    "\nif(IT.anmeldeFehler){zugangsFehler=t('linkExpired');openAccess(null)}"
+                    "\nif(IT.anmeldeFehler){zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS
                     if anmeldung else ""), "Zugang Aktualisierung")
 
     # Stile: Mobil-Nachschaerfung hinter die Export-Stile, Ergaenzungen hinter die Zugangs-Stile

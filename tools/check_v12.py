@@ -58,6 +58,10 @@ async def main():
         def do_GET(self):
             if self.path == '/api/chat':
                 return self._json({'ok': True})
+            if self.path == '/api/alarme':
+                return self._json({'alarme': [{'id': 1, 'richtung': 'ueber', 'schwelle': 60, 'aktiv': True},
+                                              {'id': 2, 'richtung': 'unter', 'schwelle': 30, 'aktiv': False}],
+                                   'geraete': 0, 'max': 5, 'vapid': 'BNrcZE0FOPtHxiqv0ALj'})
             if self.path == '/api/aktuell':
                 if self.headers.get('Authorization') != 'Bearer test-token':
                     self.send_response(401); self.end_headers(); return
@@ -125,7 +129,10 @@ async def main():
             await pg.click('[data-perspective="volatility"] summary'); await pg.click('[data-explain="VIX_VX1"]'); await state('erklaerung')
             await pg.click('#understood')
             await pg.click('#create-alert'); await state('alarm')
-            await pg.click('#close-alert')
+            await pg.click('#close-alarm' if ANMELDUNG else '#close-alert')
+            if ANMELDUNG:
+                await pg.click('#install-link'); await state('installieren')
+                await pg.click('#close-install')
             await pg.evaluate('window.scrollTo(0,0)')
             await pg.select_option('#header-language', 'en'); await state('englisch')
             await pg.click('#account-login' if ANMELDUNG else '#review-public')
