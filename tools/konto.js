@@ -11,7 +11,7 @@ function aboBox(){
  const k=konto;if(!k)return '<p>'+t('alarmLaedt')+'</p>';if(k.fehler)return '<p class="access-error">'+t('alarmFehler')+'</p>';
  if(!k.premium){
   const frei=k.pflicht?t('kontoFrei'):t('kontoFreiOffen');
-  return '<p><b>'+t('kontoFreiTitel')+'</b></p><p>'+frei+'</p>'+(k.paywall||(app()&&k.appKauf)?'<button type="button" class="primary full" id="paywall-auf">'+t('premiumAnsehen')+'</button>':'')
+  return '<p><b>'+t('kontoFreiTitel')+'</b></p><p>'+frei+'</p>'+((app()?app().kaufBereit:k.paywall)?'<button type="button" class="primary full" id="paywall-auf">'+t('premiumAnsehen')+'</button>':'')
    +(k.status==='abgelaufen'||k.status==='erstattet'?'<p class="preview-notice">'+t('kontoAbgelaufen')+' '+datum(k.premiumBis)+'</p>':'');
  }
  const kanal={stripe:t('kanalWeb'),apple:'Apple App Store',google:'Google Play',promo:t('kanalPromo')}[k.kanal]||'—';
@@ -20,7 +20,9 @@ function aboBox(){
   +zeile(k.verlaengerung?'kontoNaechste':'kontoEnde',datum(k.premiumBis))+zeile('kontoAuto',t(k.verlaengerung?'an':'aus'))
   +(k.testTageRest!=null?zeile('kontoTestRest',String(k.testTageRest)):'')+'</dl>';
  if(k.status==='zahlungsproblem')html+='<p class="access-error">'+t('kontoZahlungsproblem')+'</p>';
- if(k.verwaltung==='stripe')html+='<button type="button" class="primary full" id="abo-verwalten">'+t('aboVerwalten')+'</button><p class="preview-notice">'+t('aboVerwaltenWeb')+'</p>';
+ if(app()&&k.verwaltung==='stripe')html+='<p class="preview-notice">'+t('aboVerwaltenWebInApp')+'</p>';
+ else if(app()&&k.verwaltung==='apple')html+='<button type="button" class="primary full" id="abo-verwalten-apple">'+t('aboVerwalten')+'</button><p class="preview-notice">'+t('aboVerwaltenApple')+'</p>';
+ else if(k.verwaltung==='stripe')html+='<button type="button" class="primary full" id="abo-verwalten">'+t('aboVerwalten')+'</button><p class="preview-notice">'+t('aboVerwaltenWeb')+'</p>';
  else if(verwaltenUrl[k.verwaltung])html+='<a class="primary full" id="abo-verwalten-extern" href="'+verwaltenUrl[k.verwaltung]+'" target="_blank" rel="noopener">'+t('aboVerwalten')+'</a><p class="preview-notice">'+t(k.verwaltung==='apple'?'aboVerwaltenApple':'aboVerwaltenGoogle')+'</p>';
  return html;
 }
@@ -66,7 +68,7 @@ function kontoLink(){
  const fuss=$('.app-footer');if(!fuss)return;let l=$('#konto-link');
  if(!IT.session&&!IT.member){l?.remove();return}
  if(!l){l=document.createElement('button');l.type='button';l.id='konto-link';l.className='text-button install-link';fuss.append(l)}
- l.textContent=t(konto&&konto.pflicht&&!konto.premium&&(konto.paywall||konto.appKauf)?'premiumFreischalten':'kontoLink');
+ l.textContent=t(konto&&konto.pflicht&&!konto.premium&&(app()?app().kaufBereit:konto.paywall)?'premiumFreischalten':'kontoLink');
 }
 async function aboStarten(knopf){
  knopf.disabled=true;kontoHinweis='';
@@ -86,6 +88,7 @@ kontoDlg.addEventListener('click',async e=>{
  else if(b.id==='paywall-zurueck'){kontoAnsicht='konto';kontoHinweis='';renderKonto();$('#konto-title').focus({preventScroll:true})}
  else if(b.id==='abo-start')aboStarten(b);
  else if(b.id==='abo-wiederherstellen'){b.disabled=true;try{await app().wiederherstellen();await ladeKonto(true);kontoAnsicht='konto';renderKonto()}catch{b.disabled=false}}
+ else if(b.id==='abo-verwalten-apple')app().verwaltenApple();
  else if(b.id==='abo-verwalten'){b.disabled=true;try{location.href=(await api('abo/verwalten',{method:'POST'})).url}catch{b.disabled=false;b.textContent=t('alarmFehler')}}
  else if(b.id==='konto-loeschen'){
   const wort=$('#loeschen-wort').value.trim().toLowerCase(),f=$('#loeschen-fehler');

@@ -1,9 +1,10 @@
 /* Alarme mit eigener Schwelle, Web-Push und Installationshinweis */
 const istIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const installiert=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const nativ=()=>window.InvestTimerApp&&window.InvestTimerApp.push;
 const pushMoeglich=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 let swReg=null,installPrompt=null,alarmDaten=null,alarmHinweis='',pushZustand='laedt',alarmOpener=null;
-if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='127.0.0.1')){
+if(!window.InvestTimerApp&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='127.0.0.1')){
  navigator.serviceWorker.register('/sw.js').then(r=>{swReg=r}).catch(()=>{});
  navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.typ==='investtimer-neu-laden')IT.loadLive(true)});
 }
@@ -16,12 +17,14 @@ async function api(pfad,opt={}){
  const d=await r.json().catch(()=>({}));if(!r.ok)throw d.error||r.status;return d;
 }
 async function pushStatus(){
+ if(nativ())return nativ().status();
  if(!pushMoeglich())return istIOS&&!installiert()?'ios':'nein';
  if(Notification.permission==='denied')return 'blockiert';
  const reg=swReg||await navigator.serviceWorker.getRegistration();const abo=reg&&await reg.pushManager.getSubscription();
  return abo?'aktiv':'aus';
 }
 async function pushEinschalten(erlaubt){
+ if(nativ()){const tok=await nativ().einschalten();if(!tok)return false;alarmDaten=await api('push/geraet',{method:'POST',body:JSON.stringify({apns:tok})});return true}
  if(!erlaubt&&await Notification.requestPermission()!=='granted')return false;
  if(!alarmDaten||!alarmDaten.vapid)alarmDaten=await api('alarme');
  const reg=swReg||await navigator.serviceWorker.ready;
@@ -71,6 +74,7 @@ alarmDlg.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='close-alarm')schliesseAlarme();
  else if(b.id==='push-an'){b.disabled=true;try{await pushEinschalten()}catch{}pushZustand=await pushStatus().catch(()=>'nein');renderAlarme()}
+ else if(b.id==='push-aus'&&nativ()){b.disabled=true;try{const tok=await nativ().aus();if(tok)alarmDaten=await api('push/geraet-entfernen',{method:'POST',body:JSON.stringify({endpoint:'apns:'+tok})})}catch{}pushZustand=await pushStatus().catch(()=>'nein');renderAlarme()}
  else if(b.id==='push-aus'){b.disabled=true;try{const reg=swReg||await navigator.serviceWorker.getRegistration(),abo=reg&&await reg.pushManager.getSubscription();
   if(abo){alarmDaten=await api('push/geraet-entfernen',{method:'POST',body:JSON.stringify({endpoint:abo.endpoint})});await abo.unsubscribe()}}catch{}pushZustand=await pushStatus().catch(()=>'nein');renderAlarme()}
  else if(b.id==='push-test'){b.disabled=true;try{await api('push/test',{method:'POST'});b.textContent=t('pushTestGesendet')}catch(x){b.textContent=t(x==='warten'?'pushTestWarten':'alarmFehler')}}
@@ -80,18 +84,18 @@ alarmDlg.addEventListener('change',async e=>{const id=e.target.dataset.alarmAkti
  alarmDaten=await api('alarme/'+id,{method:'PATCH',body:JSON.stringify({aktiv:e.target.checked})}).catch(()=>alarmDaten);renderAlarme();$('[data-alarm-aktiv="'+id+'"]')?.focus()});
 alarmDlg.addEventListener('input',e=>{if(e.target.id==='alarm-wert')$('#alarm-ausgabe').textContent=e.target.value});
 alarmDlg.addEventListener('submit',async e=>{e.preventDefault();
- const frage=pushZustand==='aus'&&Notification.permission==='default'?Notification.requestPermission():null;
+ const frage=nativ()?(pushZustand==='aus'?Promise.resolve('nativ'):null):pushZustand==='aus'&&window.Notification&&Notification.permission==='default'?Notification.requestPermission():null;
  const knopf=e.target.querySelector('button[type=submit]');knopf.disabled=true;alarmHinweis='';
  try{alarmDaten=await api('alarme',{method:'POST',body:JSON.stringify({richtung:$('#alarm-richtung').value,schwelle:Number($('#alarm-wert').value)})})}
  catch(x){alarmHinweis=t(x==='doppelt'?'alarmDoppelt':x==='max'?'alarmMax':'alarmFehler');knopf.disabled=false;$('#alarm-fehler').textContent=alarmHinweis;return}
- if(frage){try{if(await frage==='granted')await pushEinschalten(true)}catch{}}
+ if(frage){try{const f=await frage;if(f==='granted'||f==='nativ')await pushEinschalten(true)}catch{}}
  pushZustand=await pushStatus().catch(()=>'nein');renderAlarme();$('#alarm-title').focus({preventScroll:true});
 });
 /* App installieren: Link im Fuss und Anleitung je Geraet */
 const installDlg=document.createElement('dialog');installDlg.id='install-dialog';installDlg.className='modal access-dialog';installDlg.setAttribute('aria-labelledby','install-title');document.body.append(installDlg);
 function installLink(){
  const fuss=$('.app-footer');if(!fuss)return;let l=$('#install-link');
- if(installiert()){l?.remove();return}
+ if(installiert()||window.InvestTimerApp){l?.remove();return}
  if(!l){l=document.createElement('button');l.type='button';l.id='install-link';l.className='text-button install-link';fuss.append(l)}
  l.textContent=t('installLink');
 }

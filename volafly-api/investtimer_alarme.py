@@ -98,12 +98,17 @@ def loeschen(uid, alarm_id):
 
 
 def geraet_speichern(uid, abo):
+    if isinstance(abo, dict) and "apns" in abo:   # iOS-App: Geraete-Token von Apple (hex)
+        tok = str(abo["apns"]).strip().lower()
+        if not (32 <= len(tok) <= 200) or any(c not in "0123456789abcdef" for c in tok):
+            raise Fehler("abo")
+        abo = {"endpoint": "apns:" + tok, "keys": {"p256dh": "", "auth": ""}}
     try:
         endpoint, keys = str(abo["endpoint"]), abo["keys"]
         p256dh, auth = str(keys["p256dh"]), str(keys["auth"])
     except (KeyError, TypeError):
         raise Fehler("abo")
-    if not endpoint.startswith("https://") or len(endpoint) > 1000 or len(p256dh) > 200 or len(auth) > 100:
+    if not (endpoint.startswith("https://") or endpoint.startswith("apns:")) or len(endpoint) > 1000 or len(p256dh) > 200 or len(auth) > 100:
         raise Fehler("abo")
     with verbinden() as db:
         db.execute("INSERT INTO geraete (endpoint, uid, p256dh, auth, erstellt) VALUES (?,?,?,?,?) "

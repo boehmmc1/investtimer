@@ -40,8 +40,68 @@ def premium_pflicht():
     return False
 
 
+APNS = os.environ.get("INVESTTIMER_APNS", "/root/.investtimer/apns.json")
+_apns_jwt = {"t": 0, "jwt": None}
+
+
+def _b64(b):
+    import base64
+    return base64.urlsafe_b64encode(b).rstrip(b"=").decode()
+
+
+def _apns_token(k):
+    """JWT (ES256) fuer APNs, hoechstens 50 Minuten wiederverwenden."""
+    import time
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+    if _apns_jwt["jwt"] and time.time() - _apns_jwt["t"] < 3000:
+        return _apns_jwt["jwt"]
+    with open(k["p8"], "rb") as f:
+        schluessel = serialization.load_pem_private_key(f.read(), password=None)
+    jetzt = int(time.time())
+    kopf = _b64(json.dumps({"alg": "ES256", "kid": k["key_id"]}).encode()) + "." + _b64(json.dumps({"iss": k["team_id"], "iat": jetzt}).encode())
+    r, s = decode_dss_signature(schluessel.sign(kopf.encode(), ec.ECDSA(hashes.SHA256())))
+    _apns_jwt.update(t=jetzt, jwt=kopf + "." + _b64(r.to_bytes(32, "big") + s.to_bytes(32, "big")))
+    return _apns_jwt["jwt"]
+
+
+def senden_apns(geraet, nachricht):
+    """iOS-App: Mitteilung ueber Apple Push (HTTP/2). Ohne Schluessel: nicht zustellbar (None)."""
+    try:
+        with open(APNS) as f:
+            k = json.load(f)
+    except (OSError, ValueError):
+        print("[push] APNs nicht eingerichtet", flush=True)
+        return None
+    import httpx
+    host = "api.sandbox.push.apple.com" if k.get("sandbox") else "api.push.apple.com"
+    token = geraet["endpoint"].split(":", 1)[1]
+    daten = {"aps": {"alert": {"title": nachricht.get("title", "InvestTimer"), "body": nachricht.get("body", "")},
+                     "sound": "default", "thread-id": nachricht.get("tag", "investtimer")}, "url": nachricht.get("url", "/")}
+    try:
+        with httpx.Client(http2=True, timeout=15) as c:
+            r = c.post("https://%s/3/device/%s" % (host, token), json=daten,
+                       headers={"authorization": "bearer " + _apns_token(k), "apns-topic": k.get("bundle", "net.investtimer.app"),
+                                "apns-push-type": "alert", "apns-priority": "10", "apns-expiration": str(int(__import__("time").time()) + 12 * 3600),
+                                "apns-collapse-id": nachricht.get("tag", "investtimer")[:64]})
+    except Exception as fehler:
+        print("[push] APNs Fehler: %s" % type(fehler).__name__, flush=True)
+        return None
+    if r.status_code == 200:
+        return True
+    grund = (r.json() if r.content else {}).get("reason")
+    if r.status_code == 410 or grund in ("BadDeviceToken", "Unregistered", "DeviceTokenNotForTopic"):
+        alarme.geraet_entfernen(geraet["endpoint"])
+        return False
+    print("[push] APNs %s %s" % (r.status_code, grund), flush=True)
+    return None
+
+
 def senden(geraet, nachricht):
     """True = zugestellt, False = Geraet abgemeldet (entfernt), None = voruebergehender Fehler."""
+    if geraet["endpoint"].startswith("apns:"):
+        return senden_apns(geraet, nachricht)
     try:
         webpush({"endpoint": geraet["endpoint"], "keys": {"p256dh": geraet["p256dh"], "auth": geraet["auth"]}},
                 json.dumps(nachricht, ensure_ascii=False), vapid_private_key=VAPID_SCHLUESSEL,

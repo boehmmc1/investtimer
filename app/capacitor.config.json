@@ -1,0 +1,14 @@
+{
+  "appId": "net.investtimer.app",
+  "appName": "InvestTimer",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "scheme": "InvestTimer",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "PushNotifications": { "presentationOptions": ["banner", "sound", "list"] },
+    "SplashScreen": { "launchShowDuration": 600, "backgroundColor": "#f6f6f1", "showSpinner": false }
+  }
+}

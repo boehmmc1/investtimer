@@ -1,0 +1,38 @@
+# iOS-App bauen (ohne Signatur, Simulator). Beweist, dass Projekt und Plugins kompilieren.
+# Signierter Build fuer TestFlight: siehe docs/ios-app.md (braucht Apple-Entwicklerkonto).
+name: iOS-App
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", "public/index.html", "tools/konto.js", "tools/alarme.js", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: node bauen.mjs
+      - run: npx cap sync ios
+      - name: Xcode-Build (Simulator)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -40
+          test -d build/Build/Products/Debug-iphonesimulator/App.app
+      - name: App-Paket pruefen
+        run: |
+          A=build/Build/Products/Debug-iphonesimulator/App.app
+          test -f "$A/PrivacyInfo.xcprivacy"
+          test -f "$A/public/index.html"
+          grep -q "app-bruecke.js" "$A/public/index.html"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$A/Info.plist"
