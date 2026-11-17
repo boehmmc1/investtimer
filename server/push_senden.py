@@ -21,11 +21,23 @@ from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.environ.get("INVESTTIMER_API_DIR", "/root/volafly-chat"))
 import investtimer_alarme as alarme  # noqa: E402
+import investtimer_konto as konto  # noqa: E402
 from pywebpush import WebPushException, webpush  # noqa: E402
 
 QUELLE = os.environ.get("STRESS_INTERN_URL", "http://127.0.0.1:8100/v1/marktstress")
 VAPID_SCHLUESSEL = os.environ.get("VAPID_PRIVATE", "/root/.investtimer/vapid-private.pem")
 VAPID_KONTAKT = {"sub": "mailto:info@investtimer.net"}
+
+
+def premium_pflicht():
+    """Gleicher Schalter wie in der API: mit IT_PREMIUM_PFLICHT=1 bekommen nur Premium-Konten Alarme."""
+    try:
+        for zeile in open(os.environ.get("INVESTTIMER_API_ENV", "/root/volafly-chat/.env")):
+            if zeile.strip().startswith("IT_PREMIUM_PFLICHT="):
+                return zeile.split("=", 1)[1].strip() == "1"
+    except OSError:
+        pass
+    return False
 
 
 def senden(geraet, nachricht):
@@ -73,7 +85,10 @@ def pruefen():
         return
     tag = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%d")
     ausgeloest = zugestellt = 0
+    pflicht = premium_pflicht()
     for a in alarme.aktive_alarme():
+        if pflicht and not konto.ist_premium(a["uid"]):
+            continue
         s = a["schwelle"]
         gekreuzt = (vorher < s <= jetzt) if a["richtung"] == "ueber" else (vorher > s >= jetzt)
         if not gekreuzt or a["ausgeloest_am"] == tag:

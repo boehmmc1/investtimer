@@ -103,6 +103,85 @@ body.ohne-registrierung:not(.members-layout) #account-login,
 body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 """
 
+TEXTE_KONTO_DE = ("kontoLink:'Mein Konto',premiumFreischalten:'Premium freischalten',kontoEyebrow:'DEIN KONTO',kontoTitel:'Mein Abonnement',"
+                  "kontoFreiTitel:'Kostenloser Zugang',kontoFreiOffen:'Aktueller Wert, KI-Fragen und Alarme sind mit deiner Anmeldung derzeit freigeschaltet.',"
+                  "kontoFrei:'Du siehst den zeitversetzten Wert. Aktueller Wert, ganze Historie, KI-Analysen und Alarme gehören zu Premium.',"
+                  "kontoAbgelaufen:'Premium endete am',premiumAnsehen:'Premium ansehen',"
+                  "st_test:'Testphase',st_aktiv:'aktiv',st_gekuendigt:'gekündigt',st_zahlungsproblem:'Zahlung offen',st_abgelaufen:'abgelaufen',st_erstattet:'erstattet',st_frei:'kostenlos',"
+                  "kontoPreis:'Preis',kontoKanal:'Bezahlt über',kontoBeginn:'Beginn',kontoNaechste:'Nächste Verlängerung',kontoEnde:'Premium bis',"
+                  "kontoAuto:'Automatische Verlängerung',kontoTestRest:'Verbleibende Testtage',an:'an',aus:'aus',jahr:'Jahr',monat:'Monat',"
+                  "kanalWeb:'Website (Stripe)',kanalPromo:'Freischaltung',"
+                  "kontoZahlungsproblem:'Die letzte Zahlung hat nicht geklappt. Bitte prüfe deine Zahlungsmethode, sonst endet Premium.',"
+                  "aboVerwalten:'Abo verwalten oder kündigen',aboVerwaltenWeb:'Dort kündigst du, wechselst den Tarif, änderst die Zahlungsmethode und lädst Rechnungen.',"
+                  "aboVerwaltenApple:'Dein Abo läuft über Apple. Kündigen und Tarif wechseln geht in den Abo-Einstellungen deiner Apple-ID.',"
+                  "aboVerwaltenGoogle:'Dein Abo läuft über Google Play. Kündigen und Tarif wechseln geht im Play Store.',"
+                  "kontoKi:'KI-Fragen heute: {n} von {max}',"
+                  "loeschenTitel:'Konto löschen',loeschenText:'Damit löschst du dein Konto, deine Alarme und Push-Geräte endgültig. Rechnungen und Zahlungsbelege bewahren Apple bzw. Stripe nach den gesetzlichen Fristen auf.',"
+                  "loeschenEingabe:'Zur Bestätigung „löschen“ eingeben',loeschenKnopf:'Konto endgültig löschen',loeschenWort:'Bitte gib „löschen“ ein.',"
+                  "loeschenAbo:'Dein Abo verlängert sich noch automatisch. Kündige es zuerst unter „Abo verwalten“, dann kannst du das Konto löschen.',"
+                  "geloeschtTitel:'Dein Konto ist gelöscht.',geloeschtText:'Alle Daten zu deinem Konto sind entfernt. Den zeitversetzten Wert siehst du weiter ohne Anmeldung.',"
+                  "paywallEyebrow:'INVESTTIMER PREMIUM',paywallTitel:'Marktstress aktuell, mit KI-Analyse.',"
+                  "paywallIntro:'Premium schaltet alles frei, was über den zeitversetzten Wert hinausgeht:',"
+                  "v1:'Aktueller Marktstress, alle 10 Minuten neu',v2:'Vollständige historische Entwicklung',v3:'Alle Einzelindikatoren im Detail',"
+                  "v4:'KI-Analysen: Fragen zum aktuellen Stand, verständlich beantwortet',v5:'Eigene Schwellen mit Push-Mitteilung',"
+                  "tarifWahl:'Tarif wählen',tarifJahr:'Jährlich',tarifMonat:'Monatlich',tarifSpar:'rund 33 % günstiger',tarifJahrSub:'entspricht 3,33 € im Monat',"
+                  "tarifDanach:'{preis} pro {intervall}',tarifTest:'Die ersten 7 Tage sind kostenlos. Danach {danach}, erste Abbuchung am {datum}.',"
+                  "tarifAuto:'Das Abo verlängert sich automatisch, bis du kündigst. Kündigen geht jederzeit, auch in der Testphase, ohne Kündigungsfrist zum Ende des laufenden Zeitraums.',"
+                  "ctaTest:'7 Tage kostenlos testen',ctaAbo:'Premium abonnieren',wiederherstellen:'Käufe wiederherstellen',"
+                  "paywallFuss:'Preise inkl. USt. Keine Anlageberatung.',agb:'Abo-Bedingungen',datenschutz:'Datenschutz',zurueck:'Zurück',"
+                  "fehlerSchonPremium:'Du hast Premium bereits. Details siehst du unter „Mein Konto“.',fehlerAbbruch:'Der Kauf wurde abgebrochen.',"
+                  "fehlerInaktiv:'Abos sind gerade nicht verfügbar.',")
+TEXTE_KONTO_EN = ("kontoLink:'My account',premiumFreischalten:'Unlock Premium',kontoEyebrow:'YOUR ACCOUNT',kontoTitel:'My subscription',"
+                  "kontoFreiTitel:'Free access',kontoFreiOffen:'The latest reading, AI questions and alerts are currently included with your sign-in.',"
+                  "kontoFrei:'You see the delayed reading. The latest reading, full history, AI analysis and alerts are part of Premium.',"
+                  "kontoAbgelaufen:'Premium ended on',premiumAnsehen:'See Premium',"
+                  "st_test:'trial',st_aktiv:'active',st_gekuendigt:'cancelled',st_zahlungsproblem:'payment due',st_abgelaufen:'expired',st_erstattet:'refunded',st_frei:'free',"
+                  "kontoPreis:'Price',kontoKanal:'Paid via',kontoBeginn:'Started',kontoNaechste:'Next renewal',kontoEnde:'Premium until',"
+                  "kontoAuto:'Auto-renewal',kontoTestRest:'Trial days left',an:'on',aus:'off',jahr:'year',monat:'month',"
+                  "kanalWeb:'Website (Stripe)',kanalPromo:'Granted',"
+                  "kontoZahlungsproblem:'The last payment failed. Please check your payment method, otherwise Premium ends.',"
+                  "aboVerwalten:'Manage or cancel',aboVerwaltenWeb:'Cancel, switch plan, update your payment method and download invoices there.',"
+                  "aboVerwaltenApple:'Your subscription runs through Apple. Cancel or switch in your Apple ID subscription settings.',"
+                  "aboVerwaltenGoogle:'Your subscription runs through Google Play. Cancel or switch in the Play Store.',"
+                  "kontoKi:'AI questions today: {n} of {max}',"
+                  "loeschenTitel:'Delete account',loeschenText:'This permanently deletes your account, alerts and push devices. Apple or Stripe keep invoices and receipts as required by law.',"
+                  "loeschenEingabe:'Type „löschen“ to confirm',loeschenKnopf:'Delete account permanently',loeschenWort:'Please type „löschen“.',"
+                  "loeschenAbo:'Your subscription still renews automatically. Cancel it under „Manage“ first, then delete the account.',"
+                  "geloeschtTitel:'Your account has been deleted.',geloeschtText:'All data linked to your account has been removed. The delayed reading stays available without sign-in.',"
+                  "paywallEyebrow:'INVESTTIMER PREMIUM',paywallTitel:'Live market stress, with AI analysis.',"
+                  "paywallIntro:'Premium unlocks everything beyond the delayed reading:',"
+                  "v1:'Latest market stress, updated every 10 minutes',v2:'Full history',v3:'Every indicator in detail',"
+                  "v4:'AI analysis: questions about the current reading, answered plainly',v5:'Your own thresholds with push notifications',"
+                  "tarifWahl:'Choose a plan',tarifJahr:'Yearly',tarifMonat:'Monthly',tarifSpar:'about 33 % less',tarifJahrSub:'equals €3.33 a month',"
+                  "tarifDanach:'{preis} per {intervall}',tarifTest:'The first 7 days are free. Then {danach}, first charge on {datum}.',"
+                  "tarifAuto:'The subscription renews automatically until you cancel. You can cancel any time, also during the trial, effective at the end of the current period.',"
+                  "ctaTest:'Try 7 days free',ctaAbo:'Subscribe to Premium',wiederherstellen:'Restore purchases',"
+                  "paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Subscription terms',datenschutz:'Privacy',zurueck:'Back',"
+                  "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
+                  "fehlerInaktiv:'Subscriptions are not available right now.',")
+KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8")
+KONTO_CSS = """
+.konto-daten{margin:10px 0 12px;display:grid;gap:6px}.konto-zeile{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.konto-zeile dt{color:var(--sub)}.konto-zeile dd{margin:0;text-align:right;color:var(--text)}
+.konto-status{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--sub)}
+.konto-status.s-aktiv,.konto-status.s-test{color:var(--text)}.konto-status.s-zahlungsproblem{color:#c0392b;border-color:#c0392b}
+.konto-ki{font-size:14px;color:var(--sub)}
+.konto-loeschen{margin-top:18px;border-top:1px solid var(--line);padding-top:12px;font-size:14px}
+.konto-loeschen summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--sub)}
+.konto-loeschen input{width:100%;box-sizing:border-box;min-height:44px;margin:6px 0;font-size:16px;border-radius:10px;border:1px solid var(--line);padding:0 12px;background:transparent;color:var(--text)}
+.danger{min-height:48px;border-radius:999px;border:1px solid #c0392b;background:transparent;color:#c0392b;font-weight:600;cursor:pointer}.danger.full{width:100%}
+a.primary.full{display:flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box}
+.premium-vorteile{margin:8px 0 16px;padding-left:20px;line-height:1.7;font-size:15px}.premium-vorteile .ki{font-weight:600}
+.tarife{display:grid;gap:10px;margin:0 0 12px}
+.tarif{position:relative;display:grid;gap:2px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;cursor:pointer;background:var(--panel)}
+.tarif.gewaehlt{border:2px solid var(--text);padding:13px 15px}.tarif input{position:absolute;opacity:0;pointer-events:none}
+.tarif:focus-within{outline:2px solid var(--text);outline-offset:2px}
+.tarif-kopf{display:flex;align-items:center;justify-content:space-between;gap:8px}.tarif-preis{font-size:20px;font-weight:600}.tarif-preis small,.tarif-sub{font-size:13px;color:var(--sub);font-weight:400}
+.tarif-badge{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--text);color:var(--bg,#fff)}
+.tarif-bedingung{font-size:13px;line-height:1.55;color:var(--sub)}
+@media (min-width:560px){.tarife{grid-template-columns:1fr 1fr}}
+"""
+
 # Alarme, Push und Installation (tools/alarme.js)
 ALARM_JS = (ROOT / "tools" / "alarme.js").read_text(encoding="utf-8")
 TEXTE_ALARM_DE = ("alarmEyebrow:'DEINE ALARME',alarmTitle:'Deine Schwelle. Dein Hinweis.',"
@@ -164,7 +243,7 @@ TEXTE_ANMELDUNG_DE = ("email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de
                       "accessLegal:'Kein Passwort nötig: Du bekommst einen Anmeldelink per E-Mail. Neu hier? Damit wird dein Zugang angelegt.',"
                       "legalLinks:'Mit der Anmeldung gilt unsere <a href=\\\"/datenschutz.html\\\">Datenschutzerklärung</a>.',"
                       "loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',"
-                      + TEXTE_ALARM_DE)
+                      + TEXTE_ALARM_DE + TEXTE_KONTO_DE)
 TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com',sendLink:'Send sign-in link',sending:'Sending …',"
                       "linkSentTitle:'Check your inbox.',"
                       "linkSent:'We sent a sign-in link and a six-digit code to {email}. Tap the link or enter the code here.',"
@@ -181,7 +260,7 @@ TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com'
                       "accessLegal:'No password needed: we email you a sign-in link. New here? That creates your access.',"
                       "legalLinks:'Signing in is subject to our <a href=\\\"/datenschutz.html\\\">privacy policy</a>.',"
                       "loginNeeded:'Please sign in again to keep asking.',"
-                      + TEXTE_ALARM_EN)
+                      + TEXTE_ALARM_EN + TEXTE_KONTO_EN)
 
 # Ersetzt LIVE_JS, wenn die Anmeldung aktiv ist. Sitzung im localStorage, Erneuerung ueber das Refresh-Token.
 LIVE_JS_ANMELDUNG = """/* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
@@ -603,14 +682,14 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\nupdate();",
                 "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\n"
                 "document.addEventListener('investtimer:update',update);\nupdate();" + (
-                    "\nif(IT.anmeldeFehler){zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS
+                    "\nif(IT.anmeldeFehler){zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS
                     if anmeldung else ""), "Zugang Aktualisierung")
 
     # Stile: Mobil-Nachschaerfung hinter die Export-Stile, Ergaenzungen hinter die Zugangs-Stile
     head, rest = html.split('<style id="investtimer-access-style">', 1)
     head = once(head, "</style>", MOBILE_CSS + GAUGE_CSS + "</style>", "Mobil-CSS")
     access_css, rest = rest.split("</style>", 1)
-    html = head + '<style id="investtimer-access-style">' + access_css + V12_CSS + HALBMOND_CSS + (ANMELDUNG_CSS if anmeldung else "") + "</style>" + rest
+    html = head + '<style id="investtimer-access-style">' + access_css + V12_CSS + HALBMOND_CSS + (ANMELDUNG_CSS + KONTO_CSS if anmeldung else "") + "</style>" + rest
 
     for leftover in ("investtimer-snapshot", "evaluateSnapshot", "metricRows", "configRows", "Fear_Greed_Index",
                      "snapshotScore", "sourceLibraryFileId", "data:video", "answerKind", "BEISPIELANTWORT"):
