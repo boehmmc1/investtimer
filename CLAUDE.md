@@ -30,6 +30,9 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 
 - Repo `boehmmc1/investtimer`, Live-Checkout `/var/www/investtimer` (nie direkt
   darin arbeiten). Feature-Arbeit im Worktree `/root/investtimer-ki-halbmond`.
+- Push: SSH-Schlüssel `/root/.ssh/investtimer_push` (Host-Alias `github-investtimer-push`,
+  Push-URL im Worktree gesetzt). Muss auf GitHub als Deploy-Key mit Schreibrecht eingetragen sein.
+  Keine GitHub-Tokens im Chat annehmen oder speichern.
 - Deploy: `investtimer-deploy.timer` holt `main` alle 2 Minuten (`git reset --hard`).
 - Daten: `investtimer-data.service` schreibt `/var/lib/investtimer/data/stress.json`.
 - API: `/root/volafly-chat/volafly_chat.py` (systemd `volafly-chat`, Port 8100,
