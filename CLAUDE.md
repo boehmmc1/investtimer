@@ -61,4 +61,12 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 - iOS-App: `app/` (Capacitor 8, braucht Node 22 unter `/opt/node22/bin`), Build-Ablauf `docs/ios-app.md`,
   GitHub-Workflow `.github/workflows/ios.yml` (Simulator-Build). APNs-Schluessel `/root/.investtimer/apns.json`.
 - Browser-Tests laufen mit der Playwright-Umgebung im Scratchpad (`venv/bin/python`); Chrome `/usr/bin/google-chrome`.
+- Vertrag/Abo-Mails: `volafly-api/investtimer_vertrag.py` + `investtimer_api_vertrag.py`; Seiten `tools/vertragsseiten.py`
+  (Link im Fuss erst mit `deploy/abo.json` vertragsseiten=true). API-Bloecke einbauen: `python3 deploy/api_einbauen.py`
+  (Sicherung automatisch), dann `systemctl restart volafly-chat`. Schalter zusaetzlich `IT_ABO_MAILS`.
+- Tests Abo-Strecke: `python3 tests/e2e_abo.py` (eigene API-Instanz Port 8199, nachgebaute Dienste Port 12111, Testnutzer
+  wird geloescht), `python3 -m unittest tests/test_konto.py tests/test_vertrag.py`.
+- Stripe einrichten: Schluessel nach `/root/.investtimer/stripe-key`, dann `python3 deploy/stripe_einrichten.py`.
+- Timer: `investtimer-sicherung` (03:15, `/var/backups/investtimer`), `investtimer-abo-erinnerung` (stuendlich).
+- Entwuerfe Abo-Rechtstexte: `docs/rechtstexte/entwurf/` (nicht veroeffentlichen ohne Anwaltspruefung).
 

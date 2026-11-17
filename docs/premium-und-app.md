@@ -1,6 +1,6 @@
 # InvestTimer Premium, Abos und iOS-App – Umsetzungsstand
 
-Stand: 17.11.2026. Grundlage: Feature-Requests FR-001 bis FR-032.
+Stand: 17.11.2026 (Abend, zweite Runde). Grundlage: Feature-Requests FR-001 bis FR-032.
 
 ## Kurzfassung
 
@@ -16,6 +16,29 @@ Fertig, aber ausgeschaltet:
 Gebaut, aber noch nicht eingereicht:
 - **iOS-App (Capacitor 8):** Das Projekt liegt in `app/`. GitHub baut es bei jeder Änderung ohne Signatur für den Simulator.
 - **Fehlt bis zur Einreichung:** das Apple-Entwicklerkonto, die Signatur und TestFlight.
+
+## Zweite Runde (17.11.2026, „alles bis auf App-Release“)
+
+- **Verlauf** (FR-009/FR-003): Tagesverlauf im Detailbereich, 1M/3M/1J/Alle, über `/api/historie` nur mit Anmeldung bzw. Premium.
+  Echte Werte gibt es erst seit 15.11.2026 (je ein Wert pro Tag); ältere Werte aus Volafly nachzutragen ist offen.
+- **Kündigungsbutton** (§ 312k BGB) und **Widerrufsfunktion** (§ 356a BGB): `/vertrag-kuendigen.html`, `/vertrag-widerrufen.html`
+  ohne Login, zweistufig, Bestätigung sofort (druck-/speicherbar) und per E-Mail mit Eingangszeit, Kopie an info@.
+  Ordentliche Kündigung eines Web-Abos wird bei Stripe automatisch zum Periodenende gesetzt. Nicht verlinkt, bis
+  `deploy/abo.json` `"vertragsseiten": true`; die API nimmt Erklärungen nur mit `IT_PAYWALL=1` an.
+- **§ 309 Nr. 9 BGB:** Schalter `verlaengerung_monatlich` in `stripe.json` – ein schon verlängertes Jahresabo endet nach
+  Kündigung spätestens nach einem Monat; Erstattung des Rests von Hand (Hinweis in der Mail, Kopie an info@).
+- **Abo-Mails** (FR-020, Schalter `IT_ABO_MAILS=1`): Teststart, Erinnerung 2 Tage vor Testende (stündlicher Timer
+  `investtimer-abo-erinnerung`), Beginn der Zahlung, Kündigung, Ablauf. Jede Mail genau einmal. Apple-Käufe: nur „Ablauf“,
+  weil Apple Kauf, Verlängerung und Kündigung selbst bestätigt.
+- **Stripe-Einrichtung:** `deploy/stripe_einrichten.py` legt Produkte, Preise (inkl. USt, Lookup-Keys), Kundenportal und
+  Webhook an und schreibt `stripe.json` (nur Testschlüssel ohne `--live`). Noch nicht gegen echtes Stripe gelaufen.
+- **Ende-zu-Ende-Test** `tests/e2e_abo.py`: 27 Prüfungen gegen eine eigene API-Instanz mit echter Supabase-Anmeldung und
+  nachgebauten Diensten (Stripe, RevenueCat, Resend) – alle bestanden. Dazu `tests/test_vertrag.py` (8) und `tests/test_konto.py` (18).
+- **Datensicherung:** täglich 03:15 (`investtimer-sicherung.timer`), `konto.db`, `alarme.db`, Verlauf, 14 Tage, `/var/backups/investtimer`.
+  Nur auf demselben Server – eine Kopie außer Haus fehlt noch.
+- **Android** (FR-029): Capacitor-Android-Projekt in `app/android`, Debug-Build auf GitHub (`android.yml`). Push auf Android
+  braucht Firebase (FCM) – Versand dafür ist noch nicht gebaut; Kauf über Google Play mit `revenuecatGoogle` vorbereitet.
+- **Rechtstexte:** Entwürfe (Abo-Bedingungen, Widerrufsbelehrung, Datenschutz-Ergänzungen) in `docs/rechtstexte/entwurf/`, unveröffentlicht.
 
 ## Architektur
 
@@ -105,27 +128,27 @@ Legende: ✅ fertig · 🟡 teilweise / hinter Schalter · ⛔ offen (extern ode
 | 006 | Zwei Tarife | 🟡 | Paywall mit 4,99 €/Monat und 39,99 €/Jahr, Jahresabo hervorgehoben. Preise stehen beim Anbieter, spätere Änderungen sind dort möglich. |
 | 007 | 7 Tage Test | 🟡 | Stripe: `trial_period_days=7` mit Zahlungsdaten vorab. Apple: Einführungsangebot. Die Paywall nennt Preis, Datum der ersten Abbuchung und Verlängerung. |
 | 008 | Testphase einmal | 🟡 | Je Konto über RevenueCat, je E-Mail als Hash. Apple-Regeln gelten zusätzlich. |
-| 009 | Kostenloser Zugang | ✅/🟡 | Ohne Anmeldung gibt es den 7 Tage alten Wert mit Datum (live). Die Sperre für angemeldete Nutzer ohne Premium hängt am Schalter. **Offen:** `history.json` ist öffentlich, die ganze Historie also noch nicht Premium. |
-| 010 | Paywall | 🟡 | Gebaut, mobil und Desktop geprüft. Der Link `/agb.html` führt ins Leere, bis die Abo-Bedingungen da sind. |
-| 011 | Stripe | 🟡 | Checkout, Kundenportal und Webhook mit Signaturprüfung sind gebaut. Kein Testlauf mit echtem Stripe-Testkonto. Steuer: Schalter vorhanden. |
+| 009 | Kostenloser Zugang | ✅/🟡 | Ohne Anmeldung: 7 Tage alter Wert mit Datum (live). Verlauf nur über `/api/historie` (Anmeldung/Premium). Sperre für Nicht-Premium hängt am Schalter. |
+| 010 | Paywall | 🟡 | Gebaut, mobil und Desktop geprüft. `/agb.html` fehlt bis zur Freigabe der Abo-Bedingungen (Entwurf liegt vor). |
+| 011 | Stripe | 🟡 | Checkout, Portal, Webhook (Signatur + Zeitfenster), Einrichtungsskript. E2E gegen nachgebautes Stripe grün; echter Testmodus offen (Schlüssel fehlt). |
 | 012 | Apple In-App-Kauf | 🟡 | RevenueCat-Plugin mit Kauf, Wiederherstellen und Abo-Verwaltung; im Browser nachgestellt getestet. Produkte in App Store Connect fehlen. |
 | 013 | RevenueCat | 🟡 | Webhook (idempotent, Reihenfolge-sicher), Abruf des Abonnenten, Kundenlöschung. Konto fehlt. Customer Center nicht genutzt, die eigene Ansicht deckt es ab. |
-| 014 | Jederzeit kündigen | 🟡 | Über das Stripe-Portal bzw. Apple, Status-Abgleich über RevenueCat. Kündigungsbestätigung schicken Stripe bzw. Apple. |
-| 015 | Verbraucherrecht | ⛔ | § 309 Nr. 9 und § 312k BGB (Kündigungsbutton ohne Login), Widerruf bei digitalen Inhalten und Bestellknopf. Zuerst Prüfpartner, dann Anwalt. |
+| 014 | Jederzeit kündigen | ✅/🟡 | Kündigungsbutton ohne Login, Stripe-Portal, Apple. Eigene Kündigungsbestätigung per Mail. Hinter Schalter. |
+| 015 | Verbraucherrecht | 🟡/⛔ | Technisch umgesetzt: § 312k (Kündigungsbutton), § 356a (Widerrufsfunktion), § 309 Nr. 9 (Schalter Monatsfrist nach Verlängerung). Rechtliche Prüfung offen. |
 | 016 | Mein Abonnement | ✅ | Tarif, Preis, Status, Kanal, Beginn, nächste Verlängerung bzw. Ende, Verlängerung, Testtage und KI-Zähler. Die Aktionen laufen je Kanal über Stripe-Portal, Apple oder Google. |
 | 017 | Richtige Kündigungsverwaltung | ✅ | Der Kanal wird erkannt und je nach Kanal die passende Verwaltung geöffnet. |
 | 018 | Tarifwechsel | 🟡 | Über das Stripe-Portal bzw. Apple (dort wird anteilig verrechnet); als `PRODUCT_CHANGE` synchronisiert. |
 | 019 | Doppelabo verhindern | 🟡 | Serverseitige Sperre, kein Kaufangebot für Premium-Nutzer. Bestehende Doppelabos: manuell erstatten (Prozess unten). |
-| 020 | Mails zur Testphase | ⛔ | Bewusst noch nicht gebaut. Stripe kann die Erinnerung vor Testende selbst senden, Apple informiert selbst. Eigene Mails (Resend) erst nach der Rechtsprüfung, sonst doppelt. |
+| 020 | Mails zur Testphase | 🟡 | Gebaut (Schalter `IT_ABO_MAILS`), ohne Doppelungen zu Apple/Stripe, E2E getestet. Texte rechtlich zu prüfen. In Stripe die eigene Testende-Mail ausgeschaltet lassen. |
 | 021 | Push zum Marktstress | ✅/🟡 | Eigene Schwellen, Push über Web-Push (live, getestet) und APNs (gebaut, Server erreicht Apple). Nur einmal am Tag. Für die App fehlt der APNs-Schlüssel. |
 | 022 | KI als Premium | 🟡 | Die Sperre hängt am Schalter. Die KI-Infrastruktur ist unverändert. |
 | 023 | KI-Limits | ✅ | Zähler je Konto und Tag in SQLite (gilt für Web und App), Tages- und Monatsgrenze per `.env`, dazu die bisherigen IP- und Gesamtgrenzen. |
 | 024 | Datenschutz & Löschung | 🟡 | Löschung in Web und App ist live; die Datenschutzerklärung ist angepasst. Abschnitte zu Stripe, RevenueCat und Apple-Kauf erst mit dem Start. |
 | 025 | Recht & Disclaimer | ⛔ | Impressum steht. Abo-Bedingungen, DSA- und Apple-Händlerangaben und die FIN-Einordnung der KI sind offen. |
-| 026 | Tests | 🟡 | `tests/test_konto.py` deckt alle 18 Szenarien gegen die Berechtigungslogik ab. Browsertests: Web-Dialog, App-Ablauf (nachgestellt), echte Löschung. Es fehlen die End-to-End-Tests mit Stripe-Test und RevenueCat-Sandbox. |
+| 026 | Tests | ✅/🟡 | 18 Logik-Tests, 8 Vertrags-Tests, 27 E2E-Prüfungen (API + echte Anmeldung + nachgebaute Dienste), Browsertests Web/App. Offen: Lauf gegen echtes Stripe-Test/RevenueCat-Sandbox. |
 | 027 | App-Store-Vorbereitung | 🟡 | Bundle-ID, Name, Icon, Splash, Datenschutz-Manifest und Build-Prozess (`docs/ios-app.md`). Es fehlen Konto, Screenshots, Beschreibung im Store und TestFlight. |
 | 028 | Geringe Fixkosten | ✅ | Kein neues Backend, SQLite auf dem vorhandenen Server. Laufende Kosten: Apple 99 $/Jahr, Stripe ca. 1,5 % + 0,25 € je Zahlung, RevenueCat frei bis 2.500 $ Monatsumsatz. |
-| 029 | Android vorbereitet | 🟡 | Capacitor und RevenueCat unterstützen Android, der Kanal `google` ist in der Logik schon vorgesehen. Der Android-Push braucht FCM. |
+| 029 | Android vorbereitet | 🟡 | Android-Projekt + CI-Build, Kanal `google` und Play-Kauf vorbereitet. Offen: FCM-Push, Play-Console. |
 | 030 | Bestandsaufnahme | ✅ | Diese Datei. |
 | 031 | Phasen | – | Phase 1 fertig. Phase 2 und 3 gebaut, warten auf Konten und Recht. Phase 4 größtenteils fertig. |
 | 032 | Definition of Done | – | Siehe offene Punkte. |
@@ -138,10 +161,9 @@ Legende: ✅ fertig · 🟡 teilweise / hinter Schalter · ⛔ offen (extern ode
   - ORG: wer verkauft.
   - LIC: Datenrechte.
   - FIN: KI und Alarme ohne Anlageberatung.
-- **Historie:** `history.json` ist öffentlich. Soll die ganze Historie Premium sein, muss sie hinter `/api/` wandern.
-- **Kündigungsbutton (§ 312k):** Er muss ohne Login erreichbar sein. Das Stripe-Portal braucht einen Login und reicht vermutlich nicht. Das kommt nach der Rechtsprüfung.
+- **Historie:** nur 3 echte Tageswerte (seit 15.11.2026); Rückrechnung aus Volafly-Daten offen.
 - **Doppelabo über zwei Kanäle** (z. B. Web und Apple gleichzeitig vor dem Abgleich):
   - Erkennen: RevenueCat zeigt zwei aktive Abos.
   - Lösen: das jüngere Abo beim jeweiligen Anbieter erstatten und kündigen; der Webhook setzt den Stand neu.
-- **Sicherung:** `konto.db` und `alarme.db` werden noch nicht gesichert.
+- **Sicherung:** täglich auf demselben Server; Kopie außer Haus fehlt.
 - **Gesperrte Nutzer:** Schaltet man `IT_PREMIUM_PFLICHT` ein, verlieren alle angemeldeten Nutzer ohne Abo sofort den aktuellen Wert, die KI und die Alarm-Mitteilungen. Vorher Bestandsnutzer informieren.
