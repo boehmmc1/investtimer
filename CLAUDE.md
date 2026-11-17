@@ -53,3 +53,12 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   (Drop-in `deploy/systemd/investtimer-data-push.conf`). VAPID-Schlüssel `/root/.investtimer/vapid-*`.
   Push-Test im Browser nur mit festem Profil und Bildschirm: `xvfb-run` + `launch_persistent_context`.
 - Prüfen: `python3 tools/check_v12.py` (mobil) und `deploy/supabase_test.py` (Anmeldung echt, mit Admin-API).
+- Konto/Premium/Abo: `volafly-api/investtimer_konto.py` (SQLite `/var/lib/investtimer/konto.db`), API-Block
+  `volafly-api/investtimer_api_konto.py` (in `volafly_chat.py` vor `/health` eingefuegt), Dialog `tools/konto.js`.
+  Schalter in `/root/volafly-chat/.env`: `IT_PREMIUM_PFLICHT`, `IT_PAYWALL`, `IT_ZAHLUNG_LIVE` (alle aus, nur mit Michels
+  Freigabe einschalten: Zahlungen/Live-Modus sind Aussenhandlungen). Stand und offene Punkte: `docs/premium-und-app.md`.
+  Tests: `python3 -m unittest tests/test_konto.py`.
+- iOS-App: `app/` (Capacitor 8, braucht Node 22 unter `/opt/node22/bin`), Build-Ablauf `docs/ios-app.md`,
+  GitHub-Workflow `.github/workflows/ios.yml` (Simulator-Build). APNs-Schluessel `/root/.investtimer/apns.json`.
+- Browser-Tests laufen mit der Playwright-Umgebung im Scratchpad (`venv/bin/python`); Chrome `/usr/bin/google-chrome`.
+

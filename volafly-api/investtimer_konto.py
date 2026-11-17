@@ -304,8 +304,8 @@ def ki_buchen(uid, limit_tag, limit_monat, tag=None):
         if heute >= limit_tag or monat >= limit_monat:
             return False, {"heute": heute, "monat": monat}
         db.execute("INSERT INTO ki_nutzung VALUES (?,?,1) ON CONFLICT(uid, tag) DO UPDATE SET anzahl=anzahl+1", (uid, tag))
-        # Alte Tage (> 400) aufraeumen
-        db.execute("DELETE FROM ki_nutzung WHERE tag < date(?, '-400 days')", (tag,))
+        # Alte Tage (> 2 Monate) aufraeumen
+        db.execute("DELETE FROM ki_nutzung WHERE tag < date(?, '-62 days')", (tag,))
     return True, {"heute": heute + 1, "monat": monat + 1}
 
 
