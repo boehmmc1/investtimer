@@ -6,6 +6,8 @@ vom Versand server/push_senden.py genutzt. Gespeichert werden nur die
 Supabase-Nutzer-ID, Richtung und Schwelle sowie die Push-Adresse des Geraets
 (vom Browser erzeugt, enthaelt keinen Namen und keine E-Mail).
 """
+import hashlib
+import hmac
 import os
 import sqlite3
 import time
@@ -13,6 +15,8 @@ import time
 DB = os.environ.get("INVESTTIMER_ALARME_DB", "/var/lib/investtimer/alarme.db")
 MAX_ALARME = 5
 MAX_GERAETE = 5
+KANAELE = ("push", "email", "beide")
+ABMELDE_SCHLUESSEL = os.environ.get("INVESTTIMER_ABMELDE_KEY", "/root/.investtimer/alarm-abmelde-key")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS alarme (
@@ -42,7 +46,34 @@ def verbinden():
     db = sqlite3.connect(DB, timeout=10)
     db.row_factory = sqlite3.Row
     db.executescript(SCHEMA)
+    spalten = {r[1] for r in db.execute("PRAGMA table_info(alarme)")}
+    if "kanal" not in spalten:  # E-Mail-Alarme (DAT-002): Kanal je Alarm, Ziel ist die Konto-Adresse
+        db.execute("ALTER TABLE alarme ADD COLUMN kanal TEXT NOT NULL DEFAULT 'push'")
+        db.execute("ALTER TABLE alarme ADD COLUMN email TEXT")
+    if "scharf" not in spalten:  # Ueberqueren mit Ruecklauf: Alarm meldet sich erst nach erneutem Ueberqueren
+        db.execute("ALTER TABLE alarme ADD COLUMN scharf INTEGER NOT NULL DEFAULT 1")
+        wert = db.execute("SELECT wert FROM stand WHERE schluessel='letzter_wert'").fetchone()
+        if wert:
+            w = int(wert[0])
+            db.execute("UPDATE alarme SET scharf=CASE WHEN richtung='ueber' THEN (? <= schwelle) ELSE (? >= schwelle) END", (w, w))
     return db
+
+
+def scharf_bei(richtung, schwelle, wert):
+    """Scharf, solange der Wert auf der Ausgangsseite der Schwelle liegt (Schwelle selbst zaehlt dazu).
+    'ueber X': scharf bei Wert <= X, loest aus beim Wechsel auf > X. 'unter X': scharf bei Wert >= X, loest aus bei < X."""
+    if wert is None:
+        return True
+    return int(wert) <= schwelle if richtung == "ueber" else int(wert) >= schwelle
+
+
+def ausgeloest_bei(richtung, schwelle, wert):
+    return int(wert) > schwelle if richtung == "ueber" else int(wert) < schwelle
+
+
+def _letzter_wert(db):
+    r = db.execute("SELECT wert FROM stand WHERE schluessel='letzter_wert'").fetchone()
+    return int(r[0]) if r else None
 
 
 class Fehler(Exception):
@@ -52,17 +83,29 @@ class Fehler(Exception):
 
 
 def _alarm(r):
-    return {"id": r["id"], "richtung": r["richtung"], "schwelle": r["schwelle"], "aktiv": bool(r["aktiv"])}
+    return {"id": r["id"], "richtung": r["richtung"], "schwelle": r["schwelle"], "aktiv": bool(r["aktiv"]), "kanal": r["kanal"],
+            "scharf": bool(r["scharf"])}
+
+
+def _kanal(kanal, email):
+    kanal = kanal or "push"
+    if kanal not in KANAELE:
+        raise Fehler("kanal")
+    if kanal != "push" and not email:
+        raise Fehler("email")
+    return kanal
 
 
 def liste(uid):
     with verbinden() as db:
         alarme = [_alarm(r) for r in db.execute("SELECT * FROM alarme WHERE uid=? ORDER BY id", (uid,))]
         geraete = db.execute("SELECT COUNT(*) FROM geraete WHERE uid=?", (uid,)).fetchone()[0]
-    return {"alarme": alarme, "geraete": geraete, "max": MAX_ALARME}
+        wert = _letzter_wert(db)
+    return {"alarme": alarme, "geraete": geraete, "max": MAX_ALARME, "wert": wert}
 
 
-def neu(uid, richtung, schwelle):
+def neu(uid, richtung, schwelle, kanal="push", email=None):
+    kanal = _kanal(kanal, email)
     if richtung not in ("ueber", "unter"):
         raise Fehler("richtung")
     try:
@@ -76,14 +119,25 @@ def neu(uid, richtung, schwelle):
             raise Fehler("max", 409)
         if db.execute("SELECT 1 FROM alarme WHERE uid=? AND richtung=? AND schwelle=?", (uid, richtung, schwelle)).fetchone():
             raise Fehler("doppelt", 409)
-        db.execute("INSERT INTO alarme (uid, richtung, schwelle, erstellt) VALUES (?,?,?,?)",
-                   (uid, richtung, schwelle, int(time.time())))
+        # Liegt der Wert schon jenseits der Schwelle: keine sofortige Nachricht, Alarm wartet auf Ruecklauf
+        db.execute("INSERT INTO alarme (uid, richtung, schwelle, erstellt, kanal, email, scharf) VALUES (?,?,?,?,?,?,?)",
+                   (uid, richtung, schwelle, int(time.time()), kanal, email if kanal != "push" else None,
+                    1 if scharf_bei(richtung, schwelle, _letzter_wert(db)) else 0))
     return liste(uid)
 
 
-def aendern(uid, alarm_id, aktiv):
+def aendern(uid, alarm_id, aktiv=None, kanal=None, email=None):
     with verbinden() as db:
-        n = db.execute("UPDATE alarme SET aktiv=? WHERE id=? AND uid=?", (1 if aktiv else 0, int(alarm_id), uid)).rowcount
+        n = 0
+        if aktiv is not None:
+            n = db.execute("UPDATE alarme SET aktiv=? WHERE id=? AND uid=?", (1 if aktiv else 0, int(alarm_id), uid)).rowcount
+            if aktiv and n:  # Wieder eingeschaltet: wie neu angelegt behandeln
+                r = db.execute("SELECT richtung, schwelle FROM alarme WHERE id=?", (int(alarm_id),)).fetchone()
+                db.execute("UPDATE alarme SET scharf=? WHERE id=?", (1 if scharf_bei(r[0], r[1], _letzter_wert(db)) else 0, int(alarm_id)))
+        if kanal is not None:
+            kanal = _kanal(kanal, email)
+            n = db.execute("UPDATE alarme SET kanal=?, email=? WHERE id=? AND uid=?",
+                           (kanal, email if kanal != "push" else None, int(alarm_id), uid)).rowcount
     if not n:
         raise Fehler("unbekannt", 404)
     return liste(uid)
@@ -142,14 +196,57 @@ def geraete(uid=None):
 
 
 def aktive_alarme():
+    """Alle eingeschalteten Alarme (auch ohne Geraet, damit Scharf/Ruecklauf immer mitlaeuft)."""
     with verbinden() as db:
         return [dict(r) for r in db.execute(
-            "SELECT * FROM alarme WHERE aktiv=1 AND uid IN (SELECT uid FROM geraete)")]
+            "SELECT * FROM alarme WHERE aktiv=1")]
+
+
+# --- Abmeldung per E-Mail-Link (ohne Login) -----------------------------------
+
+def _abmelde_key():
+    try:
+        with open(ABMELDE_SCHLUESSEL, "rb") as f:
+            return f.read().strip()
+    except OSError:
+        key = os.urandom(32).hex().encode()
+        with open(os.open(ABMELDE_SCHLUESSEL, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as f:
+            f.write(key)
+        return key
+
+
+def abmelde_token(alarm_id, uid):
+    """Signiert genau einen Alarm eines Nutzers. Gilt bis der Alarm geloescht ist."""
+    return hmac.new(_abmelde_key(), ("alarm-mail:%d:%s" % (int(alarm_id), uid)).encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def per_link_abmelden(alarm_id, token):
+    """E-Mail fuer diesen einen Alarm abschalten. Rueckgabe: 'ok', 'schon' oder Fehler."""
+    try:
+        alarm_id = int(alarm_id)
+    except (TypeError, ValueError):
+        raise Fehler("token", 400)
+    with verbinden() as db:
+        r = db.execute("SELECT * FROM alarme WHERE id=?", (alarm_id,)).fetchone()
+        if not r or not hmac.compare_digest(abmelde_token(alarm_id, r["uid"]), str(token or "")):
+            raise Fehler("token", 404)
+        if r["kanal"] == "push":
+            return "schon"
+        if r["kanal"] == "beide":
+            db.execute("UPDATE alarme SET kanal='push', email=NULL WHERE id=?", (alarm_id,))
+        else:  # nur E-Mail: Alarm pausieren, damit nichts mehr kommt
+            db.execute("UPDATE alarme SET kanal='push', email=NULL, aktiv=0 WHERE id=?", (alarm_id,))
+    return "ok"
 
 
 def ausgeloest(alarm_id, tag):
     with verbinden() as db:
         db.execute("UPDATE alarme SET ausgeloest_am=? WHERE id=?", (tag, alarm_id))
+
+
+def scharf_setzen(alarm_id, scharf):
+    with verbinden() as db:
+        db.execute("UPDATE alarme SET scharf=? WHERE id=?", (1 if scharf else 0, alarm_id))
 
 
 def geraet_entfernen(endpoint):

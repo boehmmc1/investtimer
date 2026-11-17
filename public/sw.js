@@ -6,14 +6,17 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data ? e.data.text() : '' }; }
+  const tag = d.tag || 'investtimer';
   e.waitUntil(self.registration.showNotification(d.title || 'InvestTimer', {
     body: d.body || '',
-    tag: d.tag || 'investtimer',
+    tag,
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     lang: 'de',
     data: { url: d.url || '/' }
-  }));
+  }).then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+    /* Empfangsbestaetigung an offene Seiten (Testnachricht: "zugestellt") */
+    .then(fenster => fenster.forEach(f => f.postMessage({ typ: 'investtimer-push', tag, id: d.id || null }))));
 });
 
 self.addEventListener('notificationclick', e => {

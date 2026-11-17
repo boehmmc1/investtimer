@@ -17,7 +17,7 @@ ziel = API / "volafly_chat.py"
 s = ziel.read_text(encoding="utf-8")
 start, ende = s.index("# --- InvestTimer: Konto, Premium, Abo"), s.index('@app.get("/health")')
 block = "".join((ROOT / "volafly-api" / n).read_text(encoding="utf-8").rstrip() + "\n\n\n"
-                for n in ("investtimer_api_konto.py", "investtimer_api_vertrag.py"))
+                for n in ("investtimer_api_konto.py", "investtimer_api_vertrag.py", "investtimer_api_alarm_mail.py"))
 neu = s[:start] + block + s[ende:]
 compile(neu, str(ziel), "exec")
 shutil.copy2(ziel, ziel.with_name(ziel.name + ".bak-" + time.strftime("%Y%m%d-%H%M%S")))

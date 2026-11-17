@@ -85,10 +85,13 @@ ANMELDUNG_CSS = """
 #saved-alerts{display:none}
 /* Angemeldet: Einstieg zu den Alarmen direkt unter dem Wert (im Entwurf nur tief in den Details) */
 .members-layout .score-column .subscribe-module{display:block;margin-top:18px}
+.alarm-erklaerung{font-size:13px;line-height:1.55;color:var(--text);margin:8px 0 2px;min-height:2.6em}
+.alarm-kanal{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:10px 0 4px;display:grid;gap:2px}.alarm-kanal legend{font-size:13px;color:var(--sub);padding:0 4px}.alarm-kanal .wahl{display:flex;gap:10px;align-items:center;min-height:40px;font-size:15px}.alarm-kanal input{accent-color:var(--accent);width:20px;height:20px;margin:0}.alarm-mailhinweis{font-size:12px;color:var(--sub);margin:4px 0 0;line-height:1.5;overflow-wrap:anywhere}.alarm-kanal-wahl{min-height:40px;font-size:14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);padding:0 6px;max-width:150px}
+.push-test-status{font-size:13px;line-height:1.55;margin-top:6px}.push-test-status:empty{display:none}.push-test-status.ok b{color:var(--accent)}.push-test-status.fehler,.push-test-status.warnung b{color:#b3261e}.push-test-status ul{margin:6px 0 0;padding-left:18px}.push-test-status li{margin:4px 0}.push-test-status summary{cursor:pointer;min-height:36px;display:flex;align-items:center;color:var(--sub)}
 .push-box{margin:18px 0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:14px;line-height:1.6}
 .push-box p{margin:0 0 8px;color:var(--text)}.push-box p:last-child{margin-bottom:0}.push-box .primary{margin-top:6px}.push-box .access-more{margin:4px 0 0}
 .alarm-liste{list-style:none;margin:6px 0 14px;padding:0;display:grid;gap:8px}
-.alarm-eintrag{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.alarm-eintrag{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
 .alarm-eintrag.pausiert .alarm-text{opacity:.6}
 .alarm-text{flex:1;display:grid;gap:2px}.alarm-text b{font-size:15px;font-weight:500}.alarm-text small{font-size:12px;color:var(--sub)}
 .alarm-schalter{position:relative;display:inline-flex;align-items:center;min-height:44px;flex:none;cursor:pointer}
@@ -130,7 +133,7 @@ TEXTE_KONTO_DE = ("pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',
                   "aboVerwaltenGoogle:'Dein Abo läuft über Google Play. Kündigen und Tarif wechseln geht im Play Store.',"
                   "aboVerwaltenWebInApp:'Dein Abo hast du auf der Website abgeschlossen. Verwalten und kündigen kannst du es auf investtimer.net unter „Mein Konto“.',"
                   "kontoKi:'KI-Fragen heute: {n} von {max}',"
-                  "loeschenTitel:'Konto löschen',loeschenText:'Damit löschst du dein Konto, deine Alarme und Push-Geräte endgültig. Rechnungen und Zahlungsbelege bewahren Apple bzw. Stripe nach den gesetzlichen Fristen auf.',"
+                  "loeschenTitel:'Konto löschen',loeschenText:'Damit löschst du dein Konto, deine Alarme (auch E-Mail-Alarme) und Push-Geräte endgültig. Rechnungen und Zahlungsbelege bewahren Apple bzw. Stripe nach den gesetzlichen Fristen auf.',"
                   "loeschenEingabe:'Zur Bestätigung „löschen“ eingeben',loeschenKnopf:'Konto endgültig löschen',loeschenWort:'Bitte gib „löschen“ ein.',"
                   "loeschenAbo:'Dein Abo verlängert sich noch automatisch. Kündige es zuerst unter „Abo verwalten“, dann kannst du das Konto löschen.',"
                   "geloeschtTitel:'Dein Konto ist gelöscht.',geloeschtText:'Alle Daten zu deinem Konto sind entfernt. Den zeitversetzten Wert siehst du weiter ohne Anmeldung.',"
@@ -162,7 +165,7 @@ TEXTE_KONTO_EN = ("pwAendernTitel:'Change password',pwAlt:'Current password',pwA
                   "aboVerwaltenGoogle:'Your subscription runs through Google Play. Cancel or switch in the Play Store.',"
                   "aboVerwaltenWebInApp:'You subscribed on the website. Manage or cancel it on investtimer.net under „My account“.',"
                   "kontoKi:'AI questions today: {n} of {max}',"
-                  "loeschenTitel:'Delete account',loeschenText:'This permanently deletes your account, alerts and push devices. Apple or Stripe keep invoices and receipts as required by law.',"
+                  "loeschenTitel:'Delete account',loeschenText:'This permanently deletes your account, alerts (including email alerts) and push devices. Apple or Stripe keep invoices and receipts as required by law.',"
                   "loeschenEingabe:'Type „löschen“ to confirm',loeschenKnopf:'Delete account permanently',loeschenWort:'Please type „löschen“.',"
                   "loeschenAbo:'Your subscription still renews automatically. Cancel it under „Manage“ first, then delete the account.',"
                   "geloeschtTitel:'Your account has been deleted.',geloeschtText:'All data linked to your account has been removed. The delayed reading stays available without sign-in.',"
@@ -216,9 +219,26 @@ TEXTE_ALARM_DE = ("alarmEyebrow:'DEINE ALARME',alarmTitle:'Deine Schwelle. Dein 
                   "alarmAktiv:'aktiv',alarmPausiert:'pausiert',alarmLoeschen:'Löschen',alarmKeine:'Noch kein Alarm angelegt.',"
                   "alarmLaedt:'Wird geladen …',alarmFehler:'Das hat nicht geklappt. Bitte versuche es gleich noch einmal.',"
                   "alarmDoppelt:'Diesen Alarm gibt es schon.',alarmMax:'Du kannst bis zu fünf Alarme anlegen.',"
-                  "alarmRegel:'Ein Alarm meldet sich, wenn der Wert die Schwelle überschreitet, höchstens einmal am Tag. Der Hinweis beschreibt nur den Stand und ist keine Anlageberatung.',"
+                  "alarmRegel:'Ein Alarm meldet sich, wenn der Wert die Schwelle überquert, höchstens einmal am Tag. Der Hinweis beschreibt nur den Stand und ist keine Anlageberatung.',"
+                  "alarmErklUeber:'Du bekommst eine Nachricht, sobald der Marktstress über {x} steigt (also ab {x1}).',"
+                  "alarmErklUeberSchon:'Der Marktstress liegt mit {w} bereits über {x}. Du bekommst die erste Nachricht, wenn er unter {x} fällt und danach wieder darüber steigt.',"
+                  "alarmErklUnter:'Du bekommst eine Nachricht, sobald der Marktstress unter {x} fällt (also ab {x1}).',"
+                  "alarmErklUnterSchon:'Der Marktstress liegt mit {w} bereits unter {x}. Du bekommst die erste Nachricht, wenn er über {x} steigt und danach wieder darunter fällt.',"
+                  "alarmWartetUeber:'wartet, bis der Wert wieder unter {x} fällt',alarmWartetUnter:'wartet, bis der Wert wieder über {x} steigt',"
                   "pushAktiv:'Push ist auf diesem Gerät eingeschaltet.',pushTest:'Testnachricht senden',pushTestGesendet:'Testnachricht ist unterwegs',"
-                  "pushTestWarten:'Bitte eine Minute warten',pushAus:'Push ausschalten',"
+                  "alarmKanal:'Benachrichtigung per',kanal_push:'Push',kanal_email:'E-Mail',kanal_beide:'Push und E-Mail',"
+                  "alarmMailAn:'E-Mails gehen an deine Konto-Adresse {email}. Jede Mail hat einen Abmeldelink.',alarmMailFehlt:'Für E-Mail-Alarme fehlt die Adresse deines Kontos. Bitte melde dich neu an.',"
+                  "pushTestWarten:'Bitte kurz warten, dann noch einmal versuchen.',pushAus:'Push ausschalten',"
+                  "pushTestSendet:'Wird gesendet …',pushTestAngenommen:'Vom Push-Dienst angenommen. Warte auf dein Gerät …',"
+                  "pushTestZugestellt:'Zugestellt: Dein Gerät hat die Testnachricht erhalten.',pushTestTrotzdem:'Trotzdem keine Mitteilung zu sehen?',"
+                  "pushTestNicht:'Nicht angekommen?',pushTestNichtText:'Der Push-Dienst hat die Nachricht angenommen, dein Gerät hat sie aber nicht bestätigt. Meist liegt es an diesen Einstellungen:',"
+                  "pushTestAbgemeldet:'Dieses Gerät ist beim Push-Dienst nicht mehr angemeldet. Schalte Push aus und wieder ein.',"
+                  "pushTestKeinGeraet:'Für dein Konto ist kein Gerät angemeldet. Schalte Push aus und wieder ein.',"
+                  "pushTestAbgelehnt:'Der Push-Dienst hat die Nachricht nicht angenommen. Bitte versuche es später noch einmal.',"
+                  "pushHinweisOs:'Mitteilungen für deinen Browser im Betriebssystem erlauben: am Mac unter Systemeinstellungen → Mitteilungen → Chrome bzw. Safari, unter Windows unter Einstellungen → System → Benachrichtigungen, unter Android unter Einstellungen → Apps → Browser → Benachrichtigungen.',"
+                  "pushHinweisFokus:'Fokus- oder „Nicht stören“-Modus ausschalten oder InvestTimer bzw. den Browser dort zulassen.',"
+                  "pushHinweisIos:'iPhone und iPad: Mitteilungen kommen nur in der installierten Web-App an (vom Home-Bildschirm geöffnet), nicht in Safari.',"
+                  "pushHinweisBrowser:'Am Computer muss der Browser geöffnet sein, damit Mitteilungen ankommen.',"
                   "pushAusText:'Damit dich ein Alarm erreicht, schalte Mitteilungen auf diesem Gerät ein.',pushAn:'Mitteilungen einschalten',"
                   "pushBlockiert:'Mitteilungen sind für InvestTimer blockiert. Erlaube sie in den Einstellungen deines Geräts oder Browsers, dann klappt es.',"
                   "pushNein:'Dieser Browser kann keine Mitteilungen empfangen. Nutze ein aktuelles Chrome, Edge, Firefox oder Safari.',"
@@ -238,8 +258,25 @@ TEXTE_ALARM_EN = ("alarmEyebrow:'YOUR ALERTS',alarmTitle:'Your threshold. Your a
                   "alarmLaedt:'Loading …',alarmFehler:'That did not work. Please try again in a moment.',"
                   "alarmDoppelt:'This alert already exists.',alarmMax:'You can create up to five alerts.',"
                   "alarmRegel:'An alert fires when the score crosses the threshold, at most once a day. It only describes the reading and is not investment advice.',"
+                  "alarmErklUeber:'You will get a notification as soon as market stress rises above {x} (that is, from {x1}).',"
+                  "alarmErklUeberSchon:'Market stress is already above {x} at {w}. You will get the first notification once it falls below {x} and then rises above it again.',"
+                  "alarmErklUnter:'You will get a notification as soon as market stress falls below {x} (that is, from {x1}).',"
+                  "alarmErklUnterSchon:'Market stress is already below {x} at {w}. You will get the first notification once it rises above {x} and then falls below it again.',"
+                  "alarmWartetUeber:'waiting until the score falls below {x} again',alarmWartetUnter:'waiting until the score rises above {x} again',"
                   "pushAktiv:'Push is on for this device.',pushTest:'Send test notification',pushTestGesendet:'Test notification is on its way',"
-                  "pushTestWarten:'Please wait a minute',pushAus:'Turn off push',"
+                  "alarmKanal:'Notify me by',kanal_push:'Push',kanal_email:'Email',kanal_beide:'Push and email',"
+                  "alarmMailAn:'Emails go to your account address {email}. Every email has an unsubscribe link.',alarmMailFehlt:'Your account email address is missing. Please sign in again.',"
+                  "pushTestWarten:'Please wait a moment, then try again.',pushAus:'Turn off push',"
+                  "pushTestSendet:'Sending …',pushTestAngenommen:'Accepted by the push service. Waiting for your device …',"
+                  "pushTestZugestellt:'Delivered: your device received the test notification.',pushTestTrotzdem:'Still no notification visible?',"
+                  "pushTestNicht:'Not arrived?',pushTestNichtText:'The push service accepted the message, but your device did not confirm it. Usually one of these settings is the cause:',"
+                  "pushTestAbgemeldet:'This device is no longer registered with the push service. Turn push off and on again.',"
+                  "pushTestKeinGeraet:'No device is registered for your account. Turn push off and on again.',"
+                  "pushTestAbgelehnt:'The push service did not accept the message. Please try again later.',"
+                  "pushHinweisOs:'Allow notifications for your browser in the operating system: on a Mac under System Settings → Notifications → Chrome or Safari, on Windows under Settings → System → Notifications, on Android under Settings → Apps → Browser → Notifications.',"
+                  "pushHinweisFokus:'Turn off Focus or Do Not Disturb, or allow InvestTimer or your browser there.',"
+                  "pushHinweisIos:'iPhone and iPad: notifications only arrive in the installed web app (opened from the home screen), not in Safari.',"
+                  "pushHinweisBrowser:'On a computer the browser must be running for notifications to arrive.',"
                   "pushAusText:'Turn on notifications on this device so alerts can reach you.',pushAn:'Turn on notifications',"
                   "pushBlockiert:'Notifications are blocked for InvestTimer. Allow them in your device or browser settings.',"
                   "pushNein:'This browser cannot receive notifications. Use a current Chrome, Edge, Firefox or Safari.',"

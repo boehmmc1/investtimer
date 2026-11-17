@@ -40,6 +40,51 @@ def premium_pflicht():
     return False
 
 
+RESEND_KEY = os.environ.get("INVESTTIMER_RESEND_KEY", "/root/.investtimer/resend-key")
+RESEND_API = os.environ.get("IT_RESEND_API", "https://api.resend.com")
+SEITE = "https://investtimer.net"
+ABSENDER = "InvestTimer Alarm <alarm@investtimer.net>"
+
+
+def mail_senden(alarm, betreff, satz):
+    """E-Mail-Alarm (DAT-002) an die Konto-Adresse, mit Abmeldelink ohne Login und One-Click-Abmeldung."""
+    import html
+    import requests
+    try:
+        key = open(RESEND_KEY).read().strip()
+    except OSError:
+        print("[mail] Resend-Schluessel fehlt", flush=True)
+        return False
+    abmelden = "%s/api/alarm-abmelden?a=%d&t=%s" % (SEITE, alarm["id"], alarme.abmelde_token(alarm["id"], alarm["uid"]))
+    richtung = "über" if alarm["richtung"] == "ueber" else "unter"
+    text = ("%s\n\nDu hast für den Marktstress einen Alarm %s %d eingerichtet. Den aktuellen Stand und die Einordnung siehst du auf %s\n\n"
+            "Der Hinweis beschreibt nur den Stand des Marktstress-Werts. Er ist keine Anlageberatung und keine Empfehlung zum Kauf oder Verkauf.\n\n"
+            "Keine E-Mails mehr zu diesem Alarm: %s\nAlle Alarme verwalten: %s (Marktstress abonnieren)\n\nInvestTimer · investtimer.net"
+            % (satz, richtung, alarm["schwelle"], SEITE, abmelden, SEITE))
+    e = html.escape
+    inhalt = ('<div style="font:15px/1.6 -apple-system,Segoe UI,Arial,sans-serif;color:#1c2f2b;max-width:560px">'
+              '<p style="font-size:20px;font-weight:600;margin:0 0 12px">%s</p>'
+              '<p>Du hast für den Marktstress einen Alarm %s %d eingerichtet. Den aktuellen Stand und die Einordnung siehst du auf '
+              '<a href="%s" style="color:#2f6b5c">investtimer.net</a>.</p>'
+              '<p style="font-size:13px;color:#5b6b66">Der Hinweis beschreibt nur den Stand des Marktstress-Werts. Er ist keine Anlageberatung '
+              'und keine Empfehlung zum Kauf oder Verkauf.</p>'
+              '<p style="font-size:13px;color:#5b6b66;border-top:1px solid #dfe5dc;padding-top:12px">'
+              '<a href="%s" style="color:#5b6b66">Keine E-Mails mehr zu diesem Alarm</a> · Alle Alarme verwaltest du auf investtimer.net unter „Marktstress abonnieren“.</p>'
+              '</div>') % (e(satz), richtung, alarm["schwelle"], SEITE, e(abmelden))
+    try:
+        r = requests.post(RESEND_API + "/emails", timeout=15, headers={"Authorization": "Bearer " + key}, json={
+            "from": ABSENDER, "to": [alarm["email"]], "reply_to": "info@investtimer.net", "subject": betreff,
+            "text": text, "html": inhalt,
+            "headers": {"List-Unsubscribe": "<%s>" % abmelden, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"}})
+    except Exception as fehler:
+        print("[mail] Fehler: %s" % type(fehler).__name__, flush=True)
+        return False
+    if r.status_code >= 300:
+        print("[mail] Resend %s %s" % (r.status_code, (r.json() if r.content else {}).get("name")), flush=True)
+        return False
+    return True
+
+
 APNS = os.environ.get("INVESTTIMER_APNS", "/root/.investtimer/apns.json")
 _apns_jwt = {"t": 0, "jwt": None}
 
@@ -121,11 +166,15 @@ def an_nutzer(uid, nachricht):
     return ergebnis.count(True), ergebnis.count(False)
 
 
-def test(uid):
-    ok, weg = an_nutzer(uid, {"title": "InvestTimer", "body": "Push ist eingerichtet. So sieht ein Hinweis zu deiner Schwelle aus.",
-                              "tag": "investtimer-test", "url": "/"})
-    print("[push] Test: %d zugestellt, %d abgemeldet" % (ok, weg), flush=True)
-    return ok
+def test(uid, kennung=None):
+    """Testnachricht. Ausgabe als JSON (eine Zeile), damit die API das Ergebnis an die Seite melden kann."""
+    geraete = alarme.geraete(uid)
+    ergebnis = [senden(g, {"title": "InvestTimer", "body": "Push ist eingerichtet. So sieht ein Hinweis zu deiner Schwelle aus.",
+                           "tag": "investtimer-test", "url": "/", "id": kennung}) for g in geraete]
+    aus = {"geraete": len(geraete), "angenommen": ergebnis.count(True), "abgemeldet": ergebnis.count(False),
+           "fehler": ergebnis.count(None)}
+    print(json.dumps(aus), flush=True)
+    return aus["angenommen"]
 
 
 def pruefen():
@@ -141,29 +190,43 @@ def pruefen():
         print("[push] erster Lauf, Wert %d gemerkt" % jetzt, flush=True)
         return
     vorher = int(vorher)
-    if vorher == jetzt:
-        return
     tag = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%d")
-    ausgeloest = zugestellt = 0
+    ausgeloest = zugestellt = mails = 0
     pflicht = premium_pflicht()
     for a in alarme.aktive_alarme():
         if pflicht and not konto.ist_premium(a["uid"]):
             continue
         s = a["schwelle"]
-        gekreuzt = (vorher < s <= jetzt) if a["richtung"] == "ueber" else (vorher > s >= jetzt)
-        if not gekreuzt or a["ausgeloest_am"] == tag:
+        # Ueberqueren mit Ruecklauf: scharf solange der Wert auf der Ausgangsseite liegt (<= X bzw. >= X).
+        # Ein scharfer Alarm loest aus, sobald der Wert > X (bzw. < X) ist, und wartet dann auf den Ruecklauf.
+        if not a["scharf"]:
+            if alarme.scharf_bei(a["richtung"], s, jetzt):
+                alarme.scharf_setzen(a["id"], True)
+            continue
+        if not alarme.ausgeloest_bei(a["richtung"], s, jetzt):
+            continue
+        alarme.scharf_setzen(a["id"], False)
+        if a["ausgeloest_am"] == tag:  # hoechstens eine Nachricht je Alarm und Tag (Pendeln um die Schwelle)
             continue
         text = ("Marktstress bei %d: über deiner Schwelle von %d." if a["richtung"] == "ueber"
                 else "Marktstress bei %d: unter deiner Schwelle von %d.") % (jetzt, s)
-        ok, _ = an_nutzer(a["uid"], {"title": "InvestTimer", "body": text, "tag": "investtimer-alarm-%d" % a["id"], "url": "/"})
+        kanal = a.get("kanal") or "push"
+        ok = 0
+        if kanal in ("push", "beide"):
+            ok, _ = an_nutzer(a["uid"], {"title": "InvestTimer", "body": text, "tag": "investtimer-alarm-%d" % a["id"], "url": "/"})
+        if kanal in ("email", "beide") and a.get("email"):
+            if mail_senden(a, text.rstrip("."), text):
+                ok += 1
+                mails += 1
         if ok:
             alarme.ausgeloest(a["id"], tag)
             ausgeloest += 1
             zugestellt += ok
-    print("[push] Wert %d -> %d: %d Alarme ausgeloest, %d Nachrichten" % (vorher, jetzt, ausgeloest, zugestellt), flush=True)
+    if ausgeloest or vorher != jetzt:
+        print("[push] Wert %d -> %d: %d Alarme ausgeloest, %d Nachrichten (davon %d E-Mails)" % (vorher, jetzt, ausgeloest, zugestellt, mails), flush=True)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3 and sys.argv[1] == "--test":
-        sys.exit(0 if test(sys.argv[2]) else 1)
+    if len(sys.argv) in (3, 4) and sys.argv[1] == "--test":
+        sys.exit(0 if test(sys.argv[2], sys.argv[3] if len(sys.argv) == 4 else None) else 1)
     pruefen()

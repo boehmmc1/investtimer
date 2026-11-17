@@ -43,6 +43,7 @@
     },
     async aus() { const t = localStorage.getItem("investtimer-apns"); localStorage.removeItem("investtimer-apns"); return t; }
   };
+  if (P()) P().addListener("pushNotificationReceived", () => window.dispatchEvent(new Event("investtimer-push-angekommen")));
   if (P()) P().addListener("pushNotificationActionPerformed", () => window.InvestTimer && window.InvestTimer.loadLive && window.InvestTimer.loadLive(true));
 
   // --- Kauf (RevenueCat / Apple) ---
