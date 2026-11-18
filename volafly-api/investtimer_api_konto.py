@@ -315,12 +315,14 @@ def _it_historie_daten():
     key = tuple(os.path.getmtime(p) if os.path.exists(p) else 0 for p in IT_HIST_PFADE) + (_date.today().isoformat(),)
     if _it_hist_cache["key"] == key:
         return _it_hist_cache["daten"]
-    tage = {}
+    tage, bl = {}, {}
     try:
         with open(IT_HIST_PFADE[1]) as f:
             for d, t in json.load(f).get("tage", {}).items():
                 if t.get("count", 0) >= 8:
                     tage[d] = (t["rounded"], t["count"], "r")
+                    if t.get("bloecke"):
+                        bl[d] = t["bloecke"]
     except (OSError, ValueError):
         pass
     try:
@@ -329,7 +331,8 @@ def _it_historie_daten():
     except (OSError, ValueError):
         auf = {}
     for d, t in auf.items():
-        if isinstance(t, dict) and isinstance(t.get("rounded"), int):
+        # Nur Handelstage: an Wochenenden aufgezeichnete Werte wiederholen den Freitag
+        if isinstance(t, dict) and isinstance(t.get("rounded"), int) and _date.fromisoformat(d).weekday() < 5:
             tage[d] = (t["rounded"], t.get("count"), "a")
     reihe = sorted(tage.items())
     grenze = (_date.today() - _td(days=400)).isoformat()
@@ -342,7 +345,7 @@ def _it_historie_daten():
         return [w[x] for x in sorted(w)]
 
     punkte = [[d, w, n, h] for d, (w, n, h) in reihe]
-    # Ereignismarken: Tag mit dem hoechsten Wert im Fenster (oder fest vorgegebenes Datum)
+    # Ereignisse (Stressphasen): Zeitraum aus der Datei, Kennzahlen aus den Daten
     ereignisse = []
     try:
         with open(IT_HIST_PFADE[2]) as f:
@@ -350,17 +353,20 @@ def _it_historie_daten():
     except (OSError, ValueError):
         liste = []
     for e in liste:
-        if e.get("aus"):
+        if e.get("aus") or not e.get("start") or not e.get("ende"):
             continue
-        if e.get("datum") and e["datum"] in tage:
-            d = e["datum"]
-        else:
-            kand = [(w, d) for d, (w, n, h) in reihe if e.get("von", "") <= d <= e.get("bis", "")]
-            if not kand:
-                continue
-            d = max(kand)[1]
-        ereignisse.append({"d": d, "w": tage[d][0], "name": e.get("name", ""), "name_en": e.get("name_en", e.get("name", "")),
-                           "kurz": e.get("kurz", e.get("name", "")), "kurz_en": e.get("kurz_en", e.get("kurz", ""))})
+        phase = [(d, w) for d, (w, n, h) in reihe if e["start"] <= d < e["ende"]]
+        if not phase:
+            continue
+        spitze = max(phase, key=lambda x: x[1])
+        danach = next((d for d, (w, n, h) in reihe if d > spitze[0] and w < 40), None)
+        ereignisse.append({"id": e.get("id"), "start": e["start"], "ende": e["ende"],
+                           "name": e.get("name", ""), "name_en": e.get("name_en", e.get("name", "")),
+                           "kurz": e.get("kurz", e.get("name", "")), "kurz_en": e.get("kurz_en", e.get("kurz", "")),
+                           "text": e.get("text", ""), "text_en": e.get("text_en", e.get("text", "")),
+                           "spitze": {"d": spitze[0], "w": spitze[1]},
+                           "unter40": {"d": danach, "tage": (_date.fromisoformat(danach) - _date.fromisoformat(spitze[0])).days} if danach else None,
+                           "bloecke": bl.get(spitze[0])})
     daten = {"taeglich": [p for p in punkte if p[0] >= grenze], "woechentlich": woechentlich(punkte),
              "ersterAufgezeichnet": min(auf) if auf else None, "ereignisse": sorted(ereignisse, key=lambda x: x["d"])}
     _it_hist_cache.update(key=key, daten=daten)

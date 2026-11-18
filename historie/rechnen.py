@@ -36,6 +36,20 @@ def lade(key):
     return s[~s.index.duplicated(keep="last")].sort_index()
 
 
+def bloecke(werte, config):
+    """Teilwerte 0-100 der drei Blickwinkel (gleiche Formel wie marktstress.calculate, je Block gewichtet)."""
+    summe = {}
+    for name, block, metrik, ratio in ms.COMPONENTS:
+        roh = ms.raw_value(werte, metrik, ratio)
+        if roh is None:
+            continue
+        lo, hi, w = config[name]
+        score = min(100.0, max(0.0, (roh - lo) / (hi - lo) * 100))
+        a = summe.setdefault(block, [0.0, 0.0])
+        a[0] += w * score; a[1] += w
+    return {b: round(v[0] / v[1], 1) for b, v in summe.items() if v[1] > 0}
+
+
 def main():
     config = {k: tuple(v) for k, v in json.load(open(os.path.join(HIER, "config.json")))["config"].items()}
     serien = {metrik: lade(key) for metrik, key in SERIEN.items()}
@@ -55,7 +69,8 @@ def main():
         if r["rounded"] is None:
             continue
         tage[datum] = {"asOf": datum, "exact": round(r["exact"], 3), "rounded": r["rounded"], "count": r["count"],
-                       "total": r["total"], "rows": r["rows"], "blocks": r["blocks"], "missing": r["missing"]}
+                       "total": r["total"], "rows": r["rows"], "blocks": r["blocks"], "missing": r["missing"],
+                       "bloecke": bloecke(werte, config)}
     json.dump({"stand": pd.Timestamp.now().strftime("%Y-%m-%d"), "erster_aufgezeichnet": erster,
                "quelle": "TradingView-Tageskurse (Symbole wie Live-Scraper), Fear & Greed: CNN",
                "config": {k: list(v) for k, v in config.items()}, "tage": tage},
