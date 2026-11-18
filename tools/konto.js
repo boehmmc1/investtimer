@@ -70,7 +70,8 @@ function renderKonto(){
  if(kontoAnsicht==='geloescht'){kontoDlg.innerHTML='<div class="modal-top"><span class="eyebrow">'+t('kontoEyebrow')+'</span><button class="close-button" id="close-konto" type="button" aria-label="'+t('close')+'">×</button></div><h2 id="konto-title" tabindex="-1">'+t('geloeschtTitel')+'</h2><p>'+t('geloeschtText')+'</p>';return}
  const k=konto,ki=k&&k.ki;
  const inhalt=kontoAnsicht==='paywall'?paywall()
-  :'<div class="push-box">'+aboBox()+'</div>'
+  :'<p class="konto-mail">'+esc(t('kontoAngemeldet')).replace('{email}','<b>'+esc((IT.emailVonSitzung&&IT.emailVonSitzung())||'')+'</b>')+'</p>'
+  +'<h3 class="konto-abschnitt">'+t('kontoAboTitel')+'</h3><div class="push-box">'+aboBox()+'</div>'
   +(ki&&ki.tag?'<p class="konto-ki">'+t('kontoKi').replace('{n}',ki.heute).replace('{max}',ki.tag)+'</p>':'')
   +pwBox()
   +'<details class="konto-loeschen"><summary>'+t('loeschenTitel')+'</summary><p>'+t('loeschenText')+'</p>'

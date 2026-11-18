@@ -121,7 +121,7 @@ TEXTE_KONTO_DE = ("kontoMenueLabel:'Kontomenü',kontoMenueKonto:'Mein Konto',kon
                   "pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',pwAendernKnopf:'Passwort ändern',"
                   "pwOhneAlt:'Noch kein Passwort oder vergessen? Code per E-Mail',pwCodeText:'Wir haben dir einen Bestätigungscode geschickt. Gib ihn ein und wähle dein neues Passwort.',"
                   "pwCodeGesendet:'Code ist unterwegs.',pwAltFalsch:'Das aktuelle Passwort stimmt nicht.',pwGeaendert:'Dein Passwort ist geändert.',"
-                  "kontoLink:'Mein Konto',premiumFreischalten:'Premium freischalten',kontoEyebrow:'DEIN KONTO',kontoTitel:'Mein Abonnement',"
+                  "kontoLink:'Mein Konto',premiumFreischalten:'Premium freischalten',kontoEyebrow:'DEIN KONTO',kontoTitel:'Mein Konto',kontoAngemeldet:'Angemeldet als {email}',kontoAboTitel:'Abonnement',"
                   "kontoFreiTitel:'Kostenloser Zugang',kontoFreiOffen:'Aktueller Wert, KI-Fragen und Alarme sind mit deiner Anmeldung derzeit freigeschaltet.',"
                   "kontoFrei:'Du siehst den zeitversetzten Wert. Aktueller Wert, ganze Historie, KI-Analysen und Alarme gehören zu Premium.',"
                   "kontoAbgelaufen:'Premium endete am',premiumAnsehen:'Premium ansehen',"
@@ -154,7 +154,7 @@ TEXTE_KONTO_EN = ("kontoMenueLabel:'Account menu',kontoMenueKonto:'My account',k
                   "pwAendernTitel:'Change password',pwAlt:'Current password',pwAendernKnopf:'Change password',"
                   "pwOhneAlt:'No password yet or forgotten? Get a code by email',pwCodeText:'We sent you a confirmation code. Enter it and choose your new password.',"
                   "pwCodeGesendet:'Code is on its way.',pwAltFalsch:'The current password is incorrect.',pwGeaendert:'Your password has been changed.',"
-                  "kontoLink:'My account',premiumFreischalten:'Unlock Premium',kontoEyebrow:'YOUR ACCOUNT',kontoTitel:'My subscription',"
+                  "kontoLink:'My account',premiumFreischalten:'Unlock Premium',kontoEyebrow:'YOUR ACCOUNT',kontoTitel:'My account',kontoAngemeldet:'Signed in as {email}',kontoAboTitel:'Subscription',"
                   "kontoFreiTitel:'Free access',kontoFreiOffen:'The latest reading, AI questions and alerts are currently included with your sign-in.',"
                   "kontoFrei:'You see the delayed reading. The latest reading, full history, AI analysis and alerts are part of Premium.',"
                   "kontoAbgelaufen:'Premium ended on',premiumAnsehen:'See Premium',"
@@ -209,6 +209,7 @@ KONTO_CSS = """
 .konto-status{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--sub)}
 .konto-status.s-aktiv,.konto-status.s-test{color:var(--text)}.konto-status.s-zahlungsproblem{color:#c0392b;border-color:#c0392b}
 .konto-ki{font-size:14px;color:var(--sub)}
+.konto-mail{font-size:14px;color:var(--sub);margin:-4px 0 14px;overflow-wrap:anywhere}.konto-abschnitt{font-size:13px;font-weight:600;margin:0 0 6px;color:var(--text)}
 .konto-loeschen{margin-top:18px;border-top:1px solid var(--line);padding-top:12px;font-size:14px}
 .konto-loeschen summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--sub)}
 .konto-loeschen input{width:100%;box-sizing:border-box;min-height:44px;margin:6px 0;font-size:16px;border-radius:10px;border:1px solid var(--line);padding:0 12px;background:transparent;color:var(--text)}
