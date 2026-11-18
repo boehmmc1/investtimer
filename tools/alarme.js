@@ -140,14 +140,12 @@ async function pushTest(b){
   :'<b>'+t('pushTestNicht')+'</b><p>'+t('pushTestNichtText')+'</p>'+pushHinweise(),ok?'ok':'warnung');
  b.disabled=false;
 }
-/* App installieren: Link im Fuss und Anleitung je Geraet */
+/* App installieren: Eintrag im Kontomenue (kontomenue.js) und Anleitung je Geraet */
 const installDlg=document.createElement('dialog');installDlg.id='install-dialog';installDlg.className='modal access-dialog';installDlg.setAttribute('aria-labelledby','install-title');document.body.append(installDlg);
-function installLink(){
- const fuss=$('.app-footer');if(!fuss)return;let l=$('#install-link');
- if(installiert()||window.InvestTimerApp){l?.remove();return}
- if(!l){l=document.createElement('button');l.type='button';l.id='install-link';l.className='text-button install-link';fuss.append(l)}
- l.textContent=t('installLink');
-}
+function installLink(){document.dispatchEvent(new Event('investtimer:kontomenue'))}
+IT.installierbar=()=>!installiert()&&!window.InvestTimerApp;
+IT.oeffneInstall=o=>oeffneInstall(o);
+IT.oeffneAlarme=o=>oeffneAlarme(o);
 function oeffneInstall(opener){
  alarmOpener=opener;
  const inhalt=istIOS?'<p>'+t('installIOS')+'</p>'+iosSchritte()

@@ -131,11 +131,17 @@ async def main():
             await pg.click('#create-alert'); await state('alarm')
             await pg.click('#close-alarm' if ANMELDUNG else '#close-alert')
             if ANMELDUNG:
-                await pg.click('#install-link'); await state('installieren')
+                await pg.evaluate('window.scrollTo(0,0)')
+                await pg.click('#konto-knopf'); await state('kontomenue')
+                await pg.click('[data-km="install"]'); await state('installieren')
                 await pg.click('#close-install')
             await pg.evaluate('window.scrollTo(0,0)')
             await pg.select_option('#header-language', 'en'); await state('englisch')
-            await pg.click('#account-login' if ANMELDUNG else '#review-public')
+            if ANMELDUNG:
+                await pg.click('#konto-knopf'); await state('kontomenue-englisch')
+                await pg.click('[data-km="abmelden"]')
+            else:
+                await pg.click('#review-public')
             await pg.wait_for_function("() => document.querySelector('.score')?.textContent.trim() === '33'", timeout=8000)
             await state('englisch-oeffentlich')
             if errors:

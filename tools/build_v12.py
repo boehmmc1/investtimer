@@ -117,7 +117,8 @@ body.ohne-registrierung:not(.members-layout) #account-login,
 body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 """
 
-TEXTE_KONTO_DE = ("pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',pwAendernKnopf:'Passwort ändern',"
+TEXTE_KONTO_DE = ("kontoMenueLabel:'Kontomenü',kontoMenueKonto:'Mein Konto',kontoMenueAlarme:'Meine Alarme',kontoMenueAbo:'Abo verwalten',"
+                  "pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',pwAendernKnopf:'Passwort ändern',"
                   "pwOhneAlt:'Noch kein Passwort oder vergessen? Code per E-Mail',pwCodeText:'Wir haben dir einen Bestätigungscode geschickt. Gib ihn ein und wähle dein neues Passwort.',"
                   "pwCodeGesendet:'Code ist unterwegs.',pwAltFalsch:'Das aktuelle Passwort stimmt nicht.',pwGeaendert:'Dein Passwort ist geändert.',"
                   "kontoLink:'Mein Konto',premiumFreischalten:'Premium freischalten',kontoEyebrow:'DEIN KONTO',kontoTitel:'Mein Abonnement',"
@@ -149,7 +150,8 @@ TEXTE_KONTO_DE = ("pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',
                   "paywallFuss:'Preise inkl. USt. Keine Anlageberatung.',agb:'Abo-Bedingungen',datenschutz:'Datenschutz',zurueck:'Zurück',"
                   "fehlerSchonPremium:'Du hast Premium bereits. Details siehst du unter „Mein Konto“.',fehlerAbbruch:'Der Kauf wurde abgebrochen.',"
                   "fehlerInaktiv:'Abos sind gerade nicht verfügbar.',")
-TEXTE_KONTO_EN = ("pwAendernTitel:'Change password',pwAlt:'Current password',pwAendernKnopf:'Change password',"
+TEXTE_KONTO_EN = ("kontoMenueLabel:'Account menu',kontoMenueKonto:'My account',kontoMenueAlarme:'My alerts',kontoMenueAbo:'Manage subscription',"
+                  "pwAendernTitel:'Change password',pwAlt:'Current password',pwAendernKnopf:'Change password',"
                   "pwOhneAlt:'No password yet or forgotten? Get a code by email',pwCodeText:'We sent you a confirmation code. Enter it and choose your new password.',"
                   "pwCodeGesendet:'Code is on its way.',pwAltFalsch:'The current password is incorrect.',pwGeaendert:'Your password has been changed.',"
                   "kontoLink:'My account',premiumFreischalten:'Unlock Premium',kontoEyebrow:'YOUR ACCOUNT',kontoTitel:'My subscription',"
@@ -181,7 +183,7 @@ TEXTE_KONTO_EN = ("pwAendernTitel:'Change password',pwAlt:'Current password',pwA
                   "paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Subscription terms',datenschutz:'Privacy',zurueck:'Back',"
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
-KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8")
+KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8")
 TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufAria:'Verlauf des Marktstress, {n} Tageswerte',verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',"
                     "verlaufNote:'{n} Tageswerte, zwischen {min} und {max}. Aufgezeichnet seit {seit}, je ein Wert pro Tag.',"
                     "verlaufPremium:'Den vollständigen Verlauf siehst du mit Premium.',verlaufFehlt:'Der Verlauf ist gerade nicht verfügbar.',")
@@ -189,6 +191,19 @@ TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufAria:'Market stress history, 
                     "verlaufNote:'{n} daily readings, between {min} and {max}. Recorded since {seit}, one reading per day.',"
                     "verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'The history is not available right now.',")
 KONTO_CSS = """
+.app-header .header-tools{position:relative}
+.konto-knopf{display:inline-flex;align-items:center;gap:6px;border:1px solid #bfccbc;border-radius:6px;padding:0 10px 0 6px;min-height:44px;min-width:44px;color:var(--accent);background:transparent;cursor:pointer}
+.konto-knopf:hover,.konto-knopf[aria-expanded=true]{background:var(--panel);filter:none}
+.konto-kreis{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font:600 14px/1 var(--sans)}
+.konto-pfeil{width:12px;height:12px;transition:transform .15s}.konto-knopf[aria-expanded=true] .konto-pfeil{transform:rotate(180deg)}
+.konto-menue{position:absolute;right:0;top:calc(100% + 8px);z-index:60;width:max-content;min-width:220px;max-width:min(300px,calc(100vw - 32px));box-sizing:border-box;background:var(--surface,#fff);border:1px solid #bfccbc;border-radius:6px;box-shadow:0 10px 30px rgba(27,51,48,.12);padding:6px;display:grid}
+.konto-menue[hidden]{display:none}
+.konto-menue-mail{padding:10px 12px 9px;font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--line);margin-bottom:4px}
+.konto-menue [role=menuitem]{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:4px;font-size:14px;color:var(--text);text-align:left;width:100%;white-space:nowrap}
+.konto-menue [role=menuitem]:hover,.konto-menue [role=menuitem]:focus{background:var(--panel);filter:none}
+.konto-menue [role=menuitem]:focus-visible{outline:2px solid #698dbc;outline-offset:-2px}
+.konto-menue-linie{height:1px;background:var(--line);margin:4px 0}
+@media(max-width:760px){.konto-pfeil{display:none}.konto-knopf{padding:0 6px}}
 .konto-daten{margin:10px 0 12px;display:grid;gap:6px}.konto-zeile{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .konto-zeile dt{color:var(--sub)}.konto-zeile dd{margin:0;text-align:right;color:var(--text)}
 .konto-status{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--sub)}
@@ -717,7 +732,7 @@ def main(source, target_dir, preview, anmeldung=None):
                         "Fusslinks Rechtstexte")
         print("Registrierung: %s" % ("offen" if offen else "ausgeblendet (Impressum/Datenschutz fehlen)"))
     html = once(html, "stamp.textContent=(member?t('saved'):t('preview'))+' · '+date();stamp.title=member?t('memberNote'):t('noCurrent');",
-                "stamp.textContent=(member?t('current'):t('preview'))+' · '+date();stamp.title=member?'':t('noCurrent');", "Stempel")
+                "stamp.textContent=(member&&IT.live?t('current'):t('preview'))+' · '+date();stamp.title=member&&IT.live?'':t('noCurrent');", "Stempel")
     html = once(html, "memberNote.textContent=t('memberNote');memberNote.hidden=!member;", "memberNote.hidden=true;", "Mitglieder-Hinweis")
     html = once(html, "$('.app-footer [data-i18n=\"timestamp\"]').textContent=t('source')+date();",
                 "$('.app-footer [data-i18n=\"timestamp\"]').textContent=t(member?'sourceLive':'source')+date();", "Fusszeile")

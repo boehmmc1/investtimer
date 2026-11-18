@@ -91,12 +91,10 @@ async function oeffneKonto(opener,ansicht,abgleich){
 }
 function schliesseKonto(){if(kontoDlg.open)kontoDlg.close();document.body.classList.remove('access-open');kontoOpener?.focus({preventScroll:true})}
 IT.oeffneKonto=oeffneKonto;
-function kontoLink(){
- const fuss=$('.app-footer');if(!fuss)return;let l=$('#konto-link');
- if(!IT.session&&!IT.member){l?.remove();return}
- if(!l){l=document.createElement('button');l.type='button';l.id='konto-link';l.className='text-button install-link';fuss.append(l)}
- l.textContent=t(konto&&konto.pflicht&&!konto.premium&&(app()?app().kaufBereit:konto.paywall)?'premiumFreischalten':'kontoLink');
-}
+function kontoLink(){document.dispatchEvent(new Event('investtimer:kontomenue'))}
+/* Fuer das Kontomenue: Abo-Eintrag erst mit Paywall bzw. Kauf in der App */
+IT.aboEintrag=()=>!!(konto&&(konto.premium||(app()?app().kaufBereit:konto.paywall)));
+IT.aboAnsicht=()=>konto&&konto.pflicht&&!konto.premium?'paywall':'konto';
 async function aboStarten(knopf){
  knopf.disabled=true;kontoHinweis='';
  try{
