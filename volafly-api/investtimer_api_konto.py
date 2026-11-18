@@ -368,7 +368,7 @@ def _it_historie_daten():
                            "unter40": {"d": danach, "tage": (_date.fromisoformat(danach) - _date.fromisoformat(spitze[0])).days} if danach else None,
                            "bloecke": bl.get(spitze[0])})
     daten = {"taeglich": [p for p in punkte if p[0] >= grenze], "woechentlich": woechentlich(punkte),
-             "ersterAufgezeichnet": min(auf) if auf else None, "ereignisse": sorted(ereignisse, key=lambda x: x["d"])}
+             "ersterAufgezeichnet": min(auf) if auf else None, "ereignisse": sorted(ereignisse, key=lambda x: x["start"])}
     _it_hist_cache.update(key=key, daten=daten)
     return daten
 

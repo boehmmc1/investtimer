@@ -25,6 +25,7 @@ Denk-Anzeige, Web-App-Manifest.
 """
 import base64
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -118,7 +119,8 @@ body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 """
 
 TEXTE_KONTO_DE = ("filmEyebrow:'KURZ ERKLÄRT',filmTitel:'Die Idee in 49 Sekunden.',"
-                  "filmText:'Der Film stellt Kursbewegungen und Marktstress nebeneinander und zeigt ausgewählte Stressphasen. Er veranschaulicht den Gedanken, Marktbewegungen mit etwas Abstand einzuordnen. Ein hoher Stresswert markiert keinen sicheren Tiefpunkt.',"
+                  "filmSatz:'Wie InvestTimer Kursbewegungen und Marktstress nebeneinanderstellt – in 49 Sekunden, ohne Ton.',"
+                  "limitedData:'Eingeschränkte Datenbasis',"
                   "filmHinweis:'Der Film veranschaulicht die Idee. Die gezeigten historischen Werte sind vereinfacht.',"
                   "filmAria:'Erklärfilm, 49 Sekunden, ohne Ton: Kursbewegungen und Marktstress im Vergleich',filmPause:'Film anhalten',filmPlay:'Film abspielen',"
                   "kontoMenueLabel:'Kontomenü',kontoMenueKonto:'Mein Konto',kontoMenueAlarme:'Meine Alarme',kontoMenueAbo:'Abo verwalten',"
@@ -155,7 +157,8 @@ TEXTE_KONTO_DE = ("filmEyebrow:'KURZ ERKLÄRT',filmTitel:'Die Idee in 49 Sekunde
                   "fehlerSchonPremium:'Du hast Premium bereits. Details siehst du unter „Mein Konto“.',fehlerAbbruch:'Der Kauf wurde abgebrochen.',"
                   "fehlerInaktiv:'Abos sind gerade nicht verfügbar.',")
 TEXTE_KONTO_EN = ("filmEyebrow:'QUICK EXPLAINER',filmTitel:'The idea in 49 seconds.',"
-                  "filmText:'The film places price movements and market stress side by side and shows selected stress phases. It illustrates taking a step back when interpreting market movements. A high stress reading does not identify a certain market bottom.',"
+                  "filmSatz:'How InvestTimer reads price moves against market stress, in 49 seconds.',"
+                  "limitedData:'Limited data today',"
                   "filmHinweis:'The film illustrates the idea. The historical values shown are simplified.',"
                   "filmAria:'Explainer film, 49 seconds, no sound: price movements and market stress compared',filmPause:'Pause film',filmPlay:'Play film',"
                   "kontoMenueLabel:'Account menu',kontoMenueKonto:'My account',kontoMenueAlarme:'My alerts',kontoMenueAbo:'Manage subscription',"
@@ -205,22 +208,35 @@ TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufAria:'Market stress history, 
                     "verlaufHinweis:'Readings before 15 Nov 2026 were calculated afterwards with today’s model. In earlier years, fewer components were sometimes available. Past developments do not allow reliable conclusions about the future. Not investment advice.',"
                     "verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'The history is not available right now.',")
 KONTO_CSS = """
-html,body{overflow-x:clip}
-.film-buehne{--buehne:#04070b;background:var(--buehne);color:#e9efe9;width:100vw;margin:56px calc(50% - 50vw) 0;padding:80px 0;box-sizing:border-box}
-.film-buehne-innen{max-width:1280px;margin:0 auto;padding:0 64px;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:56px;align-items:center;box-sizing:border-box}
-.film-eyebrow{display:block;font-size:11px;letter-spacing:1.7px;font-weight:500;color:#8fb3a6}
-.film-buehne h2{font:500 30px/1.25 var(--display);letter-spacing:-1px;margin:12px 0 14px;color:#f2f5f1}
-.film-buehne p{font-size:15px;line-height:1.75;color:#c3cec8;margin:0}
-.film-buehne .film-hinweis{font-size:12px;line-height:1.6;color:#7d8b86;margin-top:18px}
-.film-buehne-film{position:relative;aspect-ratio:16/9;background:var(--buehne)}
-.film-buehne video{display:block;width:100%;height:100%;object-fit:contain;background:var(--buehne);border:0;outline:0;
+.film-karte,.film-mini{--buehne:#04070b;background:var(--buehne);color:#e9efe9;text-align:left;min-width:0}
+.film-karte{border-radius:17px;overflow:hidden;display:flex;flex-direction:column}
+.film-karte-bild{position:relative;flex:1 1 auto;display:flex;align-items:center;min-height:0}
+.film-karte video,.film-mini video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:var(--buehne);border:0;outline:0;
  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 6%,#000 94%,transparent 100%);
  -webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 6%,#000 94%,transparent 100%);mask-composite:intersect}
+.film-karte-text{padding:2px 26px 24px}
+.film-eyebrow{display:block;font-size:10px;letter-spacing:1.8px;font-weight:500;color:#8fb3a6}
+.film-karte .film-satz{font-size:15px;line-height:1.6;color:#e3eae6;margin:9px 0 0}
+.film-karte .film-hinweis,.film-mini .film-hinweis{font-size:11px;line-height:1.6;color:#8a9893;margin:10px 0 0}
+.film-karte-bild .film-knopf{bottom:10px;right:12px}
+@media(min-width:761px){
+ body.mit-film:not(.members-layout).clarity-page .first-look{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:66px;align-items:stretch}
+ body.mit-film:not(.members-layout) .score-column{max-width:none;margin:0;justify-content:center}
+ body.mit-film:not(.members-layout).clarity-page .first-look{row-gap:30px}
+ body.mit-film:not(.members-layout) .first-look>.public-purpose{grid-column:1/-1;margin:0 auto;text-align:center}
+}
+@media(max-width:760px){.film-karte{width:100%;border-radius:13px;margin:22px 0 2px}.film-karte-text{padding:0 18px 18px}.film-karte .film-satz{font-size:14px}}
+.film-mini{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:20px;align-items:center;border-radius:13px;padding:14px;margin:30px 0 8px}
+.film-mini-bild{position:relative;border-radius:8px;overflow:hidden}
+.film-mini video{cursor:pointer}
+.film-mini:not(.gestartet) .film-knopf{inset:0;margin:auto}
+.film-mini.gestartet{grid-template-columns:1fr}
+.film-mini h3{font:500 18px/1.3 var(--display);letter-spacing:-.4px;margin:6px 0 0;color:#f2f5f1}
+@media(max-width:560px){.film-mini{grid-template-columns:1fr;gap:12px}}
 .film-knopf{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);display:grid;place-items:center;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:#fff;opacity:.85}
 .film-knopf:hover{opacity:1;filter:none}.film-knopf:focus-visible{outline:2px solid #9fd3c1;outline-offset:3px;opacity:1}
 .film-knopf-symbol{display:block;width:12px;height:14px;border-left:4px solid currentColor;border-right:4px solid currentColor;box-sizing:border-box}
 .film-knopf[data-zustand=pause] .film-knopf-symbol{width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent currentColor;margin-left:3px}
-@media(max-width:760px){.film-buehne{padding:52px 0;margin-top:36px}.film-buehne-innen{grid-template-columns:1fr;padding:0 25px;gap:26px}.film-buehne h2{font-size:24px}.film-buehne p{font-size:14px}}
 .app-header .header-tools{position:relative}
 .konto-knopf{display:inline-flex;align-items:center;gap:6px;border:1px solid #bfccbc;border-radius:6px;padding:0 10px 0 6px;min-height:44px;min-width:44px;color:var(--accent);background:transparent;cursor:pointer}
 .konto-knopf:hover,.konto-knopf[aria-expanded=true]{background:var(--panel);filter:none}
@@ -634,6 +650,22 @@ def rechtsseiten(target):
     return all((Path(target) / n).is_file() for n in ("impressum.html", "datenschutz.html"))
 
 
+def film_schalter():
+    """IT_FILM=1 zeigt den Erklaerfilm. Quelle: --film=an|aus, sonst Umgebung, sonst /root/volafly-chat/.env. Standard: aus (LIC-001)."""
+    for a in sys.argv[1:]:
+        if a.startswith("--film="):
+            return a.split("=", 1)[1] in ("an", "1", "on")
+    wert = os.environ.get("IT_FILM")
+    if wert is None:
+        try:
+            for zeile in open(os.environ.get("IT_ENV_DATEI", "/root/volafly-chat/.env"), encoding="utf-8"):
+                if zeile.strip().startswith("IT_FILM="):
+                    wert = zeile.split("=", 1)[1].strip()
+        except OSError:
+            pass
+    return wert == "1"
+
+
 def main(source, target_dir, preview, anmeldung=None):
     html = Path(source).read_text(encoding="utf-8")
     if anmeldung and not (str(anmeldung.get("url", "")).startswith("https://") and anmeldung.get("anonKey")):
@@ -659,6 +691,13 @@ def main(source, target_dir, preview, anmeldung=None):
     html = sub_once(html, r'<script type="application/json" id="investtimer-film-config">.*?</script>',
                     '<script type="application/json" id="investtimer-film-config">'
                     '{"src":"/media/invest-timer.mp4","poster":"/media/invest-timer-poster.jpg"}</script>', "Film-Daten")
+
+    # Unter dem Wert: Bestandteile nur, wenn an diesem Tag mehr als 2 fehlen ("Eingeschraenkte Datenbasis")
+    html = once(html, '<span class="component-count" id="component-count">14 von 14 Bestandteilen</span>',
+                '<span class="component-count" id="component-count" hidden></span>', "Bestandteile Markup")
+    html = once(html, "$('#component-count').textContent=t('componentCount')(result?.count??0,14);",
+                "{const cc=$('#component-count'),eng=!!result&&14-(result.count??0)>2;cc.hidden=!eng;cc.textContent=eng?(state.lang==='de'?'Eingeschränkte Datenbasis':'Limited data today'):''}",
+                "Bestandteile Anzeige")
 
     # Kopf
     html = sub_once(html, r"<!--\nINVESTTIMER · COMPLETE SINGLE-FILE UI EXPORT.*?-->",
@@ -695,6 +734,8 @@ def main(source, target_dir, preview, anmeldung=None):
                 "databody:'Data as of {datelong}. The score is updated regularly. After sign-in, the daily history appears at the top of this section.',"
                 "databodyPublic:'Historical reading from {datelong}. The latest market stress is available after sign-in.'", "databody en")
     html = once(html, "<p>${t('databody')}</p>", "<p>${t(window.InvestTimer?.member?'databody':'databodyPublic')}</p>", "databody Auswahl")
+    # Abschnitt "Zum Datenstand" entfaellt; der Stand steht ueber dem Wert und in der Fusszeile
+    html = sub_once(html, r'<details class="secondary-disclosure data-disclosure"><summary>\$\{t\(\'data\'\)\}</summary>.*?</details>', "", "Datenstand-Abschnitt")
     html = once(html, "timestamp:'US-Aktienmarkt · Datenstand 15. Nov. 2026'", "timestamp:'US-Aktienmarkt · Datenstand {date}'", "timestamp de")
     html = once(html, "timestamp:'US stock market · Data as of 15 Nov 2026'", "timestamp:'US stock market · Data as of {date}'", "timestamp en")
     html = once(html, "const t=k=>copy[state.lang][k];\nconst number=",
@@ -793,7 +834,7 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\nupdate();",
                 "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\n"
                 "document.addEventListener('investtimer:update',update);\nupdate();" + (
-                    "\nif(IT.neuesPasswort){IT.zugangModus('neu');openAccess(null)}else if(IT.anmeldeFehler){IT.zugangModus('code-email');zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS
+                    "\nif(IT.neuesPasswort){IT.zugangModus('neu');openAccess(null)}else if(IT.anmeldeFehler){IT.zugangModus('code-email');zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS.replace("__FILM_AN__", "true" if film_schalter() else "false")
                     if anmeldung else ""), "Zugang Aktualisierung")
 
     # Stile: Mobil-Nachschaerfung hinter die Export-Stile, Ergaenzungen hinter die Zugangs-Stile
