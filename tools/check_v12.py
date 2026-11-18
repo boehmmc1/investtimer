@@ -108,8 +108,12 @@ async def main():
             await pg.click('#details-toggle'); await state('details')
             await pg.click('#details-toggle')
             await pg.evaluate('window.scrollTo(0,0)')
-            await pg.locator('.film-buehne').scroll_into_view_if_needed(); await state('film-buehne')
-            await pg.evaluate('window.scrollTo(0,0)')
+            if await pg.locator('.film-buehne').count():
+                await pg.locator('.film-buehne').scroll_into_view_if_needed(); await state('film-buehne')
+                await pg.evaluate('window.scrollTo(0,0)')
+            else:
+                await pg.click('#open-market-film'); await state('film')
+                await pg.click('#close-market-film')
             if ANMELDUNG:
                 await pg.evaluate("() => { const b = document.getElementById('account-login'); return b && getComputedStyle(b).display; }")
                 await pg.goto('about:blank')
