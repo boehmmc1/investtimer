@@ -1,3 +1,5 @@
+# STILLGELEGT 18.11.2026 (Datenrechte LIC-001): systemctl disable --now investtimer-historie.timer
+# Der S&P 500 wird nicht mehr angezeigt; die Reihe bleibt nur intern fuer die Rueckrechnung (Bestandteil SPX_200D).
 [Unit]
 Description=InvestTimer: S&P 500 taeglich nach US-Boersenschluss
 

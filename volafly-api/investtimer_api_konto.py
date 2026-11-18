@@ -305,13 +305,12 @@ async def it_rc_webhook(request: Request):
 
 _it_hist_cache = {"key": None, "daten": None}
 IT_HIST_PFADE = ("/var/lib/investtimer/data/history.json", "/var/lib/investtimer/historie/rueckrechnung.json",
-                 "/var/lib/investtimer/historie/daten/SPX.csv")
+                 "/var/www/investtimer/historie/ereignisse.json")
 
 
 def _it_historie_daten():
-    """Verlauf: rueckgerechnet (ab 8 Bestandteilen) + aufgezeichnet (gewinnt immer), verdichtet:
+    """Verlauf: rueckgerechnet (ab 8 Bestandteilen) + aufgezeichnet (gewinnt immer) + Ereignismarken, verdichtet:
     taeglich fuer das letzte gute Jahr, woechentlich (letzter Handelstag je Woche) fuer alles."""
-    import csv as _csvmod
     from datetime import date as _date, timedelta as _td
     key = tuple(os.path.getmtime(p) if os.path.exists(p) else 0 for p in IT_HIST_PFADE) + (_date.today().isoformat(),)
     if _it_hist_cache["key"] == key:
@@ -343,17 +342,25 @@ def _it_historie_daten():
         return [w[x] for x in sorted(w)]
 
     punkte = [[d, w, n, h] for d, (w, n, h) in reihe]
-    spx = []
+    # Ereignismarken: Tag mit dem hoechsten Wert im Fenster (oder fest vorgegebenes Datum)
+    ereignisse = []
     try:
-        start = reihe[0][0] if reihe else "9999"
         with open(IT_HIST_PFADE[2]) as f:
-            spx = [[r["date"], round(float(r["close"]), 2)] for r in _csvmod.DictReader(f) if r["date"] >= start]
-    except (OSError, ValueError, KeyError):
-        spx = []
+            liste = json.load(f).get("ereignisse", [])
+    except (OSError, ValueError):
+        liste = []
+    for e in liste:
+        if e.get("datum") and e["datum"] in tage:
+            d = e["datum"]
+        else:
+            kand = [(w, d) for d, (w, n, h) in reihe if e.get("von", "") <= d <= e.get("bis", "")]
+            if not kand:
+                continue
+            d = max(kand)[1]
+        ereignisse.append({"d": d, "w": tage[d][0], "name": e.get("name", ""), "name_en": e.get("name_en", e.get("name", "")),
+                           "kurz": e.get("kurz", e.get("name", "")), "kurz_en": e.get("kurz_en", e.get("kurz", ""))})
     daten = {"taeglich": [p for p in punkte if p[0] >= grenze], "woechentlich": woechentlich(punkte),
-             "ersterAufgezeichnet": min(auf) if auf else None,
-             "spx": {"taeglich": [p for p in spx if p[0] >= grenze], "woechentlich": woechentlich(spx),
-                     "quelle": "S&P 500 (Index von S&P Dow Jones Indices), Tagesschlusskurse über TradingView"}}
+             "ersterAufgezeichnet": min(auf) if auf else None, "ereignisse": sorted(ereignisse, key=lambda x: x["d"])}
     _it_hist_cache.update(key=key, daten=daten)
     return daten
 
@@ -361,7 +368,7 @@ def _it_historie_daten():
 @app.get("/v1/investtimer/historie")
 def it_historie(request: Request):
     """Tagesverlauf des Marktstress (Premium bzw. mit Anmeldung, solange die Pflicht aus ist).
-    Punkte: [Datum, Wert, Bestandteile, Herkunft r=rueckgerechnet/a=aufgezeichnet]. S&P 500 nur mit IT_SPX_VERGLEICH=1."""
+    Punkte: [Datum, Wert, Bestandteile, Herkunft r=rueckgerechnet/a=aufgezeichnet], dazu Ereignismarken."""
     uid, fehler = _it_nutzer_oder_fehler(request)
     if fehler:
         return fehler
@@ -371,9 +378,8 @@ def it_historie(request: Request):
     d = _it_historie_daten()
     if not d["taeglich"] and not d["woechentlich"]:
         return _it_aus()
-    aus = {k: d[k] for k in ("taeglich", "woechentlich", "ersterAufgezeichnet")}
-    if _it_schalter("IT_SPX_VERGLEICH") and d["spx"]["woechentlich"]:
-        aus["spx"] = d["spx"]
+    # S&P 500 wird nicht mehr ausgeliefert (Datenrechte LIC-001, 18.11.2026)
+    aus = {k: d[k] for k in ("taeglich", "woechentlich", "ersterAufgezeichnet", "ereignisse")}
     return _JSONResp(aus, headers={"Cache-Control": "no-store"})
 
 
