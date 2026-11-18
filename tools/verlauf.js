@@ -29,10 +29,14 @@ function stressSvg(p,x,e){
  let s='<svg class="chart-svg verlauf-svg" data-panel="stress" viewBox="0 0 '+vW+' '+H+'" aria-hidden="true">';
  for(const g of [0,25,50,75,100])s+='<line class="chart-grid" x1="'+vL+'" x2="'+(vW-vR)+'" y1="'+y(g)+'" y2="'+y(g)+'"/><text class="chart-text" x="0" y="'+(y(g)+4)+'">'+g+'</text>';
  /* Ereignismarken: duenne Linie, Punkt am Wert des Tages, Kurzname (nur Desktop, abwechselnd hoch/tief gegen Ueberlappung) */
- (e||[]).forEach((m,i)=>{const mx=x(m.d).toFixed(1);
+ const reihen=[[],[],[]];
+ (e||[]).forEach(m=>{const mx=x(m.d).toFixed(1);
   if(!mobil)s+='<line class="verlauf-marke" x1="'+mx+'" x2="'+mx+'" y1="'+T+'" y2="'+(H-B)+'"/>';
   s+='<circle class="verlauf-marke-punkt" r="'+(mobil?3.5:3)+'" cx="'+mx+'" cy="'+y(m.w).toFixed(1)+'"/>';
-  if(!mobil){const rechts=x(m.d)>vW-80;s+='<text class="verlauf-marke-text" x="'+(x(m.d)+(rechts?-4:4)).toFixed(1)+'" y="'+(T+9+(i%2)*12)+'"'+(rechts?' text-anchor="end"':'')+'>'+esc(vEn()?m.kurz_en:m.kurz)+'</text>'}
+  if(!mobil){/* Beschriftung ohne Ueberlappung: erste freie von drei Zeilen, sonst nur Punkt (Name im Tooltip) */
+   const name=vEn()?m.kurz_en:m.kurz,breite=name.length*5.6+6,rechts=x(m.d)+breite>vW-vR,a=rechts?x(m.d)-breite:x(m.d),b=a+breite;
+   const r=reihen.findIndex(z=>z.every(([u,v])=>b<u-2||a>v+2));
+   if(r>=0){reihen[r].push([a,b]);s+='<text class="verlauf-marke-text" x="'+(rechts?x(m.d)-4:x(m.d)+4).toFixed(1)+'" y="'+(T+9+r*12)+'"'+(rechts?' text-anchor="end"':'')+'>'+esc(name)+'</text>'}}
  });
  /* Abschnitte je Herkunft; am Uebergang verbunden */
  let seg=[],art=null;const fertig=()=>{if(seg.length>1)s+='<polyline class="'+(art==='a'?'chart-line':'chart-line verlauf-rueck')+'" points="'+seg.join(' ')+'"/>';};
@@ -40,7 +44,7 @@ function stressSvg(p,x,e){
  const z=p[p.length-1];
  s+='<circle class="chart-point" r="4.5" cx="'+x(z[0])+'" cy="'+y(z[1])+'"/><text class="chart-label" text-anchor="end" x="'+(x(z[0])-8)+'" y="'+(y(z[1])-9)+'">'+z[1]+'</text>';
  s+='<text class="chart-text" x="'+vL+'" y="'+(H-5)+'">'+vDatum(p[0][0],1)+'</text><text class="chart-text" text-anchor="end" x="'+(vW-vR)+'" y="'+(H-5)+'">'+vDatum(z[0],1)+'</text>';
- s+='<line class="verlauf-cursor" y1="'+T+'" y2="'+(H-B)+'" x1="-10" x2="-10"/><circle class="verlauf-cursor-punkt" r="4" cx="-10" cy="-10"/></svg>';
+ s+='<line class="verlauf-cursor" y1="'+T+'" y2="'+(H-B)+'" x1="0" x2="0" visibility="hidden"/><circle class="verlauf-cursor-punkt" r="4" cx="0" cy="0" visibility="hidden"/></svg>';
  return s;
 }
 function verlaufHtml(){
@@ -70,8 +74,8 @@ function vZeige(i){
  const box=panel.querySelector('.verlauf'),dia=box&&box.querySelector('.verlauf-diagramm');if(!dia)return;
  const {p,e}=vAuswahl();if(!p.length)return;i=Math.max(0,Math.min(p.length-1,i));verlaufIndex=i;
  const q=p[i],x=vX(p)(q[0]),svg=dia.querySelector('[data-panel=stress]'),H=180,T=10,B=24,yy=T+(100-q[1])*(H-T-B)/100;
- dia.querySelectorAll('.verlauf-cursor').forEach(l=>{l.setAttribute('x1',x);l.setAttribute('x2',x)});
- const c=dia.querySelector('.verlauf-cursor-punkt');c.setAttribute('cx',x);c.setAttribute('cy',yy);
+ dia.querySelectorAll('.verlauf-cursor').forEach(l=>{l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('visibility','visible')});
+ const c=dia.querySelector('.verlauf-cursor-punkt');c.setAttribute('cx',x);c.setAttribute('cy',yy);c.setAttribute('visibility','visible');
  /* Ereignis im Abschnitt dieses Punkts (Tageswert: gleicher Tag; Wochenwert: in dieser Woche) */
  const vorher=i>0?p[i-1][0]:'0000';const ev=e.filter(m=>m.d>vorher&&m.d<=q[0]);
  const sp=ev.map(m=>'<span class="tip-ereignis"><b>'+esc(vEn()?m.name_en:m.name)+'</b> · '+vDatum(m.d)+' · '+t('tipWert').replace('{w}',m.w)+'</span>').join('');
@@ -81,7 +85,7 @@ function vZeige(i){
  const r=svg.getBoundingClientRect(),d=dia.getBoundingClientRect(),px=r.left-d.left+x/vW*r.width;
  tip.style.left=Math.max(0,Math.min(d.width-tip.offsetWidth,px-tip.offsetWidth/2))+'px';
 }
-function vVerberge(){const dia=panel.querySelector('.verlauf-diagramm');if(!dia)return;dia.querySelector('.verlauf-tip').hidden=true;dia.querySelectorAll('.verlauf-cursor').forEach(l=>{l.setAttribute('x1',-10);l.setAttribute('x2',-10)});const c=dia.querySelector('.verlauf-cursor-punkt');c&&c.setAttribute('cx',-10)}
+function vVerberge(){const dia=panel.querySelector('.verlauf-diagramm');if(!dia)return;dia.querySelector('.verlauf-tip').hidden=true;dia.querySelectorAll('.verlauf-cursor,.verlauf-cursor-punkt').forEach(l=>l.setAttribute('visibility','hidden'))}
 function vIndexBei(ev){
  const dia=ev.target.closest('.verlauf-diagramm'),svg=dia&&dia.querySelector('[data-panel=stress]');if(!svg)return null;
  const r=svg.getBoundingClientRect(),xv=(ev.clientX-r.left)/r.width*vW,{p}=vAuswahl(),x=vX(p);
