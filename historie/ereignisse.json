@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Ereignismarken im Marktstress-Verlauf. Datum = Tag mit dem hoechsten Marktstress im Fenster von..bis (aus der Rueckrechnung bzw. Aufzeichnung, mind. 8 Bestandteile). Optional 'datum' setzen, um es fest vorzugeben. Neutral formulieren, keine Bewertung.",
+  "_hinweis": "Ereignismarken im Marktstress-Verlauf. Datum = Tag mit dem hoechsten Marktstress im Fenster von..bis (aus der Rueckrechnung bzw. Aufzeichnung, mind. 8 Bestandteile). Optional 'datum' setzen, um es fest vorzugeben; 'aus': true blendet ein Ereignis aus. Neutral formulieren, keine Bewertung.",
   "ereignisse": [
     {"id": "lehman", "von": "2008-09-01", "bis": "2008-10-31", "name": "Finanzkrise (Lehman)", "name_en": "Financial crisis (Lehman)", "kurz": "Lehman", "kurz_en": "Lehman"},
     {"id": "euro", "von": "2011-08-01", "bis": "2011-08-31", "name": "Euro-Schuldenkrise", "name_en": "Euro debt crisis", "kurz": "Euro-Krise", "kurz_en": "Euro crisis"},
@@ -8,7 +8,7 @@
     {"id": "corona", "von": "2020-03-01", "bis": "2020-03-31", "name": "Corona-Crash", "name_en": "Covid crash", "kurz": "Corona", "kurz_en": "Covid"},
     {"id": "zinswende", "von": "2022-10-01", "bis": "2022-10-31", "name": "Zinswende / Bärenmarkt 2022", "name_en": "Rate hikes / 2022 bear market", "kurz": "Zinswende", "kurz_en": "Rate hikes"},
     {"id": "svb", "von": "2023-03-01", "bis": "2023-03-31", "name": "SVB-Pleite", "name_en": "SVB collapse", "kurz": "SVB", "kurz_en": "SVB"},
-    {"id": "yen", "von": "2024-08-01", "bis": "2024-08-31", "name": "Yen-Carry-Unwind", "name_en": "Yen carry unwind", "kurz": "Yen", "kurz_en": "Yen"},
+    {"id": "yen", "von": "2024-08-01", "bis": "2024-08-31", "name": "Yen-Carry-Unwind", "name_en": "Yen carry unwind", "kurz": "Yen", "kurz_en": "Yen", "aus": true, "aus_grund": "Tageswert 73 am 05.08.2024, Wochenwert (5J/Alle) nur 40: im Chart kein erhoehter Wert sichtbar"},
     {"id": "zoll", "von": "2025-04-01", "bis": "2025-04-30", "name": "Zollschock", "name_en": "Tariff shock", "kurz": "Zölle", "kurz_en": "Tariffs"}
   ]
 }

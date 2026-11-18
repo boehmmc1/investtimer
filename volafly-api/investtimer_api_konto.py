@@ -350,6 +350,8 @@ def _it_historie_daten():
     except (OSError, ValueError):
         liste = []
     for e in liste:
+        if e.get("aus"):
+            continue
         if e.get("datum") and e["datum"] in tage:
             d = e["datum"]
         else:
