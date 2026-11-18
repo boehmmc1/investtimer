@@ -80,4 +80,5 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   und `historie/rechnen.py` (exakt `marktstress.calculate`, Config `historie/config.json`). Rohdaten und Ergebnis NUR auf dem
   Server unter `/var/lib/investtimer/historie/` (Datenrechte LIC-001, Repo ist oeffentlich). Aufgezeichnete Tage
   (`/var/lib/investtimer/data/history.json`) werden nie ersetzt oder gekuerzt. Timer `investtimer-historie` holt taeglich den S&P 500.
-  Schalter `IT_SPX_VERGLEICH=1` (S&P-Panel nur fuer Angemeldete). KI-Werkzeug `marktstress_verlauf`.
+  S&P-500-Anzeige seit 18.11.2026 entfernt (LIC-001), Timer `investtimer-historie` deaktiviert; SPX.csv nur intern fuer SPX_200D.
+  Ereignismarken: `historie/ereignisse.json` (`aus: true` blendet aus). KI-Werkzeug `marktstress_verlauf`.
