@@ -117,7 +117,11 @@ body.ohne-registrierung:not(.members-layout) #account-login,
 body.ohne-registrierung:not(.members-layout) .benefit-line{display:none}
 """
 
-TEXTE_KONTO_DE = ("kontoMenueLabel:'Kontomenü',kontoMenueKonto:'Mein Konto',kontoMenueAlarme:'Meine Alarme',kontoMenueAbo:'Abo verwalten',"
+TEXTE_KONTO_DE = ("filmEyebrow:'KURZ ERKLÄRT',filmTitel:'Die Idee in 49 Sekunden.',"
+                  "filmText:'Der Film stellt Kursbewegungen und Marktstress nebeneinander und zeigt ausgewählte Stressphasen. Er veranschaulicht den Gedanken, Marktbewegungen mit etwas Abstand einzuordnen. Ein hoher Stresswert markiert keinen sicheren Tiefpunkt.',"
+                  "filmHinweis:'Der Film veranschaulicht die Idee. Die gezeigten historischen Werte sind vereinfacht.',"
+                  "filmAria:'Erklärfilm, 49 Sekunden, ohne Ton: Kursbewegungen und Marktstress im Vergleich',filmPause:'Film anhalten',filmPlay:'Film abspielen',"
+                  "kontoMenueLabel:'Kontomenü',kontoMenueKonto:'Mein Konto',kontoMenueAlarme:'Meine Alarme',kontoMenueAbo:'Abo verwalten',"
                   "pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',pwAendernKnopf:'Passwort ändern',"
                   "pwOhneAlt:'Noch kein Passwort oder vergessen? Code per E-Mail',pwCodeText:'Wir haben dir einen Bestätigungscode geschickt. Gib ihn ein und wähle dein neues Passwort.',"
                   "pwCodeGesendet:'Code ist unterwegs.',pwAltFalsch:'Das aktuelle Passwort stimmt nicht.',pwGeaendert:'Dein Passwort ist geändert.',"
@@ -150,7 +154,11 @@ TEXTE_KONTO_DE = ("kontoMenueLabel:'Kontomenü',kontoMenueKonto:'Mein Konto',kon
                   "paywallFuss:'Preise inkl. USt. Keine Anlageberatung.',agb:'Abo-Bedingungen',datenschutz:'Datenschutz',zurueck:'Zurück',"
                   "fehlerSchonPremium:'Du hast Premium bereits. Details siehst du unter „Mein Konto“.',fehlerAbbruch:'Der Kauf wurde abgebrochen.',"
                   "fehlerInaktiv:'Abos sind gerade nicht verfügbar.',")
-TEXTE_KONTO_EN = ("kontoMenueLabel:'Account menu',kontoMenueKonto:'My account',kontoMenueAlarme:'My alerts',kontoMenueAbo:'Manage subscription',"
+TEXTE_KONTO_EN = ("filmEyebrow:'QUICK EXPLAINER',filmTitel:'The idea in 49 seconds.',"
+                  "filmText:'The film places price movements and market stress side by side and shows selected stress phases. It illustrates taking a step back when interpreting market movements. A high stress reading does not identify a certain market bottom.',"
+                  "filmHinweis:'The film illustrates the idea. The historical values shown are simplified.',"
+                  "filmAria:'Explainer film, 49 seconds, no sound: price movements and market stress compared',filmPause:'Pause film',filmPlay:'Play film',"
+                  "kontoMenueLabel:'Account menu',kontoMenueKonto:'My account',kontoMenueAlarme:'My alerts',kontoMenueAbo:'Manage subscription',"
                   "pwAendernTitel:'Change password',pwAlt:'Current password',pwAendernKnopf:'Change password',"
                   "pwOhneAlt:'No password yet or forgotten? Get a code by email',pwCodeText:'We sent you a confirmation code. Enter it and choose your new password.',"
                   "pwCodeGesendet:'Code is on its way.',pwAltFalsch:'The current password is incorrect.',pwGeaendert:'Your password has been changed.',"
@@ -183,7 +191,7 @@ TEXTE_KONTO_EN = ("kontoMenueLabel:'Account menu',kontoMenueKonto:'My account',k
                   "paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Subscription terms',datenschutz:'Privacy',zurueck:'Back',"
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
-KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8")
+KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8")
 TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Tag für Tag ansehen.',"
                     "verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',verlauf1J:'1J',verlauf5J:'5J',legendeAuf:'aufgezeichnet',legendeRueck:'zurückgerechnet',verlaufEreignisHinweis:'Markierte Ereignisse dienen der zeitlichen Einordnung.',ereignisseLabel:'Ereignisse',karteHoechst:'Höchster Marktstress',karteAm:'{w} am {d}',karteUnter40:'Wieder unter 40',karteNachTagen:'nach {n} Tagen',karteNochNicht:'noch nicht',karteTrieb:'Was den Wert trieb (Teilwerte 0–100 am {d})',triebVol:'Kursschwankungen',triebPreis:'Breite und Trend',triebStimmung:'Stimmung und Absicherung',"
                     ""
@@ -197,6 +205,22 @@ TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufAria:'Market stress history, 
                     "verlaufHinweis:'Readings before 15 Nov 2026 were calculated afterwards with today’s model. In earlier years, fewer components were sometimes available. Past developments do not allow reliable conclusions about the future. Not investment advice.',"
                     "verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'The history is not available right now.',")
 KONTO_CSS = """
+html,body{overflow-x:clip}
+.film-buehne{--buehne:#04070b;background:var(--buehne);color:#e9efe9;width:100vw;margin:56px calc(50% - 50vw) 0;padding:80px 0;box-sizing:border-box}
+.film-buehne-innen{max-width:1280px;margin:0 auto;padding:0 64px;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:56px;align-items:center;box-sizing:border-box}
+.film-eyebrow{display:block;font-size:11px;letter-spacing:1.7px;font-weight:500;color:#8fb3a6}
+.film-buehne h2{font:500 30px/1.25 var(--display);letter-spacing:-1px;margin:12px 0 14px;color:#f2f5f1}
+.film-buehne p{font-size:15px;line-height:1.75;color:#c3cec8;margin:0}
+.film-buehne .film-hinweis{font-size:12px;line-height:1.6;color:#7d8b86;margin-top:18px}
+.film-buehne-film{position:relative;aspect-ratio:16/9;background:var(--buehne)}
+.film-buehne video{display:block;width:100%;height:100%;object-fit:contain;background:var(--buehne);border:0;outline:0;
+ -webkit-mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 6%,#000 94%,transparent 100%);
+ -webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 6%,#000 94%,transparent 100%);mask-composite:intersect}
+.film-knopf{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);display:grid;place-items:center;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:#fff;opacity:.85}
+.film-knopf:hover{opacity:1;filter:none}.film-knopf:focus-visible{outline:2px solid #9fd3c1;outline-offset:3px;opacity:1}
+.film-knopf-symbol{display:block;width:12px;height:14px;border-left:4px solid currentColor;border-right:4px solid currentColor;box-sizing:border-box}
+.film-knopf[data-zustand=pause] .film-knopf-symbol{width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent currentColor;margin-left:3px}
+@media(max-width:760px){.film-buehne{padding:52px 0;margin-top:36px}.film-buehne-innen{grid-template-columns:1fr;padding:0 25px;gap:26px}.film-buehne h2{font-size:24px}.film-buehne p{font-size:14px}}
 .app-header .header-tools{position:relative}
 .konto-knopf{display:inline-flex;align-items:center;gap:6px;border:1px solid #bfccbc;border-radius:6px;padding:0 10px 0 6px;min-height:44px;min-width:44px;color:var(--accent);background:transparent;cursor:pointer}
 .konto-knopf:hover,.konto-knopf[aria-expanded=true]{background:var(--panel);filter:none}
