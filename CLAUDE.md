@@ -76,3 +76,8 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   eingebauten Bloecke direkt in `volafly_chat.py` (vor Aenderungen sichern).
 - UI-Vorlage ist jetzt `source/InvestTimer_UI_Signalbogen_v1.3.html`. Der Build lagert alle Base64-Daten nach `public/media/`
   aus und bricht ab, wenn Demo/Entwurf/Vorschau/Beispielantwort oder Base64 in der Seite stehen.
+- Verlauf: Rueckrechnung `historie/holen.py` (TradingView-Websocket ueber `/root/volafly-video/fetch_history.py`, CNN Fear & Greed)
+  und `historie/rechnen.py` (exakt `marktstress.calculate`, Config `historie/config.json`). Rohdaten und Ergebnis NUR auf dem
+  Server unter `/var/lib/investtimer/historie/` (Datenrechte LIC-001, Repo ist oeffentlich). Aufgezeichnete Tage
+  (`/var/lib/investtimer/data/history.json`) werden nie ersetzt oder gekuerzt. Timer `investtimer-historie` holt taeglich den S&P 500.
+  Schalter `IT_SPX_VERGLEICH=1` (S&P-Panel nur fuer Angemeldete). KI-Werkzeug `marktstress_verlauf`.
