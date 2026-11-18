@@ -37,7 +37,7 @@ function stressSvg(p,x,e){
    if(b<=vW-vR+2){const r=reihen.findIndex(z=>z.every(([u,v])=>b<u-2||a>v+2));
     if(r>=0){reihen[r].push([a,b]);s+='<text class="verlauf-band-text" x="'+(x0+3).toFixed(1)+'" y="'+(T+10+r*12)+'">'+esc(name)+'</text>'}}}
  });
- s+='<polyline class="chart-line" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/>';
+ s+='<polyline class="chart-line'+(['5J','A'].includes(verlaufSpanne)?' verlauf-lang':'')+'" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/>';
  const z=p[p.length-1];
  s+='<circle class="chart-point" r="4.5" cx="'+x(z[0])+'" cy="'+y(z[1])+'"/><text class="chart-label" text-anchor="end" x="'+(x(z[0])-8)+'" y="'+(y(z[1])-9)+'">'+z[1]+'</text>';
  s+='<text class="chart-text" x="'+vL+'" y="'+(H-5)+'">'+vDatum(p[0][0],1)+'</text><text class="chart-text" text-anchor="end" x="'+(vW-vR)+'" y="'+(H-5)+'">'+vDatum(z[0],1)+'</text>';
