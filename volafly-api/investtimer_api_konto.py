@@ -303,19 +303,115 @@ async def it_rc_webhook(request: Request):
     return {"ok": True}
 
 
+_it_hist_cache = {"key": None, "daten": None}
+IT_HIST_PFADE = ("/var/lib/investtimer/data/history.json", "/var/lib/investtimer/historie/rueckrechnung.json",
+                 "/var/lib/investtimer/historie/daten/SPX.csv")
+
+
+def _it_historie_daten():
+    """Verlauf: rueckgerechnet (ab 8 Bestandteilen) + aufgezeichnet (gewinnt immer), verdichtet:
+    taeglich fuer das letzte gute Jahr, woechentlich (letzter Handelstag je Woche) fuer alles."""
+    import csv as _csvmod
+    from datetime import date as _date, timedelta as _td
+    key = tuple(os.path.getmtime(p) if os.path.exists(p) else 0 for p in IT_HIST_PFADE) + (_date.today().isoformat(),)
+    if _it_hist_cache["key"] == key:
+        return _it_hist_cache["daten"]
+    tage = {}
+    try:
+        with open(IT_HIST_PFADE[1]) as f:
+            for d, t in json.load(f).get("tage", {}).items():
+                if t.get("count", 0) >= 8:
+                    tage[d] = (t["rounded"], t["count"], "r")
+    except (OSError, ValueError):
+        pass
+    try:
+        with open(IT_HIST_PFADE[0]) as f:
+            auf = json.load(f)
+    except (OSError, ValueError):
+        auf = {}
+    for d, t in auf.items():
+        if isinstance(t, dict) and isinstance(t.get("rounded"), int):
+            tage[d] = (t["rounded"], t.get("count"), "a")
+    reihe = sorted(tage.items())
+    grenze = (_date.today() - _td(days=400)).isoformat()
+
+    def woechentlich(punkte):
+        w = {}
+        for p in punkte:
+            j, k, _ = _date.fromisoformat(p[0]).isocalendar()
+            w[(j, k)] = p
+        return [w[x] for x in sorted(w)]
+
+    punkte = [[d, w, n, h] for d, (w, n, h) in reihe]
+    spx = []
+    try:
+        start = reihe[0][0] if reihe else "9999"
+        with open(IT_HIST_PFADE[2]) as f:
+            spx = [[r["date"], round(float(r["close"]), 2)] for r in _csvmod.DictReader(f) if r["date"] >= start]
+    except (OSError, ValueError, KeyError):
+        spx = []
+    daten = {"taeglich": [p for p in punkte if p[0] >= grenze], "woechentlich": woechentlich(punkte),
+             "ersterAufgezeichnet": min(auf) if auf else None,
+             "spx": {"taeglich": [p for p in spx if p[0] >= grenze], "woechentlich": woechentlich(spx),
+                     "quelle": "S&P 500 (Index von S&P Dow Jones Indices), Tagesschlusskurse über TradingView"}}
+    _it_hist_cache.update(key=key, daten=daten)
+    return daten
+
+
 @app.get("/v1/investtimer/historie")
 def it_historie(request: Request):
-    """Tagesverlauf des Marktstress (Premium bzw. mit Anmeldung, solange die Pflicht aus ist)."""
+    """Tagesverlauf des Marktstress (Premium bzw. mit Anmeldung, solange die Pflicht aus ist).
+    Punkte: [Datum, Wert, Bestandteile, Herkunft r=rueckgerechnet/a=aufgezeichnet]. S&P 500 nur mit IT_SPX_VERGLEICH=1."""
     uid, fehler = _it_nutzer_oder_fehler(request)
     if fehler:
         return fehler
     sperre = _it_premium_noetig(uid)
     if sperre:
         return sperre
-    try:
-        with open("/var/lib/investtimer/data/history.json") as f:
-            verlauf = json.load(f)
-    except (OSError, ValueError):
+    d = _it_historie_daten()
+    if not d["taeglich"] and not d["woechentlich"]:
         return _it_aus()
-    punkte = [{"d": tag, "w": v.get("rounded")} for tag, v in sorted(verlauf.items()) if isinstance(v.get("rounded"), int)]
-    return _JSONResp({"punkte": punkte}, headers={"Cache-Control": "no-store"})
+    aus = {k: d[k] for k in ("taeglich", "woechentlich", "ersterAufgezeichnet")}
+    if _it_schalter("IT_SPX_VERGLEICH") and d["spx"]["woechentlich"]:
+        aus["spx"] = d["spx"]
+    return _JSONResp(aus, headers={"Cache-Control": "no-store"})
+
+
+def _it_verlauf_werkzeug(von, bis):
+    """KI-Werkzeug: Marktstress zwischen zwei Daten (taeglich bis 130 Tage, sonst woechentlich)."""
+    from datetime import date as _date
+    d = _it_historie_daten()
+    try:
+        v, b = _date.fromisoformat(str(von)[:10]).isoformat(), _date.fromisoformat(str(bis)[:10]).isoformat()
+    except ValueError:
+        return json.dumps({"fehler": "Datum im Format JJJJ-MM-TT angeben"})
+    if v > b:
+        v, b = b, v
+    alle = {p[0]: p for p in d["woechentlich"]}
+    try:
+        with open(IT_HIST_PFADE[1]) as f:
+            rueck = json.load(f).get("tage", {})
+        for t, x in rueck.items():
+            if v <= t <= b and x.get("count", 0) >= 8:
+                alle[t] = [t, x["rounded"], x["count"], "r"]
+    except (OSError, ValueError):
+        pass
+    for p in d["taeglich"]:
+        alle[p[0]] = p
+    punkte = [alle[t] for t in sorted(alle) if v <= t <= b]
+    if not punkte:
+        return json.dumps({"fehler": "Für diesen Zeitraum gibt es keine Werte (Verlauf ab Ende Oktober 2006)."}, ensure_ascii=False)
+    if len(punkte) > 130:  # verdichten: letzter Wert je Woche
+        w = {}
+        for p in punkte:
+            j, k, _ = _date.fromisoformat(p[0]).isocalendar()
+            w[(j, k)] = p
+        punkte = [w[x] for x in sorted(w)]
+    hoch, tief = max(punkte, key=lambda p: p[1]), min(punkte, key=lambda p: p[1])
+    return json.dumps({
+        "werte": [{"datum": p[0], "wert": p[1], "bestandteile": p[2], "herkunft": "zurückgerechnet" if p[3] == "r" else "aufgezeichnet"} for p in punkte],
+        "hoechster": {"datum": hoch[0], "wert": hoch[1]}, "niedrigster": {"datum": tief[0], "wert": tief[1]},
+        "hinweis": "Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet; in früheren Jahren standen teils "
+                   "weniger Bestandteile zur Verfügung. Das in der Antwort kurz erwähnen. Vergangene Entwicklungen erlauben keine "
+                   "verlässliche Aussage über die Zukunft. Keine Anlageberatung, keine Kauf- oder Verkaufssignale ableiten."},
+        ensure_ascii=False)

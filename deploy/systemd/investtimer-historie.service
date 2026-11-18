@@ -1,0 +1,6 @@
+[Unit]
+Description=InvestTimer: S&P 500 Tagesschluss fuer den Verlaufsvergleich holen
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/www/investtimer/historie/holen.py SPX

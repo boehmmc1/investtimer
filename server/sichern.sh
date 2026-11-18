@@ -14,5 +14,6 @@ for db in konto alarme; do
   python3 -c "import sqlite3,sys;r=sqlite3.connect(sys.argv[1]).execute('PRAGMA integrity_check').fetchone()[0];sys.exit(r!='ok')" "$ZIEL/$db-$TAG.db"
 done
 [ -f "$QUELLE/data/history.json" ] && cp "$QUELLE/data/history.json" "$ZIEL/history-$TAG.json"
+[ -f "$QUELLE/historie/rueckrechnung.json" ] && gzip -c "$QUELLE/historie/rueckrechnung.json" > "$ZIEL/rueckrechnung-$TAG.json.gz"
 find "$ZIEL" -type f -mtime +14 -delete
 echo "Sicherung $TAG: $(ls "$ZIEL" | grep -c "$TAG") Dateien"

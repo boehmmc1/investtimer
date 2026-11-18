@@ -82,6 +82,18 @@ def load_history(path, seed_path):
     return {}
 
 
+def load_rueckrechnung(path, min_count=8):
+    """Rueckgerechnete Tage (nur mit mindestens min_count Bestandteilen) im Format des Verlaufs."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            tage = json.load(handle).get("tage", {})
+    except (OSError, ValueError):
+        return {}
+    return {d: {"model": "investtimer-us-market-stress", "asOf": d, "rounded": t["rounded"], "count": t["count"],
+                "total": t.get("total", 14), "rows": t["rows"], "blocks": t["blocks"]}
+            for d, t in tage.items() if t.get("count", 0) >= min_count}
+
+
 def public_snapshot(history, today, delay_days):
     """Juengster Stand, der mindestens delay_days alt ist; sonst der aelteste."""
     if not history:
@@ -103,14 +115,16 @@ def main(argv):
     seed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed_history.json")
     history = load_history(history_path, seed_path)
     history[payload["asOf"]] = {k: payload[k] for k in PUBLIC_KEYS if k in payload and k != "updatedAt"}
-    history = dict(sorted(history.items())[-400:])
-    snapshot = public_snapshot(history, payload["asOf"], delay)
+    # Aufgezeichnete Tage werden nie gekuerzt oder ersetzt. Fuer den oeffentlichen Stand zaehlt
+    # zusaetzlich die Rueckrechnung (nur Tage vor der Aufzeichnung, mindestens 8 Bestandteile).
+    rueck = load_rueckrechnung(os.environ.get("IT_RUECKRECHNUNG", "/var/lib/investtimer/historie/rueckrechnung.json"))
+    snapshot = public_snapshot(dict(rueck, **history), payload["asOf"], delay)
     payload["publicSnapshot"] = snapshot
     if os.environ.get("PUBLIC_ONLY", "").strip() == "1":
         # Oeffentliche Datei ohne aktuellen Wert: oben steht der zeitversetzte Stand selbst.
         payload = dict(snapshot, publicSnapshot=snapshot, publicOnly=True)
-    print("oeffentlicher Stand: %s vom %s (Verzoegerung %d Tage, %d Tage im Verlauf)" % (
-        snapshot["rounded"], snapshot["asOf"], delay, len(history)))
+    print("oeffentlicher Stand: %s vom %s (Verzoegerung %d Tage, %d Tage aufgezeichnet, %d rueckgerechnet)" % (
+        snapshot["rounded"], snapshot["asOf"], delay, len(history), len(rueck)))
     if "--check" not in argv:
         write_atomic(history_path, history)
         os.chmod(history_path, 0o600)

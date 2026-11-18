@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .DS_Store
 a_*.png
+historie/daten/
+historie/rueckrechnung.json

@@ -184,11 +184,19 @@ TEXTE_KONTO_EN = ("kontoMenueLabel:'Account menu',kontoMenueKonto:'My account',k
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
 KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8")
-TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufAria:'Verlauf des Marktstress, {n} Tageswerte',verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',"
-                    "verlaufNote:'{n} Tageswerte, zwischen {min} und {max}. Aufgezeichnet seit {seit}, je ein Wert pro Tag.',"
+TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufTitelSpx:'Marktstress und S&P 500 im Vergleich',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Tag für Tag ansehen.',"
+                    "verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',verlauf1J:'1J',verlauf5J:'5J',legendeAuf:'aufgezeichnet',legendeRueck:'zurückgerechnet',"
+                    "spxEinblenden:'S&P 500 einblenden',spxLabel:'S&P 500',spxLog:'logarithmische Skala',"
+                    "spxQuelle:'S&P 500: Index von S&P Dow Jones Indices, Tagesschlusskurse über TradingView.',"
+                    "tipWert:'Marktstress {w}',tipBestandteile:'{n} von 14 Bestandteilen',"
+                    "verlaufHinweis:'Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet. In früheren Jahren standen teils weniger Bestandteile zur Verfügung. Vergangene Entwicklungen erlauben keine verlässliche Aussage über die Zukunft. Keine Anlageberatung.',"
                     "verlaufPremium:'Den vollständigen Verlauf siehst du mit Premium.',verlaufFehlt:'Der Verlauf ist gerade nicht verfügbar.',")
-TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufAria:'Market stress history, {n} daily readings',verlaufSpanne:'Period',verlaufAlle:'All',"
-                    "verlaufNote:'{n} daily readings, between {min} and {max}. Recorded since {seit}, one reading per day.',"
+TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufTitelSpx:'Market stress and the S&P 500 compared',verlaufAria:'Market stress history, {n} readings. Use the arrow keys to step through the days.',"
+                    "verlaufSpanne:'Period',verlaufAlle:'All',verlauf1J:'1Y',verlauf5J:'5Y',legendeAuf:'recorded',legendeRueck:'back-calculated',"
+                    "spxEinblenden:'Show S&P 500',spxLabel:'S&P 500',spxLog:'logarithmic scale',"
+                    "spxQuelle:'S&P 500: index by S&P Dow Jones Indices, daily closing prices via TradingView.',"
+                    "tipWert:'Market stress {w}',tipBestandteile:'{n} of 14 components',"
+                    "verlaufHinweis:'Readings before 15 Nov 2026 were calculated afterwards with today’s model. In earlier years, fewer components were sometimes available. Past developments do not allow reliable conclusions about the future. Not investment advice.',"
                     "verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'The history is not available right now.',")
 KONTO_CSS = """
 .app-header .header-tools{position:relative}
@@ -224,7 +232,7 @@ a.primary.full{display:flex;align-items:center;justify-content:center;text-decor
 .tarif-badge{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--text);color:var(--bg,#fff)}
 .tarif-bedingung{font-size:13px;line-height:1.55;color:var(--sub)}
 @media (min-width:560px){.tarife{grid-template-columns:1fr 1fr}}
-.verlauf{margin:0 0 40px}.verlauf h3{font-size:13px;font-weight:500;margin:0 0 14px}.verlauf-knoepfe{display:flex;gap:6px;margin:0 0 12px}.verlauf-spanne{min-height:36px;min-width:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--sub)}.verlauf-spanne.aktiv{background:var(--text);color:var(--bg);border-color:var(--text)}.verlauf .primary{margin-top:10px}
+.verlauf{margin:0 0 40px}.verlauf-kopf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:0 0 8px}.verlauf-kopf .verlauf-knoepfe{margin:0}.verlauf-spx-schalter{display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px;color:var(--sub)}.verlauf-spx-schalter input{width:18px;height:18px;accent-color:var(--accent)}.verlauf-legende{display:flex;gap:16px;font-size:12px;color:var(--sub);margin:0 0 6px}.verlauf-legende span{display:inline-flex;align-items:center;gap:6px}.verlauf-legende i{display:inline-block;width:22px;height:0;border-top:2px solid var(--accent)}.verlauf-legende i.gestrichelt{border-top-style:dashed;opacity:.55}.verlauf-svg{height:auto!important}.verlauf-rueck{opacity:.5;stroke-dasharray:4 3}.verlauf-spx-linie{fill:none;stroke:var(--text);stroke-width:1.5;opacity:.75;stroke-linejoin:round}.verlauf-diagramm{position:relative;outline-offset:4px;touch-action:pan-y}.verlauf-panel-titel{font-size:12px;color:var(--sub);margin:10px 0 2px}.verlauf-cursor{stroke:var(--sub);stroke-width:1;stroke-dasharray:2 3}.verlauf-cursor-punkt{fill:var(--accent);stroke:var(--bg);stroke-width:2}.verlauf-tip{position:absolute;top:-6px;z-index:5;display:grid;gap:1px;padding:7px 10px;background:var(--surface,#fff);border:1px solid #bfccbc;border-radius:6px;box-shadow:0 6px 18px rgba(27,51,48,.12);font-size:12px;line-height:1.45;color:var(--text);pointer-events:none;white-space:nowrap}.verlauf-tip .tip-rueck{color:var(--sub)}.verlauf h3{font-size:13px;font-weight:500;margin:0 0 14px}.verlauf-knoepfe{display:flex;gap:6px;margin:0 0 12px}.verlauf-spanne{min-height:36px;min-width:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--sub)}.verlauf-spanne.aktiv{background:var(--text);color:var(--bg);border-color:var(--text)}.verlauf .primary{margin-top:10px}
 """
 
 # Alarme, Push und Installation (tools/alarme.js)
@@ -776,6 +784,11 @@ def main(source, target_dir, preview, anmeldung=None):
                      "snapshotScore", "sourceLibraryFileId", "data:video", "answerKind", "BEISPIELANTWORT"):
         if leftover in html:
             raise SystemExit("Rest gefunden: " + leftover)
+    # Filmhinweis: Werte am 18.11.2026 gegen die Rueckrechnung geprueft (2.117 von 2.126 Tagen gleich, sonst 1 Punkt)
+    html = once(html, "note:'Der Clip veranschaulicht die Produktidee. Die historischen Stresswerte im Film sind noch nicht gegen das 14-Komponenten-Modell geprüft.'",
+                "note:'Der Clip veranschaulicht die Produktidee. Die historischen Stresswerte im Film sind mit dem heutigen Modell zurückgerechnet; bis Mitte 2020 standen 13 der 14 Bestandteile zur Verfügung. Vergangene Entwicklungen erlauben keine verlässliche Aussage über die Zukunft.'", "Filmhinweis de")
+    html = once(html, "note:'The clip illustrates the product idea. Its historical stress values have not yet been checked against the 14-component model.'",
+                "note:'The clip illustrates the product idea. Its historical stress values were back-calculated with today’s model; until mid-2020, 13 of the 14 components were available. Past developments do not allow reliable conclusions about the future.'", "Filmhinweis en")
     html = entwurfsreste_entfernen(html)
     html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
@@ -794,7 +807,7 @@ ENTWURF_TEXTE = {  # Schluessel: (de, en)
     "savedTitle": ("Deine Auswahl.", "Your selection."), "hint": ("", ""), "accessDemo": ("", ""),
     "review": ("", ""), "public": ("", ""), "members": ("", ""), "reviewNote": ("", ""),
     "accessAction": ("Anmelden", "Sign in"), "preview": ("Historischer Einblick", "Historical reading"),
-    "draft": ("Historische Stresswerte im Film noch nicht geprüft", "Historical stress values in the film not yet verified"),
+    "draft": ("Historische Stresswerte im Film zurückgerechnet", "Historical stress values in the film back-calculated"),
 }
 ENTWURF_WORTE = re.compile(r"(?i)demo|entwurf|vorschau|beispielantwort")
 
