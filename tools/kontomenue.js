@@ -18,7 +18,7 @@ function kmRender(){
  if(login)login.hidden=an;kmKnopf.hidden=!an;
  if(!an){kmSchliessen(false);return}
  const mail=kmEmail(),buchstabe=(mail.trim()[0]||'?').toUpperCase();
- kmKnopf.innerHTML='<span class="konto-kreis" aria-hidden="true">'+esc(buchstabe)+'</span><svg class="konto-pfeil" viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+ kmKnopf.innerHTML='<span class="konto-kreis" aria-hidden="true">'+esc(buchstabe)+'</span>';
  kmKnopf.setAttribute('aria-label',t('kontoMenueLabel')+(mail?': '+mail:''));
  kmMenue.innerHTML='<div class="konto-menue-mail" role="presentation" title="'+esc(mail)+'">'+esc(mail)+'</div>'
   +kmEintraege().map(([a,k])=>'<button type="button" role="menuitem" tabindex="-1" data-km="'+a+'">'+t(k)+'</button>').join('')
@@ -32,7 +32,10 @@ function kmOeffnen(zuletzt){
 function kmSchliessen(fokus){
  if(kmMenue.hidden)return;kmMenue.hidden=true;kmKnopf.setAttribute('aria-expanded','false');if(fokus)kmKnopf.focus();
 }
-kmKnopf.addEventListener('click',()=>kmMenue.hidden?kmOeffnen():kmSchliessen(true));
+/* Mobil fuehrt der Initialen-Kreis direkt in die Konto-Ansicht, auf dem Desktop oeffnet er das Menue */
+const kmMobil=()=>matchMedia('(max-width:759px)').matches;
+const kmZurAnsicht=()=>{if(location.hash!=='#konto')location.hash='konto';else IT.route&&IT.route()};
+kmKnopf.addEventListener('click',()=>{if(kmMobil()){kmSchliessen(false);kmZurAnsicht();return}kmMenue.hidden?kmOeffnen():kmSchliessen(true)});
 kmKnopf.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();kmOeffnen(e.key==='ArrowUp')}});
 kmMenue.addEventListener('keydown',e=>{
  const p=kmPunkte(),i=p.indexOf(document.activeElement);
@@ -45,7 +48,7 @@ kmMenue.addEventListener('keydown',e=>{
 });
 kmMenue.addEventListener('click',e=>{
  const b=e.target.closest('[data-km]');if(!b)return;const a=b.dataset.km;kmSchliessen(false);
- if(a==='konto')IT.oeffneKonto(kmKnopf,'konto');
+ if(a==='konto')kmZurAnsicht();
  else if(a==='abo')IT.oeffneKonto(kmKnopf,IT.aboAnsicht?IT.aboAnsicht():'konto');
  else if(a==='alarme')IT.oeffneAlarme(kmKnopf);
  else if(a==='install')IT.oeffneInstall(kmKnopf);

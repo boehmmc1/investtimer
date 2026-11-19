@@ -5,13 +5,19 @@
    Desktop: Kurzname im Band, Hover/Klick zeigt die Ereigniskarte. Mobil (< 760 px): wischbare Chip-Leiste. */
 let verlauf=null,verlaufZeit=0,verlaufSpanne='1J',verlaufIndex=null,verlaufEreignis=null;
 const vMobil=()=>window.matchMedia('(max-width:759px)').matches;
-const panel=$('#details-panel');
-const SPANNEN=[['1M',31,'taeglich'],['3M',92,'taeglich'],['1J',366,'woechentlich'],['5J',1827,'woechentlich'],['A',0,'monatlich']];
+/* Eigene Ansicht #verlauf; Daten erst beim Oeffnen. Ausgeloggt nur bis zum zeitversetzten Datum (oeffentlicher Endpunkt). */
+const vAn=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
+const panel=document.createElement('section');panel.id='verlauf-ansicht';panel.className='verlauf-ansicht';panel.hidden=true;panel.setAttribute('aria-labelledby','verlauf-ansicht-titel');
+($('.app-header')||document.body).after(panel);
+let verlaufFuer=null;
+const SPANNEN=[['1M',29,'taeglich'],['3M',92,'taeglich'],['1J',366,'woechentlich'],['5J',1827,'woechentlich'],['A',0,'monatlich']];
 const V_BAND_MIN=70,V_BAND_BREITE=6;
 async function ladeVerlauf(){
- if(verlauf&&Date.now()-verlaufZeit<600000)return verlauf;
- try{verlauf=await api('historie')}catch(x){verlauf={fehler:x}}verlaufZeit=Date.now();return verlauf;
+ const an=vAn();if(verlauf&&!verlauf.fehler&&verlaufFuer===an&&Date.now()-verlaufZeit<600000)return verlauf;
+ try{verlauf=an?await api('historie'):await fetch('/api/historie-oeffentlich',{cache:'no-cache'}).then(r=>r.ok?r.json():Promise.reject(r.status))}catch(x){verlauf={fehler:x}}
+ verlaufFuer=an;verlaufZeit=Date.now();return verlauf;
 }
+IT.ladeVerlauf=ladeVerlauf;
 const vLang=()=>document.documentElement.lang==='en'?'en-US':'de-DE';
 const vMs=d=>Date.parse(d+'T12:00:00Z');
 const vEn=()=>document.documentElement.lang==='en';
@@ -23,7 +29,7 @@ function vAuswahl(){
  const ende=reihe.length?vMs(reihe[reihe.length-1][0]):Date.now(),start=tage?ende-tage*864e5:-Infinity;
  const p=reihe.filter(x=>vMs(x[0])>=start);
  const a=p.length?p[0][0]:'',b=p.length?p[p.length-1][0]:'';
- const e=(verlauf.ereignisse||[]).filter(x=>x.ende>a&&x.start<=b&&(verlaufSpanne!=='A'||(x.spitze&&x.spitze.w>=V_BAND_MIN)));
+ const e=(verlauf.ereignisse||[]).filter(x=>x.ende>a&&x.start<=b&&x.spitze&&x.spitze.d>=a&&x.spitze.d<=b&&(verlaufSpanne!=='A'||x.spitze.w>=V_BAND_MIN));
  return {p,e,art};
 }
 function vDatum(d){return new Date(vMs(d)).toLocaleDateString(vLang(),{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'})}
@@ -117,10 +123,9 @@ function vAktiviere(id){
  const k=box.querySelector('.ereignis-karte');if(k){k.innerHTML=vKarte(m);k.hidden=false}
  vChipInSicht(box,true);
 }
-function vTitel(){return t('verlaufTitel')}
 function vZeichnen(fokus){
  const box=panel&&panel.querySelector('.verlauf');if(!box)return;
- box.innerHTML='<h3>'+vTitel()+'</h3>'+verlaufHtml();verlaufIndex=null;vChipInSicht(box,false);
+ box.innerHTML=verlaufHtml();verlaufIndex=null;vChipInSicht(box,false);vKopf();
  if(fokus)box.querySelector(fokus)?.focus();
 }
 /* Tooltip: naechster Wert zur Zeigerposition bzw. per Pfeiltasten */
@@ -144,15 +149,23 @@ function vIndexBei(ev){
  const r=svg.getBoundingClientRect(),xv=(ev.clientX-r.left)/r.width*vW,{p}=vAuswahl(),x=vX(p);
  let best=0,bd=Infinity;p.forEach((q,i)=>{const d=Math.abs(x(q[0])-xv);if(d<bd){bd=d;best=i}});return best;
 }
-async function zeigeVerlauf(){
- if(!panel||panel.hidden||!(IT.session||IT.member))return;
- let box=panel.querySelector('.verlauf');
- if(!box){box=document.createElement('section');box.className='verlauf';const intro=panel.querySelector('.detail-intro');if(!intro)return;intro.after(box)}
- box.innerHTML='<h3>'+vTitel()+'</h3>'+verlaufHtml();
- if(!verlauf){await ladeVerlauf();vZeichnen()}else vChipInSicht(box,false);
+function vKopf(){
+ const k=panel.querySelector('.verlauf-ansicht-kopf');if(!k)return;
+ const gesperrt=!vAn()&&verlauf&&!verlauf.fehler;
+ k.innerHTML='<div><span class="eyebrow verlauf-eyebrow">'+esc(t('verlaufEyebrow'))+'</span><h2 id="verlauf-ansicht-titel" tabindex="-1">'+esc(t('verlaufTitel'))+'</h2></div>'
+  +(gesperrt?'<p class="verlauf-gesperrt"><span>'+esc(t('verlaufNeuer'))+'</span> <button type="button" class="text-button" data-ki-login>'+esc(t('loginSubmit'))+'</button></p>':'');
 }
+function zeigeVerlauf(){
+ const fokus=document.activeElement&&document.activeElement.id==='verlauf-ansicht-titel';
+ panel.innerHTML='<header class="verlauf-ansicht-kopf"></header><div class="verlauf"></div>';
+ const box=panel.querySelector('.verlauf');vKopf();
+ const frisch=verlauf&&!verlauf.fehler&&verlaufFuer===vAn();
+ box.innerHTML=verlaufHtml();
+ if(fokus)$('#verlauf-ansicht-titel')?.focus({preventScroll:true});
+ if(!frisch){if(verlauf&&verlaufFuer!==vAn())verlauf=null;box.innerHTML=verlaufHtml();ladeVerlauf().then(()=>{if(!panel.hidden)vZeichnen()})}else vChipInSicht(box,false);
+}
+IT.verlaufAnsicht={zeigen(){const war=panel.hidden;panel.hidden=false;if(war||!panel.querySelector('.verlauf'))zeigeVerlauf()},verbergen(){panel.hidden=true}};
 if(panel){
- new MutationObserver(()=>{if(!panel.querySelector('.verlauf'))zeigeVerlauf()}).observe(panel,{childList:true,attributes:true,attributeFilter:['hidden']});
  panel.addEventListener('click',e=>{const ev=e.target.closest('[data-ereignis]');if(ev){vAktiviere(ev.dataset.ereignis);return}
   const b=e.target.closest('[data-spanne],#verlauf-premium');if(!b)return;
   if(b.id==='verlauf-premium'){IT.oeffneKonto&&IT.oeffneKonto(b,'paywall');return}
@@ -169,5 +182,5 @@ if(panel){
  panel.addEventListener('focusout',e=>{if(e.target.classList&&e.target.classList.contains('verlauf-diagramm'))vVerberge()});
 }
 let vGroesse=null;window.addEventListener('resize',()=>{clearTimeout(vGroesse);vGroesse=setTimeout(()=>{if(verlauf&&panel&&panel.querySelector('.verlauf-diagramm')){const alt=vW,altM=panel.querySelector('.verlauf-chips')!=null;vBreite();if(alt!==vW||altM!==vMobil())vZeichnen();else vChipsRand(panel.querySelector('.verlauf-chips'))}},150)});
-document.addEventListener('investtimer:update',()=>{verlauf=null;const b=panel&&panel.querySelector('.verlauf');if(b)b.remove();zeigeVerlauf()});
-new MutationObserver(()=>{if(verlauf&&panel&&panel.querySelector('.verlauf'))vZeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+document.addEventListener('investtimer:update',()=>{if(verlaufFuer!==vAn()){verlauf=null}if(!panel.hidden)zeigeVerlauf()});
+new MutationObserver(()=>{if(!panel.hidden&&verlauf&&panel.querySelector('.verlauf'))vZeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});

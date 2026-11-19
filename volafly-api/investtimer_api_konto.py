@@ -383,6 +383,23 @@ def _it_historie_daten():
     return daten
 
 
+def _it_historie_bis(d, bis):
+    """Verlauf bis einschliesslich 'bis' (oeffentlich, 7-Tage-Regel). Die angebrochene Woche bzw. der angebrochene Monat
+    endet am letzten Handelstag bis 'bis' (statt mit dem spaeteren Wochen-/Monatsschluss)."""
+    from datetime import date as _date
+    tage = [p for p in d["taeglich"] if p[0] <= bis]
+    aus = {"taeglich": tage}
+    for art, schluessel in (("woechentlich", lambda x: _date.fromisoformat(x).isocalendar()[:2]), ("monatlich", lambda x: x[:7])):
+        reihe = [p for p in d[art] if p[0] <= bis and schluessel(p[0]) != schluessel(bis)]
+        rest = [p for p in tage if schluessel(p[0]) == schluessel(bis)]
+        if rest:
+            reihe.append(rest[-1][:4] + [min(x[1] for x in rest), max(x[1] for x in rest)])
+        aus[art] = reihe
+    aus.update(bis=bis, ersterAufgezeichnet=d["ersterAufgezeichnet"],
+               ereignisse=[e for e in d["ereignisse"] if e["spitze"]["d"] <= bis])
+    return aus
+
+
 @app.get("/v1/investtimer/historie")
 def it_historie(request: Request):
     """Tagesverlauf des Marktstress (Premium bzw. mit Anmeldung, solange die Pflicht aus ist).
@@ -399,6 +416,49 @@ def it_historie(request: Request):
     # S&P 500 wird nicht mehr ausgeliefert (Datenrechte LIC-001, 18.11.2026)
     aus = {k: d[k] for k in ("taeglich", "woechentlich", "monatlich", "ersterAufgezeichnet", "ereignisse")}
     return _JSONResp(aus, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/v1/investtimer/historie-oeffentlich")
+def it_historie_oeffentlich():
+    """Verlauf ohne Anmeldung: nur bis zum zeitversetzten oeffentlichen Stand (7-Tage-Regel, wie /data/stress.json)."""
+    try:
+        with open("/var/lib/investtimer/data/stress.json") as f:
+            bis = (json.load(f).get("publicSnapshot") or {}).get("asOf")
+    except (OSError, ValueError):
+        bis = None
+    d = _it_historie_daten()
+    if not bis or not (d["taeglich"] or d["woechentlich"]):
+        return _it_aus()
+    aus = _it_historie_bis(d, bis)
+    return _JSONResp(aus, headers={"Cache-Control": "public, max-age=600"})
+
+
+@app.get("/v1/investtimer/konto/export")
+def it_konto_export(request: Request):
+    """Eigene Daten herunterladen (Art. 15/20 DSGVO): Konto, Abo-Stand, KI-Nutzung, Alarme, Anzahl Geraete."""
+    uid, fehler = _it_nutzer_oder_fehler(request)
+    if fehler:
+        return fehler
+    nutzer = {}
+    try:
+        r = _rq.get(_it_env("IT_SUPABASE_URL").rstrip("/") + "/auth/v1/user",
+                    headers={"apikey": _it_env("IT_SUPABASE_ANON_KEY"), "Authorization": request.headers.get("authorization", "")}, timeout=6)
+        if r.status_code == 200:
+            u = r.json()
+            nutzer = {k: u.get(k) for k in ("id", "email", "created_at", "last_sign_in_at", "email_confirmed_at")}
+    except Exception:
+        pass
+    try:
+        al = _alarme.liste(uid)
+        alarme = [{k: a.get(k) for k in ("id", "richtung", "schwelle", "aktiv", "scharf", "kanal", "sprache")} for a in al["alarme"]]
+        geraete = al["geraete"]
+    except Exception:
+        alarme, geraete = [], None
+    aus = {"erstellt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "dienst": "InvestTimer (investtimer.net)",
+           "konto": nutzer, "abo": _konto.status(uid), "kiNutzung": _konto.ki_stand(uid),
+           "alarme": alarme, "pushGeraete": geraete}
+    return _JSONResp(aus, headers={"Cache-Control": "no-store",
+                                   "Content-Disposition": 'attachment; filename="investtimer-daten.json"'})
 
 
 def _it_verlauf_werkzeug(von, bis):

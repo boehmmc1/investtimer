@@ -93,12 +93,14 @@ function navRender(){
  const a=aktiv();
  tabs.setAttribute('aria-label',kt('nav'));leiste.setAttribute('aria-label',kt('nav'));
  tabs.innerHTML=[['stress','#'],['ki','#ki'],['verlauf','#verlauf']].map(([k,h])=>'<a href="'+h+'" data-ziel="'+k+'"'+(a===k?' aria-current="page"':'')+'>'+kt('tab'+k[0].toUpperCase()+k.slice(1).replace('stress','Stress'))+'</a>').join('');
- leiste.innerHTML=[['stress','#'],['ki','#ki'],['verlauf','#verlauf'],['konto','']].map(([k,h])=>(k==='konto'?'<button type="button" data-ziel="konto">':'<a href="'+h+'" data-ziel="'+k+'"'+(a===k?' aria-current="page"':'')+'>')+SVG[k]+'<span>'+kt('tab'+k[0].toUpperCase()+k.slice(1))+'</span>'+(k==='konto'?'</button>':'</a>')).join('');
+ leiste.innerHTML=[['stress','#'],['ki','#ki'],['verlauf','#verlauf'],['konto','#konto']].map(([k,h])=>'<a href="'+h+'" data-ziel="'+k+'"'+(a===k?' aria-current="page"':'')+'>'+SVG[k]+'<span>'+kt('tab'+k[0].toUpperCase()+k.slice(1))+'</span></a>').join('');
 }
-function aktiv(){const h=location.hash.replace('#','');return h==='ki'?'ki':h==='verlauf'?'verlauf':'stress'}
+function aktiv(){const h=location.hash.replace('#','');return ['ki','verlauf','konto'].includes(h)?h:'stress'}
 if(kopf){kopf.insertBefore(tabs,werkzeuge||null);document.body.append(leiste);document.body.classList.add('mit-leiste')}
-leiste.addEventListener('click',e=>{const b=e.target.closest('[data-ziel=konto]');if(!b)return;
- if(angemeldet())$('#konto-knopf')?.click();else $('#account-login')?.click()});
+/* "#" als Ziel fuer Marktstress: ohne Rest-Raute in der Adresse, Zurueck-Taste bleibt nutzbar */
+function navKlick(e){const l=e.target.closest('a[data-ziel]');if(!l||e.metaKey||e.ctrlKey||e.shiftKey)return;
+ if(l.dataset.ziel==='stress'){e.preventDefault();if(aktiv()!=='stress'){history.pushState(null,'',location.pathname+location.search);route();window.scrollTo({top:0})}else window.scrollTo({top:0,behavior:'smooth'})}}
+leiste.addEventListener('click',navKlick);tabs.addEventListener('click',navKlick);
 
 /* ---------- KI-Ansicht ---------- */
 function ansichtAnlegen(){
@@ -241,26 +243,26 @@ function platzUnten(){
 if(window.visualViewport){visualViewport.addEventListener('resize',()=>{platzUnten();nachUnten(false)});visualViewport.addEventListener('scroll',platzUnten)}
 addEventListener('resize',platzUnten);
 
-/* ---------- Routing ---------- */
-const detailsPanel=$('#details-panel'),detailsKnopf=$('#details-toggle');
-function verlaufZeigen(){
- if(detailsPanel&&detailsPanel.hidden&&detailsKnopf)detailsKnopf.click();
- setTimeout(()=>{const v=detailsPanel&&detailsPanel.querySelector('.verlauf');
-  if(v){v.scrollIntoView({block:'start'});v.querySelector('h3')?.setAttribute('tabindex','-1');v.querySelector('h3')?.focus({preventScroll:true});return}
-  let h=detailsPanel&&detailsPanel.querySelector('.ki-verlauf-login');
-  if(!h&&detailsPanel){h=document.createElement('div');h.className='ki-verlauf-login';const intro=detailsPanel.querySelector('.detail-intro');(intro?intro.after(h):detailsPanel.prepend(h))}
-  if(h){h.innerHTML='<p>'+esc(kt('verlaufLogin'))+'</p><button type="button" class="primary" data-ki-login>'+esc(kt('verlaufLoginKnopf'))+'</button>';h.scrollIntoView({block:'center'})}
- },60);
-}
+/* ---------- Routing: Marktstress (ohne Raute), #ki, #verlauf, #konto ---------- */
+const scrollMerk={};let letzte=null;
 function route(){
- const a=aktiv();document.body.classList.toggle('ansicht-ki',a==='ki');
+ const a=aktiv();
+ if(letzte&&letzte!==a)scrollMerk[letzte]=window.scrollY;
+ ['ki','verlauf','konto'].forEach(k=>document.body.classList.toggle('ansicht-'+k,a===k));
+ document.body.classList.toggle('ansicht-neben',a!=='stress');
  if(!ansicht)ansichtAnlegen();
  ansicht.hidden=a!=='ki';navRender();
+ IT.verlaufAnsicht&&IT.verlaufAnsicht[a==='verlauf'?'zeigen':'verbergen']();
+ IT.kontoAnsicht&&IT.kontoAnsicht[a==='konto'?'zeigen':'verbergen']();
  if(a==='ki'){zeichnen(st.gespraech.length?null:'titel');restLaden();window.scrollTo({top:st.gespraech.length?document.documentElement.scrollHeight:0});haftUnten=true}
- else if(a==='verlauf'){verlaufZeigen()}
- else{document.body.classList.remove('ki-tastatur')}
+ else{document.body.classList.remove('ki-tastatur');
+  if(letzte!==a){window.scrollTo({top:a==='stress'?(scrollMerk.stress||0):0});
+   if(letzte){const h=a==='verlauf'?$('#verlauf-ansicht-titel'):a==='konto'?$('#konto-ansicht-titel'):null;h&&h.focus({preventScroll:true})}}}
+ letzte=a;
 }
-addEventListener('hashchange',()=>{route();if(aktiv()==='stress')window.scrollTo({top:0})});
+IT.route=route;IT.aktiveAnsicht=aktiv;
+addEventListener('popstate',route);
+addEventListener('hashchange',route);
 document.addEventListener('click',e=>{
  const l=e.target.closest('[data-ki-login]');if(l){$('#account-login')?.click();return}
  const q=e.target.closest('[data-ki-frage]');if(!q)return;e.preventDefault();

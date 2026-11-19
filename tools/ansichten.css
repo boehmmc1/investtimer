@@ -1,0 +1,74 @@
+
+/* ===== Ansichten: Marktstress (Start), #ki, #verlauf, #konto (tools/ki.js, verlauf.js, kontoansicht.js) ===== */
+:root{--sa-top:env(safe-area-inset-top, 0px);--sa-bottom:env(safe-area-inset-bottom, 0px);--sa-left:env(safe-area-inset-left, 0px);--sa-right:env(safe-area-inset-right, 0px);--leiste-h:60px}
+body{padding-top:var(--sa-top);padding-left:var(--sa-left);padding-right:var(--sa-right)}
+body::before{height:var(--sa-top)}
+body.ansicht-neben .app>main{display:none!important}
+.verlauf-ansicht[hidden],.konto-ansicht[hidden]{display:none!important}
+@media(max-width:759px){
+ body{padding-bottom:calc(var(--leiste-h) + var(--sa-bottom))}
+ .it-leiste{padding:0 var(--sa-right) var(--sa-bottom) var(--sa-left)}
+ body.ansicht-konto .app-footer{display:none}
+ /* Sprache wandert mobil in die Konto-Ansicht */
+ .app-header .header-language{display:none}
+}
+/* Kontoknopf: nur der runde Initialen-Kreis */
+.konto-knopf{border:0;border-radius:50%;padding:0;width:44px;height:44px;min-width:44px;min-height:44px;justify-content:center;background:transparent}
+.konto-knopf:hover,.konto-knopf[aria-expanded=true]{background:transparent}
+.konto-knopf:hover .konto-kreis,.konto-knopf[aria-expanded=true] .konto-kreis{box-shadow:0 0 0 3px var(--panel)}
+.konto-knopf:focus-visible{outline:2px solid #698dbc;outline-offset:1px}
+.konto-kreis{width:34px;height:34px;font-size:15px}
+.header-language{height:44px;min-height:44px;padding:0 4px;border:0;background:transparent;color:var(--sub);font-size:13px;cursor:pointer;border-radius:8px}
+.header-language:hover{color:var(--text)}
+.header-language:focus-visible{outline:2px solid #698dbc;outline-offset:1px}
+/* Verlauf als eigene Ansicht */
+.verlauf-ansicht{max-width:1000px;margin:0 auto;padding:8px 0 40px}
+.verlauf-ansicht-kopf{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 16px;margin:0 0 16px}
+.verlauf-ansicht-kopf h2{font:500 30px/1.2 var(--display);letter-spacing:-.6px;margin:4px 0 0;outline:none}
+.verlauf-eyebrow{display:block;color:var(--accent);font-size:10px;letter-spacing:1.6px}
+.verlauf-gesperrt{margin:0;font-size:13px;color:var(--sub);display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.verlauf-ansicht .verlauf{margin:0}
+@media(max-width:759px){.verlauf-ansicht{padding-top:4px}.verlauf-ansicht-kopf h2{font-size:24px}}
+/* Konto als eigene Ansicht */
+.konto-ansicht{max-width:560px;margin:0 auto;padding:8px 0 32px;text-align:left}
+.konto-kopf{margin:0 0 18px}
+.konto-kopf h2{font:500 30px/1.2 var(--display);letter-spacing:-.6px;margin:4px 0 0;outline:none}
+.konto-eyebrow{display:block;color:var(--accent);font-size:10px;letter-spacing:1.6px}
+.konto-aus-satz{font-size:15px;line-height:1.6;color:var(--sub);margin:10px 0 16px}
+.konto-anmelden{min-height:48px;padding:0 28px}
+.konto-fakten{margin:0 0 22px;display:grid;gap:0;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff)}
+.konto-fakten div{display:flex;justify-content:space-between;gap:16px;padding:13px 16px;border-top:1px solid var(--line);min-width:0}
+.konto-fakten div:first-child{border-top:0}
+.konto-fakten dt{font-size:14px;color:var(--sub);flex:none}
+.konto-fakten dd{margin:0;font-size:14px;color:var(--text);text-align:right;overflow-wrap:anywhere;min-width:0}
+.konto-block{margin:0 0 22px}
+.konto-h{display:block;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--sub);font-weight:600;margin:0 0 8px}
+.konto-liste{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff);overflow:hidden}
+.konto-liste>li{border-top:1px solid var(--line)}.konto-liste>li:first-child{border-top:0}
+.konto-zeile{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 14px 10px 16px;border:0;background:none;text-align:left;color:var(--text);font:inherit;cursor:pointer;box-sizing:border-box;list-style:none}
+.konto-zeile::-webkit-details-marker{display:none}
+.konto-zeile:hover{background:var(--panel);filter:none}
+.konto-zeile:focus-visible{outline:2px solid #698dbc;outline-offset:-2px}
+.konto-zeile-text{flex:1;min-width:0;display:grid;gap:2px}
+.konto-zeile-text b{font-size:15px;font-weight:500}
+.konto-zeile-text small{font-size:12px;line-height:1.45;color:var(--sub)}
+.konto-zeile-pfeil{width:16px;height:16px;flex:none;color:var(--sub)}
+.konto-details[open]>summary .konto-zeile-pfeil{transform:rotate(90deg)}
+.konto-gefahr .konto-zeile-text b{color:#a3332b}
+.konto-st{flex:none;font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--sub);white-space:nowrap}
+.konto-st.st-aktiv{color:#235445;border-color:#9fc0b2;background:#e8f1ec}
+.konto-st.st-wartet{color:#6b5122;border-color:#d8c49b;background:#f7f0e1}
+.konto-leise{font-size:14px;color:var(--sub);margin:0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff)}
+.konto-knopf-neben{display:inline-flex;align-items:center;min-height:44px;margin-top:6px;padding:0 2px;border:0;background:none;color:var(--accent);font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.konto-select{width:100%;min-height:48px;font-size:16px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff);color:var(--text);font-family:inherit}
+.konto-form{display:grid;gap:6px;padding:0 16px 16px}
+.konto-form label{font-size:12px;color:var(--sub)}
+.konto-form input{min-height:48px;font-size:16px;padding:0 14px;border:1px solid #b9c7b6;border-radius:12px;background:var(--surface);color:var(--text);font-family:inherit;width:100%;box-sizing:border-box}
+.konto-form .ok{color:var(--accent);font-size:13px;line-height:1.5;margin:0}
+.konto-form .access-error:empty,.konto-form .ok:empty{display:none}
+.konto-abmelden{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin:4px 0 0;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--text);font:inherit;font-size:15px;cursor:pointer}
+.konto-abmelden:hover{background:var(--panel);filter:none}
+.konto-fuss{margin:26px 0 0;text-align:center;font-size:12px;color:var(--sub);line-height:1.6}
+.konto-fuss a{color:inherit;display:inline-block;padding:12px 2px;text-underline-offset:3px}
+.konto-version{white-space:nowrap}.konto-fuss-version{margin-top:0}
+@media(max-width:759px){.konto-ansicht{padding-top:4px}.konto-kopf h2{font-size:24px}}

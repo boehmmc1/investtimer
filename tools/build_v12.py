@@ -194,22 +194,23 @@ TEXTE_KONTO_EN = ("filmEyebrow:'QUICK EXPLAINER',filmTitel:'The idea in 49 secon
                   "paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Subscription terms',datenschutz:'Privacy',zurueck:'Back',"
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
-KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "ki.js").read_text(encoding="utf-8").replace(
+KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontoansicht.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "ki.js").read_text(encoding="utf-8").replace(
     "__KI_FRAGEN__", json.dumps(json.loads((ROOT / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))["ki_ansicht"], ensure_ascii=False))
-TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Wert für Wert ansehen.',"
+TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufEyebrow:'MARKTSTRESS SEIT 2006',verlaufNeuer:'Neuere Werte nach der Anmeldung',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Wert für Wert ansehen.',"
                     "verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',verlauf1J:'1J',verlauf5J:'5J',legendeAuf:'aufgezeichnet',legendeRueck:'zurückgerechnet',verlaufEreignisHinweis:'Markierte Ereignisse dienen der zeitlichen Einordnung.',ereignisseLabel:'Ereignisse',karteHoechst:'Höchster Marktstress',karteAm:'{w} am {d}',karteUnter40:'Wieder unter 40',karteNachTagen:'nach {n} Tagen',karteNochNicht:'noch nicht',karteTrieb:'Teilwerte am {d}',triebVol:'Kursschwankungen',triebPreis:'Breite und Trend',triebStimmung:'Stimmung und Absicherung',"
                     ""
                     "tipWert:'Marktstress {w}',tipBestandteile:'{n} von 14 Bestandteilen',tipWoche:'Woche bis {d}',tipSchluss:'Marktstress {w} zum Schluss',tipSpanne:'Spanne {a} bis {b}',"
                     "schlussWoche:'Wochenschluss',schlussMonat:'Monatsschluss',flaecheWoche:'Tief bis Hoch der Woche',flaecheMonat:'Tief bis Hoch des Monats',verlaufAlleHinweis:'Bei „Alle“ sind nur Phasen mit einem Höchstwert ab 70 markiert.',"
                     "verlaufHinweis:'Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet. In früheren Jahren standen teils weniger Bestandteile zur Verfügung. Vergangene Entwicklungen erlauben keine verlässliche Aussage über die Zukunft. Keine Anlageberatung.',"
                     "verlaufPremium:'Den vollständigen Verlauf siehst du mit Premium.',verlaufFehlt:'Der Verlauf ist gerade nicht verfügbar.',")
-TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufAria:'Market stress history, {n} readings. Use the arrow keys to step through them.',"
+TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufEyebrow:'MARKET STRESS SINCE 2006',verlaufNeuer:'Newer readings after sign-in',verlaufAria:'Market stress history, {n} readings. Use the arrow keys to step through them.',"
                     "verlaufSpanne:'Period',verlaufAlle:'All',verlauf1J:'1Y',verlauf5J:'5Y',legendeAuf:'recorded',legendeRueck:'back-calculated',verlaufEreignisHinweis:'Marked events serve as a reference in time.',ereignisseLabel:'Events',karteHoechst:'Highest market stress',karteAm:'{w} on {d}',karteUnter40:'Back below 40',karteNachTagen:'after {n} days',karteNochNicht:'not yet',karteTrieb:'Sub-scores on {d}',triebVol:'Price fluctuations',triebPreis:'Breadth and trend',triebStimmung:'Sentiment and protection',"
                     ""
                     "tipWert:'Market stress {w}',tipBestandteile:'{n} of 14 components',tipWoche:'Week ending {d}',tipSchluss:'Market stress {w} at close',tipSpanne:'Range {a} to {b}',"
                     "schlussWoche:'Weekly close',schlussMonat:'Monthly close',flaecheWoche:'Weekly low to high',flaecheMonat:'Monthly low to high',verlaufAlleHinweis:'“All” marks only phases that peaked at 70 or higher.',"
                     "verlaufHinweis:'Readings before 15 Nov 2026 were calculated afterwards with today’s model. In earlier years, fewer components were sometimes available. Past developments do not allow reliable conclusions about the future. Not investment advice.',"
                     "verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'The history is not available right now.',")
+ANSICHTEN_CSS = (ROOT / "tools" / "ansichten.css").read_text(encoding="utf-8")
 KONTO_CSS = """
 /* KI-Bereich (tools/ki.js): Tabs im Header, Leiste unten (mobil), eigene Ansicht #ki */
 #member-assistant{display:none!important}
@@ -527,7 +528,7 @@ function apply(){
  $$('#details-panel details').forEach((e,i)=>{e.open=!!open[i]});window.scrollTo(0,y);
  document.dispatchEvent(new Event('investtimer:update'));
 }
-const AUTH=__AUTH__,SKEY='investtimer-sitzung';
+const AUTH=__AUTH__,SKEY='investtimer-sitzung';IT.authUrl=AUTH.url;IT.authKey=AUTH.key;
 const merke=s=>{try{s?localStorage.setItem(SKEY,JSON.stringify(s)):localStorage.removeItem(SKEY)}catch{}};
 const gemerkt=()=>{try{return JSON.parse(localStorage.getItem(SKEY)||'null')}catch{return null}};
 const sb=(pfad,opt={})=>fetch(AUTH.url+pfad,{...opt,headers:{apikey:AUTH.key,'Content-Type':'application/json',...(opt.headers||{})}});
@@ -733,6 +734,16 @@ KEYS_EN = ("current:'Latest data',sourceLive:'US stock market · Data as of ',"
            "limit:'Today’s question limit has been reached — please come back tomorrow.',"
            "offline:'Connection failed — please try again in a moment.',"
            "unavailable:'The AI is currently unavailable.',")
+
+
+def _version():
+    """Version der ausgelieferten Seite: Datum und Uhrzeit des Builds (UTC), dazu das Build-Datum fuer die Anzeige."""
+    import time as _t
+    jetzt = _t.gmtime()
+    return {"v": _t.strftime("%Y.%m.%d-%H%M", jetzt), "d": _t.strftime("%d.%m.%Y", jetzt)}
+
+
+VERSION = _version()
 
 
 def head_meta(preview):
@@ -945,14 +956,14 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\nupdate();",
                 "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\n"
                 "document.addEventListener('investtimer:update',update);\nupdate();" + (
-                    "\nif(IT.neuesPasswort){IT.zugangModus('neu');openAccess(null)}else if(IT.anmeldeFehler){IT.zugangModus('code-email');zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS.replace("__FILM_AN__", "true" if film_schalter() else "false")
+                    "\nif(IT.neuesPasswort){IT.zugangModus('neu');openAccess(null)}else if(IT.anmeldeFehler){IT.zugangModus('code-email');zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS.replace("__FILM_AN__", "true" if film_schalter() else "false").replace("__VERSION__", json.dumps(VERSION))
                     if anmeldung else ""), "Zugang Aktualisierung")
 
     # Stile: Mobil-Nachschaerfung hinter die Export-Stile, Ergaenzungen hinter die Zugangs-Stile
     head, rest = html.split('<style id="investtimer-access-style">', 1)
     head = once(head, "</style>", MOBILE_CSS + GAUGE_CSS + "</style>", "Mobil-CSS")
     access_css, rest = rest.split("</style>", 1)
-    html = head + '<style id="investtimer-access-style">' + access_css + V12_CSS + HALBMOND_CSS + (ANMELDUNG_CSS + KONTO_CSS if anmeldung else "") + "</style>" + rest
+    html = head + '<style id="investtimer-access-style">' + access_css + V12_CSS + HALBMOND_CSS + (ANMELDUNG_CSS + KONTO_CSS + ANSICHTEN_CSS if anmeldung else "") + "</style>" + rest
 
     for leftover in ("investtimer-snapshot", "evaluateSnapshot", "metricRows", "configRows", "Fear_Greed_Index",
                      "snapshotScore", "sourceLibraryFileId", "data:video", "answerKind", "BEISPIELANTWORT"):
@@ -977,6 +988,9 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, '<meta name="viewport" content="width=device-width,initial-scale=1">',
                 '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">', "viewport-fit")
     html = re.sub(r"calc\(100dvh - (\d+px)\)", r"calc(100dvh - \1 - env(safe-area-inset-top,0px))", html)
+    # Safe-Area ueberall ueber Variablen (eine Stelle in tools/ansichten.css liest env(), Tests koennen sie setzen)
+    for seite in ("top", "bottom", "left", "right"):
+        html = html.replace("env(safe-area-inset-%s,0px)" % seite, "var(--sa-%s)" % seite).replace("env(safe-area-inset-%s)" % seite, "var(--sa-%s)" % seite)
     html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
     print("ok: oeffentlicher Rueckfall %s vom %s, %d Bytes HTML, Film %d Bytes" % (
