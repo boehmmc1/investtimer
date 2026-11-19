@@ -467,6 +467,22 @@ body.ansicht-neben .app>main{display:none!important}
 .verlauf-band{fill:#8c7a58}.verlauf-band-text{fill:#5c5040}
 .verlauf-chip[aria-pressed=true]{border-color:#8c7a58;color:#4f4536;background:#f2ede3}
 .verlauf-band-knopf:hover{background:rgba(140,122,88,.05)}
+
+/* KI-Bereich: Fragekarten. Desktop drei gleich hohe Karten, mobil wischbar (85 %), angeschnittene Karte ohne Text, Punkte darunter */
+.ki-punkte{display:none}
+@media(max-width:759px){
+ .ki-gruppen{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 23px;margin:0 -23px;padding:0 23px 2px;-webkit-mask-image:none;mask-image:none;scrollbar-width:none;align-items:stretch}
+ .ki-gruppe{flex:0 0 85%;scroll-snap-align:start;scroll-snap-stop:always;box-sizing:border-box}
+ .ki-gruppe>*{transition:opacity .18s}
+ .ki-gruppe-halb>*{opacity:0}
+ .ki-punkte{display:flex;justify-content:center;gap:2px;margin:6px 0 0}
+ .ki-punkt{width:32px;height:44px;padding:0;border:0;background:none;display:grid;place-items:center;cursor:pointer}
+ .ki-punkt::after{content:'';width:7px;height:7px;border-radius:50%;background:#c9d3c6;transition:background .18s,transform .18s}
+ .ki-punkt.aktiv::after{background:var(--accent);transform:scale(1.15)}
+}
+@media(max-width:360px){.ki-gruppen{margin:0 -19px;padding:0 19px 2px;scroll-padding:0 19px}}
+@media(prefers-reduced-motion:reduce){.ki-gruppe>*,.ki-punkt::after{transition:none}}
+.ki-ansicht{scroll-margin-bottom:0}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -2049,7 +2065,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.19-1725", "d": "19.11.2026"};
+const VERSION={"v": "2026.11.19-1731", "d": "19.11.2026"};
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -2172,40 +2188,42 @@ new MutationObserver(()=>zeichne()).observe(document.documentElement,{attributes
    Gespraech mit Belegen (Verlaufsausschnitt, Teilwerte) und Folgefragen. Gespraech bleibt im App-Zustand (nicht gespeichert).
    "Frag die KI dazu" (Wert, Ereigniskarten) oeffnet die Ansicht mit vorausgefuellter Frage, ohne zu senden. */
 (()=>{
-const KI_FRAGEN=[{"id": "verstehen", "de": "Verstehen", "en": "Understand", "fragen": [{"de": "Was bedeutet der heutige Wert?", "en": "What does today’s reading mean?"}, {"de": "Was misst InvestTimer eigentlich?", "en": "What does InvestTimer actually measure?"}, {"de": "Woraus setzt sich der Wert zusammen?", "en": "What goes into the score?"}, {"de": "Was unterscheidet ruhig, erhöht und Panik?", "en": "What’s the difference between calm, elevated and panic?"}]}, {"id": "einordnen", "de": "Einordnen", "en": "Put in context", "fragen": [{"de": "Ist {wert} viel oder wenig?", "en": "Is {wert} high or low?"}, {"de": "Was bewegt den Wert gerade?", "en": "What’s moving the score right now?"}, {"de": "Wie nervös ist der Markt im Moment?", "en": "How nervous is the market right now?"}, {"de": "Hat sich die Lage in den letzten Wochen verändert?", "en": "Has the picture changed over the past few weeks?"}]}, {"id": "verlauf", "de": "Verlauf", "en": "History", "fragen": [{"de": "Wann war der Marktstress zuletzt so hoch?", "en": "When was market stress last this high?"}, {"de": "Wie sah es im Corona-Crash 2020 aus?", "en": "What did the 2020 Covid crash look like?"}, {"de": "Wie lange dauern Stressphasen meistens?", "en": "How long do stress phases usually last?"}, {"de": "Was war die stärkste Stressphase der letzten Jahre?", "en": "What was the most severe stress phase in recent years?"}]}];
+const KI_KATALOG=[{"id": "verstehen", "de": "Verstehen", "en": "Understand", "fragen": [{"de": "Was bedeutet der heutige Wert?", "en": "What does today’s reading mean?"}, {"de": "Was misst InvestTimer eigentlich?", "en": "What does InvestTimer actually measure?"}, {"de": "Woraus setzt sich der Wert zusammen?", "en": "What goes into the score?"}, {"de": "Was unterscheidet ruhig, erhöht und Panik?", "en": "What’s the difference between calm, elevated and panic?"}]}, {"id": "einordnen", "de": "Einordnen", "en": "Put in context", "fragen": [{"de": "Ist {wert} viel oder wenig?", "en": "Is {wert} high or low?"}, {"de": "Was bewegt den Wert gerade?", "en": "What’s moving the score right now?"}, {"de": "Wie nervös ist der Markt im Moment?", "en": "How nervous is the market right now?"}, {"de": "Hat sich die Lage in den letzten Wochen verändert?", "en": "Has the picture changed over the past few weeks?"}]}, {"id": "verlauf", "de": "Verlauf", "en": "History", "fragen": [{"de": "Wann war der Marktstress zuletzt so hoch?", "en": "When was market stress last this high?"}, {"de": "Wie sah es im Corona-Crash 2020 aus?", "en": "What did the 2020 Covid crash look like?"}, {"de": "Wie lange dauern Stressphasen meistens?", "en": "How long do stress phases usually last?"}, {"de": "Was war die stärkste Stressphase der letzten Jahre?", "en": "What was the most severe stress phase in recent years?"}]}];
+/* Je Gruppe drei von vier Fragen, zufaellig und einmal je Seitenaufruf (bleibt beim Tab- und Sprachwechsel gleich) */
+const KI_FRAGEN=KI_KATALOG.map(g=>{const f=g.fragen.slice();for(let i=f.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[f[i],f[j]]=[f[j],f[i]]}return Object.assign({},g,{fragen:f.slice(0,3)})});
 const KT={de:{
  tabStress:'Marktstress',tabKi:'KI',tabVerlauf:'Verlauf',tabKonto:'Konto',nav:'Bereiche',
  eyebrow:'INVESTTIMER KI',eyebrowWert:'INVESTTIMER KI · STAND HEUTE {w}',titel:'Was bewegt dich am Markt?',
- unter:'Frag nach dem aktuellen Wert, seinen Treibern oder einer Phase aus dem Verlauf. Die KI antwortet mit den Daten von InvestTimer.',
+ unter:'Frag nach dem heutigen Wert, seinen Treibern oder einer früheren Phase.',karte:'Fragen {n} von {m}',
  platzhalter:'Deine Frage an die KI',senden:'Frage senden',hinweis:'Antworten erzeugt eine KI und können Fehler enthalten · Keine Anlageberatung',
  rest:'Noch {n} Fragen heute',rest1:'Noch eine Frage heute',rest0:'Für heute keine Fragen mehr',
- anmelden:'Anmelden & KI fragen',ausgeloggt:'Die KI ist nach der Anmeldung verfügbar. Beispiele, was du fragen kannst:',
+ anmelden:'Anmelden & KI fragen',ausgeloggt:'Nach der Anmeldung beantwortet die KI deine Fragen. Zum Beispiel:',
  kopf:'InvestTimer KI · Stand heute {w}',kopfOhne:'InvestTimer KI',neu:'Neues Gespräch',denkt:'InvestTimer liest die Daten …',
- du:'Deine Frage',ki:'Antwort der KI',weiter:'Passende Folgefragen',belegTitel:'Marktstress {a} bis {b}',belegTag:'{w} am {d}',
+ du:'Deine Frage',ki:'Antwort der KI',weiter:'Passende Folgefragen',belegTitel:'{a} bis {b}',belegTag:'{w} am {d}',
  teilwerte:'Teilwerte am {d}',vol:'Kursschwankungen',preis:'Breite und Trend',stimmung:'Stimmung und Absicherung',
  fLimit:'Für heute sind deine Fragen aufgebraucht. Morgen kannst du wieder fragen.',
  fLogin:'Deine Anmeldung ist abgelaufen. Melde dich neu an, dann kannst du weiterfragen.',fLoginKnopf:'Neu anmelden',
  fAus:'Die KI ist gerade ausgeschaltet. Versuch es später noch einmal.',
  fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',
  fragKi:'Frag die KI dazu',zeile:'Frag die KI zum Wert …',zeileLabel:'Frage an die KI',zumKi:'Zur KI',
- frageWert:'Warum steht der Marktstress bei {w}?',frageEreignis:'Was hat den Marktstress in der Phase {n} getrieben?',
+ frageWert:'Warum steht der Marktstress bei {w}?',frageEreignis:'Wie lief die Phase „{n}“ ab?',
  verlaufLogin:'Den Verlauf seit 2006 siehst du nach der Anmeldung.',verlaufLoginKnopf:'Anmelden'
 },en:{
  tabStress:'Market stress',tabKi:'AI',tabVerlauf:'History',tabKonto:'Account',nav:'Sections',
  eyebrow:'INVESTTIMER AI',eyebrowWert:'INVESTTIMER AI · TODAY {w}',titel:'What’s on your mind about the market?',
- unter:'Ask about today’s reading, what drives it, or a phase from the history. The AI answers with InvestTimer data.',
+ unter:'Ask about today’s reading, what drives it or an earlier phase.',karte:'Questions {n} of {m}',
  platzhalter:'Ask the AI',senden:'Send question',hinweis:'AI-generated answers may contain errors · Not investment advice',
  rest:'{n} questions left today',rest1:'1 question left today',rest0:'No questions left today',
- anmelden:'Sign in to ask the AI',ausgeloggt:'The AI is available after you sign in. Here’s what you can ask:',
+ anmelden:'Sign in to ask the AI',ausgeloggt:'After you sign in, the AI answers your questions. For example:',
  kopf:'InvestTimer AI · Today {w}',kopfOhne:'InvestTimer AI',neu:'New conversation',denkt:'Reading the data …',
- du:'Your question',ki:'AI answer',weiter:'Follow-up questions',belegTitel:'Market stress {a} to {b}',belegTag:'{w} on {d}',
+ du:'Your question',ki:'AI answer',weiter:'Follow-up questions',belegTitel:'{a} to {b}',belegTag:'{w} on {d}',
  teilwerte:'Sub-scores on {d}',vol:'Volatility',preis:'Breadth and trend',stimmung:'Sentiment and hedging',
  fLimit:'You’ve used today’s questions. You can ask again tomorrow.',
  fLogin:'Your session has expired. Sign in again to keep asking.',fLoginKnopf:'Sign in again',
  fAus:'The AI is switched off right now. Try again later.',
  fNetz:'Can’t reach the AI. Check your connection and try again.',
  fragKi:'Ask the AI about this',zeile:'Ask the AI about this reading …',zeileLabel:'Question for the AI',zumKi:'Go to AI',
- frageWert:'Why is market stress at {w}?',frageEreignis:'What drove market stress during {n}?',
+ frageWert:'Why is market stress at {w}?',frageEreignis:'How did “{n}” unfold?',
  verlaufLogin:'Sign in to see the history back to 2006.',verlaufLoginKnopf:'Sign in'
 }};
 const sp=()=>document.documentElement.lang==='en'?'en':'de';
@@ -2287,10 +2305,24 @@ function eingabeHtml(){
   +'<button type="submit" class="ki-senden" aria-label="'+esc(kt('senden'))+'"'+(leer||st.busy?' disabled':'')+'>'+SVG.pfeil+'</button></form>'
   +'<p class="ki-hinweis">'+esc(kt('hinweis'))+(restText()?' · <span class="ki-rest">'+esc(restText())+'</span>':'')+'</p></div>';
 }
-function frageText(f){const w=wert();return (f[sp()]||f.de).replace('{wert}',w==null?'…':w)}
+function frageText(f){const w=wert()??(IT.view&&IT.view.rounded);return (f[sp()]||f.de).replace('{wert}',w==null?'…':w)}
 function gruppenHtml(){
- return '<div class="ki-gruppen" role="list">'+KI_FRAGEN.map(g=>'<div class="ki-gruppe" role="listitem"><h3>'+esc(g[sp()]||g.de)+'</h3>'
-  +g.fragen.map(f=>{const q=frageText(f);return '<button type="button" class="ki-frage" data-frage="'+esc(q)+'">'+esc(q)+'</button>'}).join('')+'</div>').join('')+'</div>';
+ return '<div class="ki-gruppen" role="list">'+KI_FRAGEN.map((g,i)=>'<div class="ki-gruppe" role="listitem" aria-label="'+esc((g[sp()]||g.de)+' · '+kt('karte').replace('{n}',i+1).replace('{m}',KI_FRAGEN.length))+'"><h3>'+esc(g[sp()]||g.de)+'</h3>'
+  +g.fragen.map(f=>{const q=frageText(f);return '<button type="button" class="ki-frage" data-frage="'+esc(q)+'">'+esc(q)+'</button>'}).join('')+'</div>').join('')+'</div>'
+  +'<div class="ki-punkte" aria-hidden="true">'+KI_FRAGEN.map((g,i)=>'<button type="button" tabindex="-1" class="ki-punkt'+(i?'':' aktiv')+'" data-karte="'+i+'"></button>').join('')+'</div>';
+}
+let kartenPruefen=null;addEventListener('resize',()=>kartenPruefen&&kartenPruefen());
+/* Mobil: Karten wischen; angeschnittene Karten ohne Text (nur leerer Kartenrand sichtbar), Punkte zeigen die Karte */
+function kartenEinrichten(){
+ const box=ansicht&&ansicht.querySelector('.ki-gruppen');if(!box)return;
+ const karten=[...box.children],punkte=[...ansicht.querySelectorAll('.ki-punkt')];
+ const pruefen=()=>{const r=box.getBoundingClientRect();let best=0,bestA=-1;
+  karten.forEach((k,i)=>{const b=k.getBoundingClientRect(),sicht=Math.max(0,Math.min(b.right,r.right)-Math.max(b.left,r.left))/b.width;
+   const ganz=!mobil()||sicht>0.97;k.classList.toggle('ki-gruppe-halb',!ganz);k.toggleAttribute('inert',!ganz);if(sicht>bestA){bestA=sicht;best=i}});
+  punkte.forEach((p,i)=>p.classList.toggle('aktiv',i===best))};
+ box.addEventListener('scroll',()=>requestAnimationFrame(pruefen),{passive:true});
+ kartenPruefen=pruefen;pruefen();
+ punkte.forEach((p,i)=>p.addEventListener('click',()=>{const k=karten[i];box.scrollTo({left:k.offsetLeft-box.offsetLeft-(box.clientWidth-k.offsetWidth)/2,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}));
 }
 function startHtml(){
  const w=wert();
@@ -2351,7 +2383,7 @@ function zeichnen(fokus){
  const g=ansicht.querySelector('.ki-kugel'),k=ansicht.querySelector('.ki-kugel-klein');
  if(g)grosseKugel=kugel(g,mobil()?{punkte:56,grenze:.58,impulse:true,schein:true,radius:.4}:{punkte:92,grenze:.45,impulse:true,schein:true,radius:.4});
  if(k){kleineKugel=kugel(k,{punkte:36,grenze:.7,radius:.44,linie:.6,punkt:.5,punktZu:.35});kleineKugel.tempo(st.busy?6:1);k.classList.toggle('denkt',st.busy)}
- platzUnten();
+ kartenEinrichten();platzUnten();
  if(fokus==='eingabe')$('#ki-eingabe')?.focus({preventScroll:true});else if(fokus==='titel')$('#ki-titel')?.focus({preventScroll:true});
 }
 function nachUnten(weich){if(!haftUnten)return;requestAnimationFrame(()=>{const m=ansicht&&ansicht.querySelector('.ki-nachrichten>:last-child');if(m){const r=m.getBoundingClientRect(),unten=platzUntenPx();if(r.top>innerHeight-unten-60||r.bottom>innerHeight-unten)window.scrollBy({top:Math.min(r.top-90,r.bottom-(innerHeight-unten)+16),behavior:weich?'smooth':'auto'})}})}

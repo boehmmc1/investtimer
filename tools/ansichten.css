@@ -97,3 +97,19 @@ body.ansicht-neben .app>main{display:none!important}
 .verlauf-band{fill:#8c7a58}.verlauf-band-text{fill:#5c5040}
 .verlauf-chip[aria-pressed=true]{border-color:#8c7a58;color:#4f4536;background:#f2ede3}
 .verlauf-band-knopf:hover{background:rgba(140,122,88,.05)}
+
+/* KI-Bereich: Fragekarten. Desktop drei gleich hohe Karten, mobil wischbar (85 %), angeschnittene Karte ohne Text, Punkte darunter */
+.ki-punkte{display:none}
+@media(max-width:759px){
+ .ki-gruppen{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 23px;margin:0 -23px;padding:0 23px 2px;-webkit-mask-image:none;mask-image:none;scrollbar-width:none;align-items:stretch}
+ .ki-gruppe{flex:0 0 85%;scroll-snap-align:start;scroll-snap-stop:always;box-sizing:border-box}
+ .ki-gruppe>*{transition:opacity .18s}
+ .ki-gruppe-halb>*{opacity:0}
+ .ki-punkte{display:flex;justify-content:center;gap:2px;margin:6px 0 0}
+ .ki-punkt{width:32px;height:44px;padding:0;border:0;background:none;display:grid;place-items:center;cursor:pointer}
+ .ki-punkt::after{content:'';width:7px;height:7px;border-radius:50%;background:#c9d3c6;transition:background .18s,transform .18s}
+ .ki-punkt.aktiv::after{background:var(--accent);transform:scale(1.15)}
+}
+@media(max-width:360px){.ki-gruppen{margin:0 -19px;padding:0 19px 2px;scroll-padding:0 19px}}
+@media(prefers-reduced-motion:reduce){.ki-gruppe>*,.ki-punkt::after{transition:none}}
+.ki-ansicht{scroll-margin-bottom:0}
