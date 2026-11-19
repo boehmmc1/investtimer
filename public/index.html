@@ -458,6 +458,9 @@ body.ansicht-neben .app>main{display:none!important}
 .verlauf-mini-punkt{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--stufe,var(--accent));box-shadow:0 0 0 2px var(--bg)}
 .verlauf-mini-achse{display:flex;justify-content:space-between;margin:6px 0 0;font-size:12px;color:var(--sub)}
 @media(min-width:760px){body.mit-film:not(.members-layout) .first-look>.verlauf-mini{grid-column:1/-1}}
+/* Verlauf: Ereignisbaender deutlich zurueckgenommen, die Linie bleibt lesbar */
+.verlauf-band{opacity:.045}.verlauf-band.aktiv{opacity:.09}
+.verlauf-band-knopf:hover{background:rgba(155,111,50,.04)}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -2038,7 +2041,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.19-1659", "d": "19.11.2026"};
+const VERSION={"v": "2026.11.19-1704", "d": "19.11.2026"};
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);

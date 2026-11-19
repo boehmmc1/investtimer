@@ -1,20 +1,140 @@
 {
-  "_hinweis": "Stressphasen im Marktstress-Verlauf. start/ende: erster Tag ueber 40 bis zum Tag, ab dem der Wert wieder unter 40 lag (Rueckrechnung, Unterbrechungen bis 5 Handelstage ueberbrueckt). Kennzahlen (Hoechstwert, Tage bis unter 40, Blickwinkel am Spitzentag) berechnet der Server. 'aus': true blendet aus. Namen nur als neutrale Zeitmarke (Eigenname plus Jahr, sonst 'Stressphase <Zeitraum>'), keine Beschreibungen und keine Aussagen zu Ursachen. kurz: Chip- und Bandbeschriftung.",
-  "ereignisse": [
-    {"id": "subprime", "start": "2007-07-26", "ende": "2007-09-18", "name": "Subprime 2007", "name_en": "Subprime 2007", "kurz": "Subprime 2007", "kurz_en": "Subprime 2007"},
-    {"id": "bearstearns", "start": "2007-12-31", "ende": "2008-04-23", "name": "Bear Stearns 2008", "name_en": "Bear Stearns 2008", "kurz": "Bear Stearns 2008", "kurz_en": "Bear Stearns 2008"},
-    {"id": "lehman", "start": "2008-09-04", "ende": "2009-05-04", "name": "Lehman 2008", "name_en": "Lehman 2008", "kurz": "Lehman 2008", "kurz_en": "Lehman 2008"},
-    {"id": "griechenland", "start": "2010-05-05", "ende": "2010-07-08", "name": "Flash Crash 2010", "name_en": "Flash crash 2010", "kurz": "Flash Crash 2010", "kurz_en": "Flash crash 2010"},
-    {"id": "euro", "start": "2011-07-27", "ende": "2011-11-30", "name": "Euro-Krise 2011", "name_en": "Euro crisis 2011", "kurz": "Euro-Krise 2011", "kurz_en": "Euro crisis 2011"},
-    {"id": "oktober2014", "start": "2014-10-01", "ende": "2014-10-23", "name": "Stressphase Herbst 2014", "name_en": "Stress phase, fall 2014", "kurz": "Herbst 2014", "kurz_en": "Fall 2014"},
-    {"id": "china", "start": "2015-08-20", "ende": "2015-10-05", "name": "China 2015", "name_en": "China 2015", "kurz": "China 2015", "kurz_en": "China 2015"},
-    {"id": "volmageddon", "start": "2018-02-02", "ende": "2018-03-05", "name": "Stressphase Februar 2018", "name_en": "Stress phase, February 2018", "kurz": "Feb. 2018", "kurz_en": "Feb 2018"},
-    {"id": "zinsangst2018", "start": "2018-12-04", "ende": "2019-01-07", "name": "Stressphase Winter 2018/19", "name_en": "Stress phase, winter 2018/19", "kurz": "Winter 2018/19", "kurz_en": "Winter 2018/19"},
-    {"id": "corona", "start": "2020-02-24", "ende": "2020-05-18", "name": "Corona 2020", "name_en": "Covid 2020", "kurz": "Corona 2020", "kurz_en": "Covid 2020"},
-    {"id": "zinswende", "start": "2022-01-18", "ende": "2022-11-10", "name": "Stressphase 2022", "name_en": "Stress phase 2022", "kurz": "2022", "kurz_en": "2022"},
-    {"id": "svb", "start": "2023-02-21", "ende": "2023-04-05", "name": "SVB 2023", "name_en": "SVB 2023", "kurz": "SVB 2023", "kurz_en": "SVB 2023"},
-    {"id": "yen", "start": "2024-08-02", "ende": "2024-08-13", "name": "Stressphase August 2024", "name_en": "Stress phase, August 2024", "kurz": "Aug. 2024", "kurz_en": "Aug 2024"},
-    {"id": "zoll", "start": "2025-02-26", "ende": "2025-05-07", "name": "Stressphase Frühjahr 2025", "name_en": "Stress phase, spring 2025", "kurz": "Frühjahr 2025", "kurz_en": "Spring 2025"},
-    {"id": "fruehjahr2026", "start": "2026-03-03", "ende": "2026-04-08", "name": "Stressphase Frühjahr 2026", "name_en": "Stress phase, spring 2026", "kurz": "Frühjahr 2026", "kurz_en": "Spring 2026"}
-  ]
+ "_hinweis": "Stressphasen im Marktstress-Verlauf. start/ende: erster Tag ueber 40 bis zum Tag, ab dem der Wert wieder unter 40 lag (Rueckrechnung, Unterbrechungen bis 5 Handelstage ueberbrueckt). Kennzahlen (Hoechstwert, Tage bis unter 40, Blickwinkel am Spitzentag) berechnet der Server. 'aus': true blendet aus. Namen nur als neutrale Zeitmarke (Eigenname plus Jahr, sonst 'Stressphase <Zeitraum>'), keine Beschreibungen und keine Aussagen zu Ursachen. kurz: Chip- und Bandbeschriftung.",
+ "ereignisse": [
+  {
+   "id": "subprime",
+   "start": "2007-07-26",
+   "ende": "2007-09-18",
+   "name": "Stressphase Sommer 2007",
+   "name_en": "Stress phase, summer 2007",
+   "kurz": "Sommer 2007",
+   "kurz_en": "Summer 2007"
+  },
+  {
+   "id": "bearstearns",
+   "start": "2007-12-31",
+   "ende": "2008-04-23",
+   "name": "Stressphase Frühjahr 2008",
+   "name_en": "Stress phase, spring 2008",
+   "kurz": "Frühjahr 2008",
+   "kurz_en": "Spring 2008"
+  },
+  {
+   "id": "lehman",
+   "start": "2008-09-04",
+   "ende": "2009-05-04",
+   "name": "Finanzkrise 2008/09",
+   "name_en": "Financial crisis 2008/09",
+   "kurz": "Finanzkrise 2008",
+   "kurz_en": "Crisis 2008"
+  },
+  {
+   "id": "griechenland",
+   "start": "2010-05-05",
+   "ende": "2010-07-08",
+   "name": "Stressphase Mai 2010",
+   "name_en": "Stress phase, May 2010",
+   "kurz": "Mai 2010",
+   "kurz_en": "May 2010"
+  },
+  {
+   "id": "euro",
+   "start": "2011-07-27",
+   "ende": "2011-11-30",
+   "name": "Euro-Krise 2011",
+   "name_en": "Euro crisis 2011",
+   "kurz": "Euro-Krise 2011",
+   "kurz_en": "Euro crisis 2011"
+  },
+  {
+   "id": "oktober2014",
+   "start": "2014-10-01",
+   "ende": "2014-10-23",
+   "name": "Stressphase Herbst 2014",
+   "name_en": "Stress phase, fall 2014",
+   "kurz": "Herbst 2014",
+   "kurz_en": "Fall 2014"
+  },
+  {
+   "id": "china",
+   "start": "2015-08-20",
+   "ende": "2015-10-05",
+   "name": "Stressphase Spätsommer 2015",
+   "name_en": "Stress phase, late summer 2015",
+   "kurz": "Spätsommer 2015",
+   "kurz_en": "Late summer 2015"
+  },
+  {
+   "id": "volmageddon",
+   "start": "2018-02-02",
+   "ende": "2018-03-05",
+   "name": "Stressphase Februar 2018",
+   "name_en": "Stress phase, February 2018",
+   "kurz": "Feb. 2018",
+   "kurz_en": "Feb 2018"
+  },
+  {
+   "id": "zinsangst2018",
+   "start": "2018-12-04",
+   "ende": "2019-01-07",
+   "name": "Stressphase Winter 2018/19",
+   "name_en": "Stress phase, winter 2018/19",
+   "kurz": "Winter 2018/19",
+   "kurz_en": "Winter 2018/19"
+  },
+  {
+   "id": "corona",
+   "start": "2020-02-24",
+   "ende": "2020-05-18",
+   "name": "Corona-Crash 2020",
+   "name_en": "Covid crash 2020",
+   "kurz": "Corona 2020",
+   "kurz_en": "Covid 2020"
+  },
+  {
+   "id": "zinswende",
+   "start": "2022-01-18",
+   "ende": "2022-11-10",
+   "name": "Stressphase 2022",
+   "name_en": "Stress phase 2022",
+   "kurz": "2022",
+   "kurz_en": "2022"
+  },
+  {
+   "id": "svb",
+   "start": "2023-02-21",
+   "ende": "2023-04-05",
+   "name": "Stressphase Frühjahr 2023",
+   "name_en": "Stress phase, spring 2023",
+   "kurz": "Frühjahr 2023",
+   "kurz_en": "Spring 2023"
+  },
+  {
+   "id": "yen",
+   "start": "2024-08-02",
+   "ende": "2024-08-13",
+   "name": "Stressphase August 2024",
+   "name_en": "Stress phase, August 2024",
+   "kurz": "Aug. 2024",
+   "kurz_en": "Aug 2024"
+  },
+  {
+   "id": "zoll",
+   "start": "2025-02-26",
+   "ende": "2025-05-07",
+   "name": "Stressphase Frühjahr 2025",
+   "name_en": "Stress phase, spring 2025",
+   "kurz": "Frühjahr 2025",
+   "kurz_en": "Spring 2025"
+  },
+  {
+   "id": "fruehjahr2026",
+   "start": "2026-03-03",
+   "ende": "2026-04-08",
+   "name": "Stressphase Frühjahr 2026",
+   "name_en": "Stress phase, spring 2026",
+   "kurz": "Frühjahr 2026",
+   "kurz_en": "Spring 2026"
+  }
+ ]
 }
