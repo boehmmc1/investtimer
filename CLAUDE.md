@@ -92,3 +92,7 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   `tools/startseite.py` (keine Gewichte), `tools/erklaerungen.py` (Alltagssprache), `tools/farbskala.py` (5 Stufen à 20), CSS `tools/ansichten.css`.
   KI-Einstieg außerhalb des KI-Tabs nur über die KI-Brücke. Mit Sitzung nie den öffentlichen Wert zeigen (gespeicherter Wert `investtimer-aktuell`).
   Film aus (IT_FILM=0, zeigt S&P-500-Kurse). KI-Tests ohne Kontingent: `tests/ki_instanz.sh start` + `tests/ki_fragen.py`.
+- Stand 19.11.2026 nachts: Feedback (#feedback, `tools/feedback.js`, API `volafly-api/investtimer_api_feedback.py`), FAQ (#faq, `tools/faq.js` + `tools/faq.json`,
+  Abo-Fragen nur mit IT_PAYWALL), Aktualität + Fehlererfassung (`tools/aktualitaet.js`, API `investtimer_api_fehler.py`, DB `/var/lib/investtimer/fehler.db`),
+  Vorschaubild `server/og_bild.py` (Timer investtimer-og), Statistik `server/statistik.py` (Timer investtimer-statistik/-wochenbericht, Zugang
+  `/root/.investtimer/statistik-zugang`, nginx-Snippet `/etc/nginx/investtimer-statistik.conf` nur auf dem Server). Narrativ hinter IT_NARRATIV (aus).
