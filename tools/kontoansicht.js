@@ -22,7 +22,7 @@ const KA={de:{
  alarmUeber:'Rises above {x}',alarmUnter:'Falls below {x}',stAktiv:'active',stWartet:'waiting',stPausiert:'paused',
  kanal_push:'Push',kanal_email:'Email',kanal_beide:'Push and email',
  sprache:'Language',installTitel:'App',install:'Install app',installText:'Start InvestTimer from your home screen, with push notifications for your alerts.',
- mein:'My account',emailAendern:'Change email address',emailNeu:'New email address',emailSpeichern:'Send confirmation',
+ mein:'Account settings',emailAendern:'Change email address',emailNeu:'New email address',emailSpeichern:'Send confirmation',
  emailGesendet:'We sent you a confirmation. The new address applies once you open the link in that email.',
  emailGleich:'That is already your address.',emailVergeben:'This address already belongs to another account.',
  export:'Download my data',exportText:'A file with your account, your alerts and your AI usage.',

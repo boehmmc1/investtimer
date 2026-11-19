@@ -227,3 +227,32 @@ Jede Zeile ersetzt einen ausgelieferten EN-Text genau (in '...' oder "..."); der
 | Sentiment and price volatility do not always tell the same story. This measure adds another perspective. Some of its observations overlap with other components. | Sentiment and volatility don’t always agree, so this adds another view. Some of its inputs overlap with other components. |
 
 Außerdem: Ereigniskarten (historie/ereignisse.json, name_en/text_en), Push- und Alarm-Mail-Texte (server/push_senden.py), Abmeldeseite (volafly-api/investtimer_api_alarm_mail.py), neue Texte filmSatz/limitedData, Fußzeile EN „Legal notice and privacy policy are available in German.“, Datumsformat en-US.
+
+## Neue Texte aus dem Änderungsauftrag 19.11.2026 (Glossar angewendet)
+
+| Stelle | DE | EN |
+|---|---|---|
+| Tab / Konto-Ansicht | Konto | Account |
+| Konto-Ansicht | Registriert seit | Member since |
+| Konto-Ansicht | Meine Alarme · aktiv / wartet / pausiert | My alerts · active / waiting / paused |
+| Konto-Ansicht | Steigt über {x} / Fällt unter {x} | Rises above {x} / Falls below {x} |
+| Konto-Ansicht | Mein Konto (Abschnitt) | Account settings |
+| Konto-Ansicht | E-Mail-Adresse ändern · Meine Daten herunterladen · Überall abmelden · Konto löschen | Change email address · Download my data · Sign out everywhere · Delete account |
+| Konto-Ansicht (ausgeloggt) | Melde dich an, um den aktuellen Wert zu sehen, die KI zu fragen und Alarme einzurichten. | Sign in to see the latest reading, ask the AI and set up alerts. |
+| Konto-Fuß | Version {v} · {d} | Version {v} · {d} |
+| Verlauf | MARKTSTRESS SEIT 2006 · Neuere Werte nach der Anmeldung | MARKET STRESS SINCE 2006 · Newer readings after sign-in |
+| Startseite | Die letzten 12 Monate · Ganzen Verlauf ansehen · {w} am {d} | The past 12 months · See full history · {w} on {d} |
+| Stufen | Ruhig · Moderat · Erhöht · Hoch · Panik | Calm · Moderate · Elevated · High · Panic |
+| Stufe Panik | Am Markt herrscht Panik. | The market is in panic. |
+| Mehr erfahren | Bestandteile ansehen | See components |
+| Mehr erfahren | …und zu einem Wert zusammengeführt… | …combined into one score… |
+| Mehr erfahren | Fehlt an einem Tag ein Bestandteil, rechnet der Wert mit den übrigen weiter. Fehlen mehr als zwei, steht unter der Zahl „Eingeschränkte Datenbasis“. | If a component is missing on a given day, the score is calculated from the others. If more than two are missing, the score is marked “Limited data today”. |
+| KI-Start | Frag nach dem heutigen Wert, seinen Treibern oder einer früheren Phase. | Ask about today’s reading, what drives it or an earlier phase. |
+| KI-Start (ausgeloggt) | Nach der Anmeldung beantwortet die KI deine Fragen. Zum Beispiel: | After you sign in, the AI answers your questions. For example: |
+| KI-Ereignis | Wie lief die Phase „{n}“ ab? | How did “{n}” unfold? |
+| Update | Neue Version verfügbar · Aktualisieren | New version available · Update |
+| Offline | Offline · Stand {Zeit} | Offline · as of {time} |
+| Fragenkatalog | siehe volafly-api/investtimer_fragen.json (12 Fragen DE/EN) | |
+
+Ersetzte EN-Texte (Gewichte entfernt): „Weight“ → „See components“; „Each component is placed on a common scale and weighted.“ → „… combined into one score.“;
+„If a component is missing, its weight is shared proportionally among the others.“ → „If a component is missing on a given day, the score is calculated from the others.“

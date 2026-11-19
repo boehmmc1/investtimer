@@ -2,7 +2,7 @@
    - beim Oeffnen und bei jeder Rueckkehr in die App (visibilitychange) fragt die Seite nach einer neuen Version
    - neue Version aktiv: sofort neu laden, wenn kein Dialog, kein KI-Gespraech und keine Eingabe offen ist,
      sonst Hinweis "Neue Version verfuegbar · Aktualisieren" (wird beim naechsten ruhigen Moment automatisch erledigt)
-   - offline: "Offline · Stand {Zeit}" (Zeit des zuletzt geladenen Werts) */
+   - offline: "Offline · Stand {Zeit}" (Zeit der gespeicherten Serverantwort, kein eigener Speicher im Browser) */
 (()=>{
 const UT={de:{neu:'Neue Version verfügbar',aktualisieren:'Aktualisieren',offline:'Offline · Stand {z}',offlineOhne:'Offline'},
  en:{neu:'New version available',aktualisieren:'Update',offline:'Offline · as of {z}',offlineOhne:'Offline'}};
@@ -12,7 +12,7 @@ document.body.append(leiste);
 let zustand=null;/* 'neu' | 'offline' | null */
 function zeigen(){
  if(zustand==='neu'){leiste.innerHTML='<span>'+esc(ut('neu'))+'</span><span aria-hidden="true">·</span><button type="button" data-update="jetzt">'+esc(ut('aktualisieren'))+'</button>';leiste.hidden=false}
- else if(zustand==='offline'){let z='';try{const t=Number(localStorage.getItem('investtimer-stand-zeit'));if(t)z=new Date(t).toLocaleString(document.documentElement.lang==='en'?'en-US':'de-DE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch{}
+ else if(zustand==='offline'){let z='';const t=IT.offlineStand;if(t)z=new Date(t).toLocaleString(document.documentElement.lang==='en'?'en-US':'de-DE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
   leiste.innerHTML='<span>'+esc(z?ut('offline').replace('{z}',z):ut('offlineOhne'))+'</span>';leiste.hidden=false}
  else leiste.hidden=true;
  document.body.classList.toggle('mit-hinweisleiste',!leiste.hidden);

@@ -46,16 +46,16 @@ der Sicherheit und der Abwehr von Missbrauch.</p>
 </ul>
 
 <h2>3. Speicher im Browser</h2>
-<p>InvestTimer speichert nur das im Browser (localStorage), was für die Funktion nötig ist:</p>
+<p>InvestTimer speichert nur das im Browser (localStorage und Speicher des Service Workers), was für die Funktion nötig ist:</p>
 <ul>
 <li>nach der Anmeldung die Sitzung (Zugangs- und Erneuerungsschlüssel), damit du angemeldet bleibst. Beim Abmelden wird sie gelöscht.</li>
+<li>im Speicher des Service Workers die zuletzt geladene Fassung der Seite und den öffentlichen, zeitversetzten Marktstress-Wert, damit die installierte App ohne Verbindung den letzten Stand zeigt. Kontodaten, Alarme und KI-Antworten werden dort nicht gespeichert. Eine neue Version der Seite ersetzt den Speicher.</li>
 </ul>
 <p>Rechtsgrundlage für den Zugriff auf dein Gerät ist § 25 Abs. 2 Nr. 2 TDDDG (unbedingt erforderlich für den von dir gewünschten Dienst).
 Du kannst diese Daten jederzeit in deinem Browser löschen.</p>
 
 <h2>4. Anmeldung und Konto</h2>
-<p>Für die Anmeldung gibst du deine E-Mail-Adresse und ein Passwort (mindestens 10 Zeichen) an. Das Passwort wird nicht im Klartext gespeichert,
-sondern nur als nicht umkehrbarer Prüfwert (Hash); auch wir können es nicht einsehen. Zur Bestätigung deiner Adresse, zum Zurücksetzen
+<p>Für die Anmeldung gibst du deine E-Mail-Adresse und ein Passwort (mindestens 10 Zeichen) an. Zur Bestätigung deiner Adresse, zum Zurücksetzen
 des Passworts, zur Bestätigung einer Passwortänderung und für die Anmeldung ohne Passwort bekommst du einen einmaligen Code oder Link per E-Mail.
 Gespeichert werden E-Mail-Adresse, eine Nutzerkennung, Zeitpunkte von Registrierung und Anmeldung sowie technische Protokolle
 der Anmeldung (darin auch die IP-Adresse).</p>

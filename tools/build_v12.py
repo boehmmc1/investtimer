@@ -595,14 +595,13 @@ let lastLoad=0,lastSeen='';
 function loadLive(force){
  if(!location.protocol.startsWith('http')||(!force&&Date.now()-lastLoad<3e5))return;lastLoad=Date.now();
  document.body.dataset.live='laedt';
- const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>{IT.offline=!!r.headers.get('X-InvestTimer-Offline');document.dispatchEvent(new Event(IT.offline?'investtimer:offline':'investtimer:online'));return r.ok?r.json():Promise.reject()})
+ const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>{IT.offline=!!r.headers.get('X-InvestTimer-Offline');IT.offlineStand=IT.offline?Date.parse(r.headers.get('Date')||'')||null:null;document.dispatchEvent(new Event(IT.offline?'investtimer:offline':'investtimer:online'));return r.ok?r.json():Promise.reject()})
   .then(d=>normaliseResult(d.publicSnapshot)||normaliseResult(d)).catch(()=>null);
  let liveFehler=false;
  const aktuell=IT.token().then(tok=>!tok?null:fetch('/api/aktuell',{cache:'no-store',headers:{Authorization:'Bearer '+tok}})
   .then(r=>{if(r.status===401){IT.abmelden();return null}if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
  Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
   document.body.dataset.live='fertig';
-  if(pub||live){try{localStorage.setItem('investtimer-stand-zeit',String(Date.now()))}catch{}}
   if(!pub&&!live){lastLoad=0;return}
   const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
@@ -807,6 +806,15 @@ def main(source, target_dir, preview, anmeldung=None):
                 "rows": result["rows"], "blocks": result["blocks"]}
     (ROOT / "server" / "seed_history.json").write_text(
         json.dumps({fallback["asOf"]: fallback}, indent=1) + "\n", encoding="utf-8")
+    # Rueckfall in der Seite (nur sichtbar, wenn /data/stress.json nicht laedt): der oeffentliche, zeitversetzte Stand
+    # (mindestens 7 Tage alt, wie /data/stress.json), nicht der juengere Stand der UI-Vorlage
+    try:
+        pub = json.load(open(os.environ.get("IT_STRESS_DATEI", "/var/lib/investtimer/data/stress.json"))).get("publicSnapshot") or {}
+        if isinstance(pub.get("rounded"), int) and pub.get("asOf"):
+            fallback = {"model": fallback["model"], "asOf": pub["asOf"], "rounded": pub["rounded"], "count": pub.get("count", 14),
+                        "total": pub.get("total", 14), "rows": pub["rows"], "blocks": pub["blocks"]}
+    except (OSError, ValueError, KeyError):
+        pass
 
     # Film als Dateien
     film = json.loads(re.search(r'<script type="application/json" id="investtimer-film-config">(.*?)</script>', html, re.S).group(1))
@@ -868,7 +876,8 @@ def main(source, target_dir, preview, anmeldung=None):
                 "const t=k=>{const v=copy[state.lang][k];return typeof v==='string'?v.replace('{datelong}',()=>dateLabel('long')).replace('{date}',()=>dateLabel('short')):v};\n"
                 "const number=", "t()")
     html = once(html, "try{result=evaluateSnapshot(JSON.parse(document.getElementById('investtimer-snapshot').textContent))}catch{result=null}",
-                "try{result=normaliseResult(JSON.parse(document.getElementById('investtimer-result').textContent))}catch{result=null}", "Ergebnis laden")
+                "try{result=normaliseResult(JSON.parse(document.getElementById('investtimer-result').textContent));"
+                "if(result&&result.asOf&&Date.parse(result.asOf+'T00:00:00Z')>Date.now()-7*864e5)result=null}catch{result=null}", "Ergebnis laden")
     live_js = LIVE_JS
     if anmeldung:
         live_js = LIVE_JS_ANMELDUNG.replace("__AUTH__", json.dumps(
@@ -1000,13 +1009,16 @@ def main(source, target_dir, preview, anmeldung=None):
         html = html.replace("env(safe-area-inset-%s,0px)" % seite, "var(--sa-%s)" % seite).replace("env(safe-area-inset-%s)" % seite, "var(--sa-%s)" % seite)
     html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
+    if not film_schalter():  # Film aus (LIC-001): Filmdateien nicht ausliefern
+        for f in (target / "media").glob("invest-timer*"):
+            f.unlink()
     # Service Worker mit Version (Build-Zeit + Inhalts-Hash der Seite): jede neue Seite ergibt einen neuen Service Worker
     import hashlib
     sw_version = VERSION["v"] + "-" + hashlib.sha256(html.encode()).hexdigest()[:8]
     (target / "sw.js").write_text((ROOT / "tools" / "sw.js").read_text(encoding="utf-8").replace("__SW_VERSION__", sw_version), encoding="utf-8")
     (target / "version.json").write_text(json.dumps(dict(VERSION, sw=sw_version)) + "\n", encoding="utf-8")
-    print("ok: oeffentlicher Rueckfall %s vom %s, %d Bytes HTML, Film %d Bytes" % (
-        fallback["rounded"], fallback["asOf"], len(html.encode()), (target / "media" / "invest-timer.mp4").stat().st_size))
+    print("ok: oeffentlicher Rueckfall %s vom %s, %d Bytes HTML, Film %d Bytes (0 = Film aus)" % (
+        fallback["rounded"], fallback["asOf"], len(html.encode()), (target / "media" / "invest-timer.mp4").stat().st_size if (target / "media" / "invest-timer.mp4").exists() else 0))
 
 
 
