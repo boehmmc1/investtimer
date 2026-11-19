@@ -195,7 +195,7 @@ TEXTE_KONTO_EN = ("filmEyebrow:'QUICK EXPLAINER',filmTitel:'The idea in 49 secon
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
 KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontoansicht.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "ki.js").read_text(encoding="utf-8").replace(
-    "__KI_FRAGEN__", json.dumps(json.loads((ROOT / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))["ki_ansicht"], ensure_ascii=False))
+    "__KI_FRAGEN__", json.dumps(json.loads((ROOT / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))["ki_ansicht"], ensure_ascii=False)) + "\n" + (ROOT / "tools" / "update.js").read_text(encoding="utf-8")
 TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufEyebrow:'MARKTSTRESS SEIT 2006',verlaufNeuer:'Neuere Werte nach der Anmeldung',verlaufMiniTitel:'Die letzten 12 Monate',verlaufMiniLink:'Ganzen Verlauf ansehen',verlaufMiniAria:'Marktstress von {a} bis {b}, zuletzt {w}',verlaufMiniEnde:'{w} am {d}',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Wert für Wert ansehen.',"
                     "verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',verlauf1J:'1J',verlauf5J:'5J',legendeAuf:'aufgezeichnet',legendeRueck:'zurückgerechnet',verlaufEreignisHinweis:'Markierte Ereignisse dienen der zeitlichen Einordnung.',ereignisseLabel:'Ereignisse',karteHoechst:'Höchster Marktstress',karteAm:'{w} am {d}',karteUnter40:'Wieder unter 40',karteNachTagen:'nach {n} Tagen',karteNochNicht:'noch nicht',karteTrieb:'Teilwerte am {d}',triebVol:'Kursschwankungen',triebPreis:'Breite und Trend',triebStimmung:'Stimmung und Absicherung',"
                     ""
@@ -595,13 +595,14 @@ let lastLoad=0,lastSeen='';
 function loadLive(force){
  if(!location.protocol.startsWith('http')||(!force&&Date.now()-lastLoad<3e5))return;lastLoad=Date.now();
  document.body.dataset.live='laedt';
- const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject())
+ const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>{IT.offline=!!r.headers.get('X-InvestTimer-Offline');document.dispatchEvent(new Event(IT.offline?'investtimer:offline':'investtimer:online'));return r.ok?r.json():Promise.reject()})
   .then(d=>normaliseResult(d.publicSnapshot)||normaliseResult(d)).catch(()=>null);
  let liveFehler=false;
  const aktuell=IT.token().then(tok=>!tok?null:fetch('/api/aktuell',{cache:'no-store',headers:{Authorization:'Bearer '+tok}})
   .then(r=>{if(r.status===401){IT.abmelden();return null}if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
  Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
   document.body.dataset.live='fertig';
+  if(pub||live){try{localStorage.setItem('investtimer-stand-zeit',String(Date.now()))}catch{}}
   if(!pub&&!live){lastLoad=0;return}
   const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
@@ -740,6 +741,8 @@ def _version():
     """Version der ausgelieferten Seite: Datum und Uhrzeit des Builds (UTC), dazu das Build-Datum fuer die Anzeige."""
     import time as _t
     jetzt = _t.gmtime()
+    if os.environ.get("IT_BUILD_VERSION"):  # nur fuer Tests (alter/neuer Build)
+        return {"v": os.environ["IT_BUILD_VERSION"], "d": _t.strftime("%d.%m.%Y", jetzt)}
     return {"v": _t.strftime("%Y.%m.%d-%H%M", jetzt), "d": _t.strftime("%d.%m.%Y", jetzt)}
 
 
@@ -997,6 +1000,11 @@ def main(source, target_dir, preview, anmeldung=None):
         html = html.replace("env(safe-area-inset-%s,0px)" % seite, "var(--sa-%s)" % seite).replace("env(safe-area-inset-%s)" % seite, "var(--sa-%s)" % seite)
     html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
+    # Service Worker mit Version (Build-Zeit + Inhalts-Hash der Seite): jede neue Seite ergibt einen neuen Service Worker
+    import hashlib
+    sw_version = VERSION["v"] + "-" + hashlib.sha256(html.encode()).hexdigest()[:8]
+    (target / "sw.js").write_text((ROOT / "tools" / "sw.js").read_text(encoding="utf-8").replace("__SW_VERSION__", sw_version), encoding="utf-8")
+    (target / "version.json").write_text(json.dumps(dict(VERSION, sw=sw_version)) + "\n", encoding="utf-8")
     print("ok: oeffentlicher Rueckfall %s vom %s, %d Bytes HTML, Film %d Bytes" % (
         fallback["rounded"], fallback["asOf"], len(html.encode()), (target / "media" / "invest-timer.mp4").stat().st_size))
 

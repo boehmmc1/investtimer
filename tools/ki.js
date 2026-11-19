@@ -300,6 +300,7 @@ function extrasRender(){
  zeile.hidden=!angemeldet();
  zeile.innerHTML='<label class="sr-only" for="ki-zeile-eingabe">'+esc(kt('zeileLabel'))+'</label><input id="ki-zeile-eingabe" type="text" maxlength="300" autocomplete="off" enterkeyhint="go" placeholder="'+esc(kt('zeile'))+'"><button type="submit" aria-label="'+esc(kt('zumKi'))+'">'+SVG.pfeil+'</button>';
 }
+IT.kiGespraechAktiv=()=>st.gespraech.length>0||st.busy||!!(st.notiz&&st.notiz.trim());
 IT.kiFrageEreignis=name=>kt('frageEreignis').replace('{n}',name);
 IT.kiText=kt;
 document.addEventListener('investtimer:update',()=>{extrasRender();navRender();st.restGeladen=false;if(aktiv()==='ki'){zeichnen();restLaden()}});

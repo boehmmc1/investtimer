@@ -113,3 +113,11 @@ body.ansicht-neben .app>main{display:none!important}
 @media(max-width:360px){.ki-gruppen{margin:0 -19px;padding:0 19px 2px;scroll-padding:0 19px}}
 @media(prefers-reduced-motion:reduce){.ki-gruppe>*,.ki-punkt::after{transition:none}}
 .ki-ansicht{scroll-margin-bottom:0}
+
+/* Hinweisleiste: neue Version / offline (tools/update.js) */
+.it-hinweisleiste{position:fixed;z-index:70;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--sa-bottom));display:flex;align-items:center;gap:8px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:4px 6px 4px 16px;border-radius:999px;background:var(--text);color:#f3f5f0;font-size:13px;box-shadow:0 8px 24px rgba(27,51,48,.18);white-space:nowrap}
+.it-hinweisleiste[hidden]{display:none}
+.it-hinweisleiste span:only-child{padding:10px 10px 10px 0}
+.it-hinweisleiste button{min-height:40px;padding:0 14px;border:0;border-radius:999px;background:#f3f5f0;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.it-hinweisleiste button:focus-visible{outline:2px solid #9fd3c1;outline-offset:2px}
+@media(max-width:759px){.it-hinweisleiste{bottom:calc(var(--leiste-h) + 12px + var(--sa-bottom))}body.ansicht-ki .it-hinweisleiste{top:calc(12px + var(--sa-top));bottom:auto}}

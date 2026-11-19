@@ -483,6 +483,14 @@ body.ansicht-neben .app>main{display:none!important}
 @media(max-width:360px){.ki-gruppen{margin:0 -19px;padding:0 19px 2px;scroll-padding:0 19px}}
 @media(prefers-reduced-motion:reduce){.ki-gruppe>*,.ki-punkt::after{transition:none}}
 .ki-ansicht{scroll-margin-bottom:0}
+
+/* Hinweisleiste: neue Version / offline (tools/update.js) */
+.it-hinweisleiste{position:fixed;z-index:70;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--sa-bottom));display:flex;align-items:center;gap:8px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:4px 6px 4px 16px;border-radius:999px;background:var(--text);color:#f3f5f0;font-size:13px;box-shadow:0 8px 24px rgba(27,51,48,.18);white-space:nowrap}
+.it-hinweisleiste[hidden]{display:none}
+.it-hinweisleiste span:only-child{padding:10px 10px 10px 0}
+.it-hinweisleiste button{min-height:40px;padding:0 14px;border:0;border-radius:999px;background:#f3f5f0;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.it-hinweisleiste button:focus-visible{outline:2px solid #9fd3c1;outline-offset:2px}
+@media(max-width:759px){.it-hinweisleiste{bottom:calc(var(--leiste-h) + 12px + var(--sa-bottom))}body.ansicht-ki .it-hinweisleiste{top:calc(12px + var(--sa-top));bottom:auto}}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -995,13 +1003,14 @@ let lastLoad=0,lastSeen='';
 function loadLive(force){
  if(!location.protocol.startsWith('http')||(!force&&Date.now()-lastLoad<3e5))return;lastLoad=Date.now();
  document.body.dataset.live='laedt';
- const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject())
+ const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>{IT.offline=!!r.headers.get('X-InvestTimer-Offline');document.dispatchEvent(new Event(IT.offline?'investtimer:offline':'investtimer:online'));return r.ok?r.json():Promise.reject()})
   .then(d=>normaliseResult(d.publicSnapshot)||normaliseResult(d)).catch(()=>null);
  let liveFehler=false;
  const aktuell=IT.token().then(tok=>!tok?null:fetch('/api/aktuell',{cache:'no-store',headers:{Authorization:'Bearer '+tok}})
   .then(r=>{if(r.status===401){IT.abmelden();return null}if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
  Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
   document.body.dataset.live='fertig';
+  if(pub||live){try{localStorage.setItem('investtimer-stand-zeit',String(Date.now()))}catch{}}
   if(!pub&&!live){lastLoad=0;return}
   const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
@@ -2065,7 +2074,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.19-1731", "d": "19.11.2026"};
+const VERSION={"v": "2026.11.19-1747", "d": "19.11.2026"};
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -2485,11 +2494,55 @@ function extrasRender(){
  zeile.hidden=!angemeldet();
  zeile.innerHTML='<label class="sr-only" for="ki-zeile-eingabe">'+esc(kt('zeileLabel'))+'</label><input id="ki-zeile-eingabe" type="text" maxlength="300" autocomplete="off" enterkeyhint="go" placeholder="'+esc(kt('zeile'))+'"><button type="submit" aria-label="'+esc(kt('zumKi'))+'">'+SVG.pfeil+'</button>';
 }
+IT.kiGespraechAktiv=()=>st.gespraech.length>0||st.busy||!!(st.notiz&&st.notiz.trim());
 IT.kiFrageEreignis=name=>kt('frageEreignis').replace('{n}',name);
 IT.kiText=kt;
 document.addEventListener('investtimer:update',()=>{extrasRender();navRender();st.restGeladen=false;if(aktiv()==='ki'){zeichnen();restLaden()}});
 new MutationObserver(()=>{extrasRender();navRender();if(aktiv()==='ki')zeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 extrasRender();route();
+})();
+
+/* Updates der installierten Web-App und Offline-Hinweis (Service Worker: tools/sw.js).
+   - beim Oeffnen und bei jeder Rueckkehr in die App (visibilitychange) fragt die Seite nach einer neuen Version
+   - neue Version aktiv: sofort neu laden, wenn kein Dialog, kein KI-Gespraech und keine Eingabe offen ist,
+     sonst Hinweis "Neue Version verfuegbar · Aktualisieren" (wird beim naechsten ruhigen Moment automatisch erledigt)
+   - offline: "Offline · Stand {Zeit}" (Zeit des zuletzt geladenen Werts) */
+(()=>{
+const UT={de:{neu:'Neue Version verfügbar',aktualisieren:'Aktualisieren',offline:'Offline · Stand {z}',offlineOhne:'Offline'},
+ en:{neu:'New version available',aktualisieren:'Update',offline:'Offline · as of {z}',offlineOhne:'Offline'}};
+const ut=k=>UT[document.documentElement.lang==='en'?'en':'de'][k];
+const leiste=document.createElement('div');leiste.className='it-hinweisleiste';leiste.setAttribute('role','status');leiste.setAttribute('aria-live','polite');leiste.hidden=true;
+document.body.append(leiste);
+let zustand=null;/* 'neu' | 'offline' | null */
+function zeigen(){
+ if(zustand==='neu'){leiste.innerHTML='<span>'+esc(ut('neu'))+'</span><span aria-hidden="true">·</span><button type="button" data-update="jetzt">'+esc(ut('aktualisieren'))+'</button>';leiste.hidden=false}
+ else if(zustand==='offline'){let z='';try{const t=Number(localStorage.getItem('investtimer-stand-zeit'));if(t)z=new Date(t).toLocaleString(document.documentElement.lang==='en'?'en-US':'de-DE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch{}
+  leiste.innerHTML='<span>'+esc(z?ut('offline').replace('{z}',z):ut('offlineOhne'))+'</span>';leiste.hidden=false}
+ else leiste.hidden=true;
+ document.body.classList.toggle('mit-hinweisleiste',!leiste.hidden);
+}
+leiste.addEventListener('click',e=>{if(e.target.closest('[data-update]'))location.reload()});
+const ruhig=()=>!document.querySelector('dialog[open]')&&!(IT.kiGespraechAktiv&&IT.kiGespraechAktiv())&&!(document.activeElement&&document.activeElement.matches('input,textarea,select'));
+let neuBereit=false;
+function neueVersion(){if(neuBereit)return;neuBereit=true;if(ruhig()&&document.visibilityState==='visible'){location.reload();return}zustand='neu';zeigen()}
+/* ruhiger Moment spaeter: beim Wechsel in den Hintergrund und zurueck, oder nachdem ein Dialog geschlossen wurde */
+document.addEventListener('visibilitychange',()=>{if(neuBereit&&document.visibilityState==='visible'&&ruhig())location.reload()});
+if('serviceWorker' in navigator&&!window.InvestTimerApp){
+ /* Erste Uebernahme (Seite war noch ohne Service Worker) ist kein Update; jede weitere ist eine neue Version */
+ let gesteuert=!!navigator.serviceWorker.controller;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(gesteuert)neueVersion();else gesteuert=true});
+ const pruefen=()=>navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{});
+ setTimeout(pruefen,3000);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pruefen()});
+ IT.updatePruefen=pruefen;
+}
+function netz(){if(!navigator.onLine){if(zustand!=='neu'){zustand='offline';zeigen()}}else if(zustand==='offline'){IT.loadLive&&IT.loadLive(true)}}
+addEventListener('online',netz);addEventListener('offline',netz);netz();
+/* verlaesslicher als navigator.onLine: der Wert kam aus dem Speicher des Service Workers */
+document.addEventListener('investtimer:offline',()=>{if(zustand!=='neu'){zustand='offline';zeigen()}});
+document.addEventListener('investtimer:online',()=>{if(zustand==='offline'){zustand=null;zeigen()}});
+if(IT.offline&&zustand!=='neu'){zustand='offline';zeigen()}
+new MutationObserver(()=>{if(zustand)zeigen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 })();
 
 })();
