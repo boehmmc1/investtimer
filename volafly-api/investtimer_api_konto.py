@@ -310,7 +310,7 @@ IT_HIST_PFADE = ("/var/lib/investtimer/data/history.json", "/var/lib/investtimer
 
 def _it_historie_daten():
     """Verlauf: rueckgerechnet (ab 8 Bestandteilen) + aufgezeichnet (gewinnt immer) + Ereignismarken, verdichtet:
-    taeglich fuer das letzte gute Jahr, woechentlich (letzter Handelstag je Woche) fuer alles."""
+    taeglich fuer das letzte gute Jahr, woechentlich und monatlich (letzter Handelstag je Periode plus Tief/Hoch) fuer alles."""
     from datetime import date as _date, timedelta as _td
     key = tuple(os.path.getmtime(p) if os.path.exists(p) else 0 for p in IT_HIST_PFADE) + (_date.today().isoformat(),)
     if _it_hist_cache["key"] == key:
@@ -337,12 +337,23 @@ def _it_historie_daten():
     reihe = sorted(tage.items())
     grenze = (_date.today() - _td(days=400)).isoformat()
 
-    def woechentlich(punkte):
+    def verdichten(punkte, schluessel):
+        """Je Periode: letzter Handelstag [Datum, Wert, Bestandteile, Herkunft] plus Tief und Hoch der Periode."""
         w = {}
         for p in punkte:
-            j, k, _ = _date.fromisoformat(p[0]).isocalendar()
-            w[(j, k)] = p
+            k = schluessel(p[0])
+            if k in w:
+                a = w[k]
+                w[k] = p[:4] + [min(a[4], p[1]), max(a[5], p[1])]
+            else:
+                w[k] = p[:4] + [p[1], p[1]]
         return [w[x] for x in sorted(w)]
+
+    def woechentlich(punkte):
+        return verdichten(punkte, lambda d: _date.fromisoformat(d).isocalendar()[:2])
+
+    def monatlich(punkte):
+        return verdichten(punkte, lambda d: d[:7])
 
     punkte = [[d, w, n, h] for d, (w, n, h) in reihe]
     # Ereignisse (Stressphasen): Zeitraum aus der Datei, Kennzahlen aus den Daten
@@ -363,11 +374,10 @@ def _it_historie_daten():
         ereignisse.append({"id": e.get("id"), "start": e["start"], "ende": e["ende"],
                            "name": e.get("name", ""), "name_en": e.get("name_en", e.get("name", "")),
                            "kurz": e.get("kurz", e.get("name", "")), "kurz_en": e.get("kurz_en", e.get("kurz", "")),
-                           "text": e.get("text", ""), "text_en": e.get("text_en", e.get("text", "")),
                            "spitze": {"d": spitze[0], "w": spitze[1]},
                            "unter40": {"d": danach, "tage": (_date.fromisoformat(danach) - _date.fromisoformat(spitze[0])).days} if danach else None,
                            "bloecke": bl.get(spitze[0])})
-    daten = {"taeglich": [p for p in punkte if p[0] >= grenze], "woechentlich": woechentlich(punkte),
+    daten = {"taeglich": [p for p in punkte if p[0] >= grenze], "woechentlich": woechentlich(punkte), "monatlich": monatlich(punkte),
              "ersterAufgezeichnet": min(auf) if auf else None, "ereignisse": sorted(ereignisse, key=lambda x: x["start"])}
     _it_hist_cache.update(key=key, daten=daten)
     return daten
@@ -387,7 +397,7 @@ def it_historie(request: Request):
     if not d["taeglich"] and not d["woechentlich"]:
         return _it_aus()
     # S&P 500 wird nicht mehr ausgeliefert (Datenrechte LIC-001, 18.11.2026)
-    aus = {k: d[k] for k in ("taeglich", "woechentlich", "ersterAufgezeichnet", "ereignisse")}
+    aus = {k: d[k] for k in ("taeglich", "woechentlich", "monatlich", "ersterAufgezeichnet", "ereignisse")}
     return _JSONResp(aus, headers={"Cache-Control": "no-store"})
 
 

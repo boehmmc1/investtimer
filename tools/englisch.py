@@ -178,10 +178,8 @@ ERSETZEN = [
  ("The purchase was cancelled.", "Purchase canceled."),
  ("Subscriptions are not available right now.", "Subscriptions aren’t available right now."),
  # Verlauf
- ("Market stress history, {n} readings. Use the arrow keys to step through the days.", "Market stress history, {n} readings. Use the arrow keys to move day by day."),
  ("Marked events serve as a reference in time.", "Marked events are shown for context."),
  ("Highest market stress", "Peak"),
- ("What drove the score (sub-scores 0–100 on {d})", "Drivers at the peak (0–100, {d})"),
  ("Readings before 15 Nov 2026 were calculated afterwards with today’s model. In earlier years, fewer components were sometimes available. Past developments do not allow reliable conclusions about the future. Not investment advice.",
   "Readings before Nov 15, 2026 are back-calculated with today’s model; earlier years sometimes had fewer components. Past performance is no guide to the future. Not investment advice."),
  ("The history is not available right now.", "History isn’t available right now."),
