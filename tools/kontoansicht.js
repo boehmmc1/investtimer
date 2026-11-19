@@ -14,7 +14,7 @@ const KA={de:{
  emailGleich:'Das ist schon deine Adresse.',emailVergeben:'Diese Adresse gehört schon zu einem anderen Konto.',
  export:'Meine Daten herunterladen',exportText:'Eine Datei mit deinem Konto, deinen Alarmen und deiner KI-Nutzung.',
  ueberall:'Überall abmelden',ueberallText:'Meldet dich auf allen Geräten ab, auch hier.',
- passwort:'Passwort ändern',feedback:'Feedback geben',feedbackText:'Idee, Kritik oder ein Fehler? Schreib uns.',feedbackLink:'Feedback',loeschen:'Konto löschen',abo:'Abo',abmelden:'Abmelden',
+ passwort:'Passwort ändern',faq:'Häufige Fragen',faqText:'Kurze Antworten zu Wert, KI, Alarmen und Konto.',feedback:'Feedback geben',feedbackText:'Idee, Kritik oder ein Fehler? Schreib uns.',feedbackLink:'Feedback',loeschen:'Konto löschen',abo:'Abo',abmelden:'Abmelden',
  impressum:'Impressum',datenschutz:'Datenschutz',version:'Version {v} · {d}',fehler:'Das hat nicht geklappt. Bitte versuche es gleich noch einmal.',laedt:'Wird geladen …'
 },en:{
  eyebrow:'YOUR ACCOUNT',titel:'Account',titelAus:'Account',ausSatz:'Sign in to see the latest reading, ask the AI and set up alerts.',
@@ -27,7 +27,7 @@ const KA={de:{
  emailGleich:'That is already your address.',emailVergeben:'This address already belongs to another account.',
  export:'Download my data',exportText:'A file with your account, your alerts and your AI usage.',
  ueberall:'Sign out everywhere',ueberallText:'Signs you out on all devices, including this one.',
- passwort:'Change password',feedback:'Give feedback',feedbackText:'An idea, criticism or a bug? Write to us.',feedbackLink:'Feedback',loeschen:'Delete account',abo:'Subscription',abmelden:'Sign out',
+ passwort:'Change password',faq:'FAQ',faqText:'Short answers about the score, AI, alerts and your account.',feedback:'Give feedback',feedbackText:'An idea, criticism or a bug? Write to us.',feedbackLink:'Feedback',loeschen:'Delete account',abo:'Subscription',abmelden:'Sign out',
  impressum:'Legal notice',datenschutz:'Privacy',version:'Version {v} · {d}',fehler:'That did not work. Please try again in a moment.',laedt:'Loading …'
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
@@ -78,13 +78,13 @@ function htmlAn(){
   +zeileKnopf('export',ka('export'),ka('exportText'))
   +zeileKnopf('ueberall',ka('ueberall'),ka('ueberallText'))
   +zeileKnopf('loeschen',ka('loeschen'),'','konto-gefahr')+'</ul></div>'
-  +'<div class="konto-block"><ul class="konto-liste">'+zeileKnopf('feedback',ka('feedback'),ka('feedbackText'))+'</ul></div>'
+  +'<div class="konto-block"><ul class="konto-liste">'+zeileKnopf('faq',ka('faq'),ka('faqText'))+zeileKnopf('feedback',ka('feedback'),ka('feedbackText'))+'</ul></div>'
   +'<button type="button" class="konto-abmelden" data-konto="abmelden">'+ka('abmelden')+'</button>'+fuss();
 }
 function htmlAus(){
  return '<div class="konto-kopf"><span class="eyebrow konto-eyebrow">'+ka('eyebrow')+'</span><h2 id="konto-ansicht-titel" tabindex="-1">'+ka('titelAus')+'</h2><p class="konto-aus-satz">'+ka('ausSatz')+'</p>'
   +'<button type="button" class="primary konto-anmelden" data-konto="anmelden">'+ka('anmelden')+'</button></div>'+sprachwahl()
-  +'<div class="konto-block"><ul class="konto-liste">'+zeileKnopf('feedback',ka('feedback'),ka('feedbackText'))+'</ul></div>'+fuss();
+  +'<div class="konto-block"><ul class="konto-liste">'+zeileKnopf('faq',ka('faq'),ka('faqText'))+zeileKnopf('feedback',ka('feedback'),ka('feedbackText'))+'</ul></div>'+fuss();
 }
 function zeichne(){
  if(sicht.hidden)return;
@@ -140,6 +140,7 @@ sicht.addEventListener('click',e=>{
  else if(a==='passwort'||a==='loeschen'){IT.oeffneKonto&&IT.oeffneKonto(b,'konto').then(()=>{const d=$(a==='passwort'?'.konto-pw':'.konto-loeschen');if(d){d.open=true;d.scrollIntoView({block:'nearest'});d.querySelector('input')?.focus({preventScroll:true})}})}
  else if(a==='export')exportieren(b);
  else if(a==='feedback')location.hash='feedback';
+ else if(a==='faq')location.hash='faq';
  else if(a==='ueberall')ueberallAbmelden(b);
  else if(a==='abmelden'){IT.abmelden();setTimeout(()=>$('#konto-ansicht-titel')?.focus({preventScroll:true}),0)}
 });

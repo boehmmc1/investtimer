@@ -65,6 +65,11 @@ async def lauf(br, url, w, h, ein, sprache):
         await ansicht_pruefen(pg, 'Verlauf ' + sp, meta, erlaubt=())
     await pg.evaluate("location.hash='konto'"); await pg.wait_for_timeout(900)
     await ansicht_pruefen(pg, 'Konto', meta)
+    await pg.evaluate("location.hash='faq'"); await pg.wait_for_timeout(600)
+    await ansicht_pruefen(pg, 'FAQ', meta)
+    await pg.evaluate("location.hash='feedback'"); await pg.wait_for_timeout(600)
+    await ansicht_pruefen(pg, 'Feedback', meta)
+    await pg.evaluate("location.hash='konto'"); await pg.wait_for_timeout(700)
     if ein:
         await pg.click('.konto-alarm'); await pg.wait_for_timeout(700)
         await ansicht_pruefen(pg, 'Alarme (Dialog)', meta)

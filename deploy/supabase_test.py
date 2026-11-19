@@ -89,6 +89,7 @@ def main():
         # Seite mit Token und ohne
         code, d, _ = http("GET", SEITE + "/api/aktuell", kopf={"Authorization": "Bearer " + tok})
         alles &= pruefe("/api/aktuell mit Token", code == 200 and isinstance(d, dict) and "rounded" in d, "%s %s" % (code, str(d)[:120]))
+        alles &= pruefe("/api/aktuell mit Berechnungszeitpunkt", isinstance(d, dict) and str(d.get("berechnetUm") or "").endswith("Z"), str((d or {}).get("berechnetUm")))
         code, _, _ = http("GET", SEITE + "/api/aktuell")
         alles &= pruefe("/api/aktuell ohne Token gesperrt", code == 401, str(code))
         code, d, _ = http("POST", SEITE + "/api/chat", {"frage": "Wie setzt sich der Wert zusammen?", "verlauf": []}, {"Authorization": "Bearer " + tok})

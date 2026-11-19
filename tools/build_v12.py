@@ -200,8 +200,8 @@ TEXTE_KONTO_EN = ("filmEyebrow:'QUICK EXPLAINER',filmTitel:'The idea in 49 secon
                   "paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Subscription terms',datenschutz:'Privacy',zurueck:'Back',"
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
-KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontoansicht.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "feedback.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "ki.js").read_text(encoding="utf-8").replace(
-    "__KI_FRAGEN__", json.dumps(json.loads((ROOT / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))["ki_ansicht"], ensure_ascii=False)) + "\n" + (ROOT / "tools" / "update.js").read_text(encoding="utf-8")
+KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontoansicht.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "feedback.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "faq.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "ki.js").read_text(encoding="utf-8").replace(
+    "__KI_FRAGEN__", json.dumps(json.loads((ROOT / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))["ki_ansicht"], ensure_ascii=False)) + "\n" + (ROOT / "tools" / "update.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "aktualitaet.js").read_text(encoding="utf-8")
 TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufInfo:'Werte vor November 2026 sind mit dem heutigen Modell zurückgerechnet.',verlaufInfoLabel:'Hinweis zu den Werten',verlaufEyebrow:'MARKTSTRESS SEIT 2006',verlaufNeuer:'Neuere Werte nach der Anmeldung',verlaufMiniTitel:'Die letzten 12 Monate',verlaufMiniLink:'Ganzen Verlauf ansehen',verlaufMiniAria:'Marktstress von {a} bis {b}, zuletzt {w}',verlaufMiniEnde:'{w} am {d}',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Wert für Wert ansehen.',"
                     "verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',verlauf1J:'1J',verlauf5J:'5J',legendeAuf:'aufgezeichnet',legendeRueck:'zurückgerechnet',verlaufEreignisHinweis:'Markierte Ereignisse dienen der zeitlichen Einordnung.',ereignisseLabel:'Ereignisse',karteHoechst:'Höchster Marktstress',karteAm:'{w} am {d}',karteUnter40:'Wieder unter 40',karteNachTagen:'nach {n} Tagen',karteNochNicht:'noch nicht',karteTrieb:'Teilwerte am {d}',triebVol:'Kursschwankungen',triebPreis:'Breite und Trend',triebStimmung:'Stimmung und Absicherung',"
                     ""
@@ -641,7 +641,7 @@ function normaliseResult(d){
   if(rounded!==null&&!(Number.isInteger(rounded)&&rounded>=0&&rounded<=100))return null;
   const part=r=>r&&typeof r.name==='string'&&Number.isFinite(r.effectiveWeight);
   if(!d.rows.every(part)||!d.blocks.every(part)||!Number.isInteger(d.count))return null;
-  return {rounded,count:d.count,rows:d.rows,blocks:d.blocks,asOf:/^\\d{4}-\\d{2}-\\d{2}$/.test(d.asOf)?d.asOf:null};
+  return {rounded,count:d.count,rows:d.rows,blocks:d.blocks,asOf:/^\\d{4}-\\d{2}-\\d{2}$/.test(d.asOf)?d.asOf:null,berechnetUm:typeof d.berechnetUm==='string'?d.berechnetUm:null};
 }
 """
 
@@ -776,8 +776,11 @@ def head_meta(preview):
                   '<meta property="og:url" content="https://investtimer.net/">',
                   '<meta property="og:title" content="InvestTimer — Marktstress auf einen Blick">',
                   '<meta property="og:description" content="Ein klarer Wert von 0 bis 100. Details auf Wunsch.">',
-                  '<meta property="og:image" content="https://investtimer.net/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">',
-                  '<meta name="twitter:card" content="summary_large_image">']
+                  # Vorschaubild taeglich neu (server/og_bild.py); nginx ersetzt __OG_TAG__ durch das Tagesdatum (Cache-Busting), Rueckfall og-aktuell.png
+                  '<meta property="og:image" content="https://investtimer.net/og/og-__OG_TAG__.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">',
+                  '<meta property="og:image:alt" content="InvestTimer: Marktstress am US-Aktienmarkt, zeitversetzter Wert mit Stufe">',
+                  '<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="InvestTimer — Marktstress auf einen Blick">',
+                  '<meta name="twitter:description" content="Ein klarer Wert von 0 bis 100. Details auf Wunsch."><meta name="twitter:image" content="https://investtimer.net/og/og-__OG_TAG__.png">']
     return "\n".join(lines)
 
 
@@ -797,6 +800,20 @@ def schalter(name):
         except OSError:
             pass
     return wert == "1"
+
+
+def faq_liste():
+    """Haeufige Fragen (tools/faq.json); Abo-Fragen nur mit Paywall-Schalter IT_PAYWALL=1."""
+    return [{"de": f["de"], "en": f["en"]} for f in json.loads((ROOT / "tools" / "faq.json").read_text(encoding="utf-8"))["fragen"]
+            if not f.get("abo") or schalter("IT_PAYWALL")]
+
+
+def faq_jsonld():
+    """FAQPage-Strukturdaten (deutsch, ohne HTML)."""
+    ohne = lambda t: re.sub(r"<[^>]+>", "", t)
+    return ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "inLanguage": "de",
+            "mainEntity": [{"@type": "Question", "name": f["de"]["f"], "acceptedAnswer": {"@type": "Answer", "text": ohne(f["de"]["a"])}}
+                           for f in faq_liste()]}, ensure_ascii=False).replace("</", "<\\/") + '</script>')
 
 
 def film_schalter():
@@ -866,7 +883,7 @@ def main(source, target_dir, preview, anmeldung=None):
         " " + anmeldung["url"].rstrip("/") if anmeldung else ""), "CSP Abrufe")
     html = once(html, "img-src data:;", "img-src 'self' data:;", "CSP Bilder")
     html = once(html, "media-src data:;", "media-src 'self';", "CSP Film")
-    html = once(html, '<meta name="application-name" content="InvestTimer">', head_meta(preview), "Kopf-Meta")
+    html = once(html, '<meta name="application-name" content="InvestTimer">', head_meta(preview) + ("\n" + faq_jsonld() if anmeldung else ""), "Kopf-Meta")
     html = sub_once(html, r'(?<=<script type="application/json" id="investtimer-export-manifest">).*?(?=</script>)',
                     "\n" + json.dumps({"artifact": "InvestTimer UI", "exportVersion": "1.2", "languages": ["de", "en"],
                                        "data": "/data/stress.json", "chat": "/api/chat"}, indent=1) + "\n", "Manifest")
@@ -956,8 +973,8 @@ def main(source, target_dir, preview, anmeldung=None):
         else:
             html = once(html, '<span data-i18n="tagline">Marktstress verstehen.</span></footer>',
                         '<span data-i18n="tagline">Marktstress verstehen.</span>'
-                        '<nav class="rechtliches"><span class="nur-de"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a> · <a href="#feedback">Feedback</a></span>'
-                        '<span class="nur-en" lang="en"><a href="/impressum.html">Legal notice</a> and <a href="/datenschutz.html">privacy policy</a> are available in German. · <a href="#feedback">Feedback</a></span>'
+                        '<nav class="rechtliches"><span class="nur-de"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a> · <a href="#faq">Häufige Fragen</a> · <a href="#feedback">Feedback</a></span>'
+                        '<span class="nur-en" lang="en"><a href="/impressum.html">Legal notice</a> and <a href="/datenschutz.html">privacy policy</a> are available in German. · <a href="#faq">FAQ</a> · <a href="#feedback">Feedback</a></span>'
                         + (' · <a href="/vertrag-kuendigen.html">Verträge hier kündigen</a> · <a href="/vertrag-widerrufen.html">Vertrag widerrufen</a>'
                            if json.loads((ROOT / "deploy" / "abo.json").read_text()).get("vertragsseiten") else "")
                         + '</nav></footer>',
@@ -994,7 +1011,7 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\nupdate();",
                 "new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});\n"
                 "document.addEventListener('investtimer:update',update);\nupdate();" + (
-                    "\nif(IT.neuesPasswort){IT.zugangModus('neu');openAccess(null)}else if(IT.anmeldeFehler){IT.zugangModus('code-email');zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS.replace("__FILM_AN__", "true" if film_schalter() else "false").replace("__VERSION__", json.dumps(VERSION))
+                    "\nif(IT.neuesPasswort){IT.zugangModus('neu');openAccess(null)}else if(IT.anmeldeFehler){IT.zugangModus('code-email');zugangsFehler=t('linkExpired');openAccess(null)}\n" + ALARM_JS + "\n" + KONTO_JS.replace("__FILM_AN__", "true" if film_schalter() else "false").replace("__VERSION__", json.dumps(VERSION)).replace("__FAQ__", json.dumps(faq_liste(), ensure_ascii=False))
                     if anmeldung else ""), "Zugang Aktualisierung")
 
     # Stile: Mobil-Nachschaerfung hinter die Export-Stile, Ergaenzungen hinter die Zugangs-Stile

@@ -100,7 +100,7 @@ function navRender(){
  tabs.innerHTML=[['stress','#'],['ki','#ki'],['verlauf','#verlauf']].map(([k,h])=>'<a href="'+h+'" data-ziel="'+k+'"'+(a===k?' aria-current="page"':'')+'>'+kt('tab'+k[0].toUpperCase()+k.slice(1).replace('stress','Stress'))+'</a>').join('');
  leiste.innerHTML=[['stress','#'],['ki','#ki'],['verlauf','#verlauf'],['konto','#konto']].map(([k,h])=>'<a href="'+h+'" data-ziel="'+k+'"'+(a===k?' aria-current="page"':'')+'>'+SVG[k]+'<span>'+kt('tab'+k[0].toUpperCase()+k.slice(1))+'</span></a>').join('');
 }
-function aktiv(){const h=location.hash.replace('#','');return ['ki','verlauf','konto','feedback'].includes(h)?h:'stress'}
+function aktiv(){const h=location.hash.replace('#','');return ['ki','verlauf','konto','feedback','faq'].includes(h)?h:'stress'}
 if(kopf){kopf.insertBefore(tabs,werkzeuge||null);document.body.append(leiste);document.body.classList.add('mit-leiste')}
 /* "#" als Ziel fuer Marktstress: ohne Rest-Raute in der Adresse, Zurueck-Taste bleibt nutzbar */
 function navKlick(e){const l=e.target.closest('a[data-ziel]');if(!l||e.metaKey||e.ctrlKey||e.shiftKey)return;
@@ -282,21 +282,34 @@ const scrollMerk={};let letzte=null,kontextNeu=false;
 function route(){
  const a=aktiv();
  if(letzte&&letzte!==a)scrollMerk[letzte]=window.scrollY;
- ['ki','verlauf','konto','feedback'].forEach(k=>document.body.classList.toggle('ansicht-'+k,a===k));
+ ['ki','verlauf','konto','feedback','faq'].forEach(k=>document.body.classList.toggle('ansicht-'+k,a===k));
  document.body.classList.toggle('ansicht-neben',a!=='stress');
  if(!ansicht)ansichtAnlegen();
  ansicht.hidden=a!=='ki';navRender();
  IT.verlaufAnsicht&&IT.verlaufAnsicht[a==='verlauf'?'zeigen':'verbergen']();
  IT.kontoAnsicht&&IT.kontoAnsicht[a==='konto'?'zeigen':'verbergen']();
  IT.feedbackAnsicht&&IT.feedbackAnsicht[a==='feedback'?'zeigen':'verbergen']();
+ IT.faqAnsicht&&IT.faqAnsicht[a==='faq'?'zeigen':'verbergen']();
+ titelSetzen(a);if(letzte!==a)zaehlen(a);
  if(a==='ki'&&letzte!=='ki'){if(!kontextNeu)st.kontext=null;kontextNeu=false}
  if(a==='ki'){zeichnen(st.gespraech.length?null:'titel');restLaden();window.scrollTo({top:st.gespraech.length?document.documentElement.scrollHeight:0});haftUnten=true}
  else{document.body.classList.remove('ki-tastatur');
   if(letzte!==a){window.scrollTo({top:a==='stress'?(scrollMerk.stress||0):0});
-   if(letzte){const h=a==='verlauf'?$('#verlauf-ansicht-titel'):a==='konto'?$('#konto-ansicht-titel'):a==='feedback'?$('#feedback-titel'):null;h&&h.focus({preventScroll:true})}}}
+   if(letzte){const h=a==='verlauf'?$('#verlauf-ansicht-titel'):a==='konto'?$('#konto-ansicht-titel'):a==='feedback'?$('#feedback-titel'):a==='faq'?$('#faq-titel'):null;h&&h.focus({preventScroll:true})}}}
  letzte=a;
 }
 IT.route=route;IT.aktiveAnsicht=aktiv;
+/* Seitentitel und Vorschau-Angaben je Ansicht (fuer Teilen aus dem Browser und Crawler, die Skripte ausfuehren) */
+const TITEL={de:{stress:'InvestTimer — Marktstress',ki:'InvestTimer KI — Fragen zum Marktstress',verlauf:'InvestTimer — Verlauf des Marktstress seit 2006',konto:'InvestTimer — Konto',feedback:'InvestTimer — Feedback',faq:'InvestTimer — Häufige Fragen'},
+ en:{stress:'InvestTimer — Market stress',ki:'InvestTimer AI — Questions about market stress',verlauf:'InvestTimer — Market stress since 2006',konto:'InvestTimer — Account',feedback:'InvestTimer — Feedback',faq:'InvestTimer — FAQ'}};
+const BESCHR={de:{stress:'Marktstress am US-Aktienmarkt als ein Wert von 0 bis 100.',ki:'Die InvestTimer KI ordnet den Marktstress ein und beantwortet deine Fragen.',verlauf:'Wie sich der Marktstress am US-Aktienmarkt seit 2006 entwickelt hat.',faq:'Antworten auf häufige Fragen zu InvestTimer.'},
+ en:{stress:'US stock market stress as one score from 0 to 100.',ki:'The InvestTimer AI puts market stress in context and answers your questions.',verlauf:'How US stock market stress has developed since 2006.',faq:'Answers to common questions about InvestTimer.'}};
+function titelSetzen(a){const l=sp(),t=TITEL[l][a]||TITEL[l].stress,b=BESCHR[l][a]||BESCHR[l].stress;document.title=t;
+ [['meta[property="og:title"]',t],['meta[name="twitter:title"]',t],['meta[property="og:description"]',b],['meta[name="description"]',b]].forEach(([s,v])=>{const m=document.querySelector(s);if(m)m.setAttribute('content',v)})}
+/* Nutzungsauswertung ohne Cookies und ohne Speicher: kleiner Aufruf je Ansichtswechsel, ohne Kennung (nginx protokolliert ihn ohne IP) */
+function zaehlen(a){if(!location.protocol.startsWith('http')||window.InvestTimerApp)return;
+ const inst=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true,g=(mobil()?'mobil':'desktop')+(inst?'-app':'');
+ try{fetch('/api/v?a='+encodeURIComponent(a)+'&l='+sp()+'&g='+g,{cache:'no-store',credentials:'omit',keepalive:true}).catch(()=>{})}catch{}}
 addEventListener('popstate',route);
 addEventListener('hashchange',route);
 document.addEventListener('click',e=>{
@@ -333,6 +346,6 @@ document.addEventListener('investtimer:wertfertig',brueckenRender);
 IT.kiGespraechAktiv=()=>st.gespraech.length>0||st.busy||!!(st.notiz&&st.notiz.trim());
 IT.kiText=kt;
 document.addEventListener('investtimer:update',()=>{brueckenRender();navRender();st.restGeladen=false;if(aktiv()==='ki'){zeichnen();restLaden()}});
-new MutationObserver(()=>{brueckenRender();navRender();if(aktiv()==='ki')zeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+new MutationObserver(()=>{brueckenRender();navRender();titelSetzen(aktiv());if(aktiv()==='ki')zeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 brueckenRender();route();
 })();

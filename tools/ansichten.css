@@ -218,3 +218,28 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 @media(min-width:760px){.feedback-ansicht{padding-top:24px}.feedback-karte{padding:30px 32px 32px;border:1px solid var(--line);border-radius:20px;background:var(--surface,#fff)}}
 @media(max-width:759px){.feedback-karte h2{font-size:24px}body.ansicht-feedback .app-footer{display:none}}
 .narrativ{max-width:720px;margin:-8px 0 22px;font-size:15px;line-height:1.7;color:var(--text)}
+/* FAQ (#faq): Akkordeon */
+.faq-ansicht[hidden]{display:none!important}
+.faq-ansicht{max-width:720px;margin:0 auto;padding:8px 0 36px;text-align:left}
+.faq-kopf{margin:0 0 18px}
+.faq-eyebrow{display:block;color:var(--accent);font-size:10px;letter-spacing:1.6px}
+.faq-kopf h2{font:500 30px/1.2 var(--display);letter-spacing:-.6px;margin:4px 0 6px;outline:none}
+.faq-unter{margin:0;font-size:15px;line-height:1.6;color:var(--sub)}
+.faq-liste{border-top:1px solid var(--line)}
+.faq-eintrag{border-bottom:1px solid var(--line)}
+.faq-frage-h{margin:0;font:inherit}
+.faq-frage{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:56px;padding:12px 2px;border:0;background:none;text-align:left;font:500 16px/1.4 var(--sans);color:var(--text);cursor:pointer}
+.faq-frage:hover{color:var(--accent);filter:none}
+.faq-frage:focus-visible{outline:2px solid #698dbc;outline-offset:2px;border-radius:6px}
+.faq-pfeil{width:18px;height:18px;flex:none;color:var(--sub);transition:transform .2s}
+.faq-eintrag.offen .faq-pfeil{transform:rotate(180deg);color:var(--accent)}
+.faq-antwort{padding:0 2px 16px}
+.faq-antwort[hidden]{display:none}
+.faq-antwort p{margin:0;font-size:15px;line-height:1.7;color:var(--text);max-width:640px}
+.faq-antwort a{color:var(--accent);text-underline-offset:3px}
+@media(max-width:759px){.faq-kopf h2{font-size:24px}}
+@media(prefers-reduced-motion:reduce){.faq-pfeil{transition:none}}
+/* Aktualitaet ueber dem Wert */
+.aktualitaet-spaet{color:#93692B}
+.snapshot-label.mit-aktualitaet{white-space:normal}
+.rechtliches a{min-width:44px;text-align:center;box-sizing:border-box}

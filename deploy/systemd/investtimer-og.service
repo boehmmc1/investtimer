@@ -1,0 +1,6 @@
+[Unit]
+Description=InvestTimer: Vorschaubild zum Teilen erzeugen (zeitversetzter Wert)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/www/investtimer/server/og_bild.py

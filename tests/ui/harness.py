@@ -17,7 +17,7 @@ _p = base64.urlsafe_b64encode(json.dumps({'sub': 'test-uid-1', 'email': EMAIL, '
 TOKEN = 'eyJhbGciOiJIUzI1NiJ9.' + _p + '.sig'
 LOGIN_HASH = '#access_token=%s&refresh_token=r1&expires_in=3600&type=magiclink' % TOKEN
 ZUSTAND = {'wert': None, 'chat_status': 200, 'chat_ok': True, 'rest': 2, 'chat_verzoegerung': 0.4, 'alarme': None,
-           'antwort': None, 'aufrufe': [], 'aktuell_verzoegerung': 0, 'feedback_status': 200, 'feedback': []}
+           'antwort': None, 'aufrufe': [], 'aktuell_verzoegerung': 0, 'feedback_status': 200, 'feedback': [], 'alter_min': 3, 'fehler': [], 'ansichten': []}
 
 
 def _historie_funktion():
@@ -81,7 +81,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._json({'ok': ZUSTAND['chat_ok']})
         if pfad == '/api/aktuell':
             time.sleep(ZUSTAND['aktuell_verzoegerung'])
-            return self._json(aktuell()) if self._auth() else self._json({'error': 'login'}, 401)
+            d = aktuell()
+            d['berechnetUm'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(time.time() - ZUSTAND['alter_min'] * 60))
+            return self._json(d) if self._auth() else self._json({'error': 'login'}, 401)
+        if pfad == '/api/v':
+            ZUSTAND['ansichten'].append(self.path)
+            self.send_response(204); self.end_headers(); return
         if pfad == '/api/historie':
             d = HIST()
             aus = {k: d[k] for k in ('taeglich', 'woechentlich', 'monatlich', 'ersterAufgezeichnet', 'ereignisse')}
@@ -111,6 +116,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pfad = self.path.split('?')[0]
         roh = self.rfile.read(int(self.headers.get('Content-Length') or 0))
         ZUSTAND['aufrufe'].append(('POST', pfad, roh[:300]))
+        if pfad == '/api/fehler':
+            ZUSTAND['fehler'].append(json.loads(roh or b'{}'))
+            return self._json({'ok': True})
         if pfad == '/api/feedback':
             ZUSTAND['feedback'].append(json.loads(roh or b'{}'))
             st = ZUSTAND['feedback_status']

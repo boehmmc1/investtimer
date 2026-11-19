@@ -1,0 +1,6 @@
+[Unit]
+Description=InvestTimer: Statistik-Bericht (ohne Cookies, IP gekuerzt)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/www/investtimer/server/statistik.py --bericht

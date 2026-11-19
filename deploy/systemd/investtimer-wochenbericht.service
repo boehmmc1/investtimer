@@ -1,0 +1,6 @@
+[Unit]
+Description=InvestTimer: Wochenzahlen per Mail an info@investtimer.net
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/www/investtimer/server/statistik.py --woche
