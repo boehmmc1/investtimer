@@ -998,6 +998,8 @@ def main(source, target_dir, preview, anmeldung=None):
     html, _ = englisch.anwenden(html)
     import startseite
     html = startseite.anwenden(html)
+    import erklaerungen
+    html = erklaerungen.anwenden(html)
     import farbskala
     html = farbskala.anwenden(html)
     # Installierte Web-App (iPhone): Safe-Area aktivieren, Bottom-Sheets nicht unter die Statusleiste
@@ -1031,7 +1033,7 @@ ENTWURF_TEXTE = {  # Schluessel: (de, en)
     "localonly": ("Alarm gespeichert.", "Alert saved."), "confirm": ("Bestätigen", "Confirm"), "demo": ("", ""),
     "savedTitle": ("Deine Auswahl.", "Your selection."), "hint": ("", ""), "accessDemo": ("", ""),
     "review": ("", ""), "public": ("", ""), "members": ("", ""), "reviewNote": ("", ""),
-    "accessAction": ("Anmelden", "Sign in"), "preview": ("Historischer Einblick", "Historical reading"),
+    "accessAction": ("Anmelden", "Sign in"), "preview": ("Zeitversetzter Stand", "Historical reading"),
     "draft": ("Historische Stresswerte im Film zurückgerechnet", "Historical stress values in the film back-calculated"),
 }
 ENTWURF_WORTE = re.compile(r"(?i)demo|entwurf|vorschau|beispielantwort")

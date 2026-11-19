@@ -73,6 +73,9 @@ def anwenden(html):
     html = html[:m.start(2)] + json.dumps(daten, indent=1) + html[m.end(2):]
     html = _once(html, "const part=r=>r&&typeof r.name==='string'&&Number.isFinite(r.effectiveWeight);",
                  "const part=r=>r&&typeof r.name==='string';", "normaliseResult ohne Gewichte")
+    # Einheitlicher Begriff fuer den oeffentlichen Wert: "zeitversetzter Stand"
+    html = _once(html, "source:'US-Aktienmarkt · gespeicherter Stand '", "source:'US-Aktienmarkt · zeitversetzter Stand '", "Fusszeile zeitversetzt")
+    html = _once(html, "noCurrent:'Historischer Wert – nicht der aktuelle", "noCurrent:'Zeitversetzter Stand – nicht der aktuelle", "Hinweis zeitversetzt")
     for rest in ("effectiveWeight", "von 14", "of 14", "Anteil an der Berechnung", "Share of the calculation", "Datenstand:", "notifications-title"):
         if rest in html:
             i = html.index(rest)

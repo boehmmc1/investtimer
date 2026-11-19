@@ -121,3 +121,7 @@ body.ansicht-neben .app>main{display:none!important}
 .it-hinweisleiste button{min-height:40px;padding:0 14px;border:0;border-radius:999px;background:#f3f5f0;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
 .it-hinweisleiste button:focus-visible{outline:2px solid #9fd3c1;outline-offset:2px}
 @media(max-width:759px){.it-hinweisleiste{bottom:calc(var(--leiste-h) + 12px + var(--sa-bottom))}body.ansicht-ki .it-hinweisleiste{top:calc(12px + var(--sa-top));bottom:auto}}
+/* Gesamtpruefung: Ueberschriften ohne verwaiste Einzelworte, Klickflaechen 44 px */
+h1,h2,h3,h4,.konto-kopf h2,.ki-start h2{text-wrap:balance}
+.alarm-kanal-wahl{min-height:44px}
+.konto-fuss a{padding:13px 2px}
