@@ -106,7 +106,7 @@ function vKarte(m){
   +'<dl class="karte-zahlen"><div><dt>'+t('karteHoechst')+'</dt><dd>'+t('karteAm').replace('{w}',m.spitze.w).replace('{d}',vDatum(m.spitze.d))+'</dd></div>'
   +'<div><dt>'+t('karteUnter40')+'</dt><dd>'+(m.unter40?t('karteNachTagen').replace('{n}',m.unter40.tage):t('karteNochNicht'))+'</dd></div></dl>'
   +(m.bloecke?'<p class="karte-trieb-titel">'+t('karteTrieb').replace('{d}',vDatum(m.spitze.d))+'</p>'+zeile('volatility','triebVol')+zeile('price','triebPreis')+zeile('positioning','triebStimmung'):'')
-  +(IT.kiFrageEreignis?'<p class="ki-frag-link"><a href="#ki" class="ki-frag" data-ki-frage="'+esc(IT.kiFrageEreignis(nm))+'">'+esc(IT.kiText('fragKi'))+'</a></p>':'');
+  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'');
 }
 /* Chip-Leiste: Verlauf am Rand als Scroll-Hinweis, aktiven Chip in Sicht holen (nur die Leiste scrollt, nie die Seite) */
 function vChipsRand(c){if(!c)return;const max=c.scrollWidth-c.clientWidth;c.classList.toggle('rand-l',c.scrollLeft>2);c.classList.toggle('rand-r',max-c.scrollLeft>2)}
@@ -120,12 +120,12 @@ function vAktiviere(id){
  verlaufEreignis=id;const box=panel.querySelector('.verlauf');if(!box)return;const {e}=vAuswahl(),m=e.find(x=>x.id===id);if(!m)return;
  box.querySelectorAll('[data-band]').forEach(r=>r.classList.toggle('aktiv',r.dataset.band===id));
  box.querySelectorAll('[data-ereignis]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ereignis===id)));
- const k=box.querySelector('.ereignis-karte');if(k){k.innerHTML=vKarte(m);k.hidden=false}
+ const k=box.querySelector('.ereignis-karte');if(k){k.innerHTML=vKarte(m);k.hidden=false;IT.kiBruecke&&IT.kiBruecke.beleben(k)}
  vChipInSicht(box,true);
 }
 function vZeichnen(fokus){
  const box=panel&&panel.querySelector('.verlauf');if(!box)return;
- box.innerHTML=verlaufHtml();verlaufIndex=null;vChipInSicht(box,false);vKopf();
+ box.innerHTML=verlaufHtml();verlaufIndex=null;vChipInSicht(box,false);vKopf();IT.kiBruecke&&IT.kiBruecke.beleben(box);
  if(fokus)box.querySelector(fokus)?.focus();
 }
 /* Tooltip: naechster Wert zur Zeigerposition bzw. per Pfeiltasten */

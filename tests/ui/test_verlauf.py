@@ -55,7 +55,7 @@ async def main():
                     pruefe(chips and chips['inSicht'] and 'rand' in chips['rand'], f'{tag}: Chip-Leiste mit Randverlauf, aktiver Chip in Sicht {chips}')
                     await pg.click('.verlauf-chip:last-child'); await pg.wait_for_timeout(400)
                 k = await pg.evaluate("document.querySelector('#verlauf-ansicht .ereignis-karte').innerText")
-                pruefe('Höchster Marktstress' in k and 'Wieder unter 40' in k and 'Frag die KI dazu' in k and 'folgt' not in k, f'{tag}: Ereigniskarte vollstaendig ohne Beschreibung')
+                pruefe('Höchster Marktstress' in k and 'Wieder unter 40' in k and 'mit der KI einordnen' in k and 'Frag die KI' not in k and 'folgt' not in k, f'{tag}: Ereigniskarte vollstaendig ohne Beschreibung')
                 pruefe(not js, f'{tag}: keine JS-Fehler {js}')
                 await ctx.close()
         await b.close()

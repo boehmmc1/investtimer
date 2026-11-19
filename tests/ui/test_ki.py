@@ -37,7 +37,7 @@ async def main():
                 txt = await pg.evaluate("document.querySelector('#ki-ansicht').innerText")
                 pruefe('Was bewegt dich am Markt?' in txt and ('Anmelden & KI fragen' in txt) == (not ein), f'{tag}: Ueberschrift, Anmelde-Knopf nur ausgeloggt')
                 if ein: pruefe('STAND HEUTE' in txt.upper() and 'Noch 2 Fragen heute' in txt and 'Keine Anlageberatung' in txt, f'{tag}: Eyebrow mit Wert, Hinweiszeile mit Restfragen')
-                for k in ('VIX', 'S&P', 'MOVE', 'Put/Call', '{wert}', '…'):
+                for k in ('VIX', 'S&P', 'MOVE', 'Put/Call', '{wert}', '…', 'Frag die KI dazu'):
                     pruefe(k not in txt, f'{tag}: kein "{k}" in der KI-Ansicht')
                 if w < 760:
                     k = await pg.evaluate("""()=>{const b=document.querySelector('.ki-gruppen').getBoundingClientRect(),ks=[...document.querySelectorAll('.ki-gruppe')];
@@ -87,12 +87,21 @@ async def main():
                 await pg.unroute('**/api/chat'); harness.ZUSTAND['chat_status'] = 200
                 await pg.click('[data-ki=neu]'); await pg.wait_for_timeout(400)
                 pruefe(await pg.evaluate("!!document.querySelector('.ki-start')&&!document.querySelector('.ki-antwort')"), f'{tag}: Neues Gespraech')
-                # "Frag die KI dazu" am Wert
+                # KI-Bruecke am Wert: KI-Tab mit Kontext, passende Gruppe hervorgehoben, nichts gesendet oder vorbefuellt
                 await pg.evaluate("history.pushState(null,'',location.pathname);dispatchEvent(new PopStateEvent('popstate'))"); await pg.wait_for_timeout(500)
                 harness.ZUSTAND['aufrufe'].clear()
-                await pg.click('.ki-frag-link a'); await pg.wait_for_timeout(700)
-                v = await pg.input_value('#ki-eingabe')
-                pruefe(await pg.evaluate("location.hash") == '#ki' and v.startswith('Warum steht der Marktstress bei') and not [a for a in harness.ZUSTAND['aufrufe'] if a[:2] == ('POST', '/api/chat')], f'{tag}: Frag die KI dazu fuellt vor ({v}), sendet nicht')
+                await pg.click('.ki-bruecke-start .ki-bruecke' if w < 760 else '.ki-bruecke-knopf'); await pg.wait_for_timeout(800)
+                r = await pg.evaluate("""()=>({hash:location.hash,kontext:document.querySelector('.ki-kontext')?.textContent||'',hervor:document.querySelector('.ki-gruppe-hervor h3')?.textContent||'',
+                   erste:document.querySelector('.ki-gruppe-hervor .ki-frage')?.textContent||'',eingabe:document.querySelector('#ki-eingabe')?.value,
+                   sicht:(()=>{const g=document.querySelector('.ki-gruppe-hervor');return g&&!g.classList.contains('ki-gruppe-halb')})()})""")
+                pruefe(r['hash'] == '#ki' and r['kontext'].startswith('Du kommst von: Marktstress') and r['hervor'].lower().startswith('einordnen') and r['erste'].startswith('Ist ') and r['eingabe'] == '' and r['sicht']
+                       and not [a for a in harness.ZUSTAND['aufrufe'] if a[:2] == ('POST', '/api/chat')], f'{tag}: KI-Bruecke oeffnet KI mit Kontext, nichts vorbefuellt/gesendet {r}')
+                await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(500); await pg.evaluate("location.hash='ki'"); await pg.wait_for_timeout(500)
+                pruefe(not await pg.evaluate("!!document.querySelector('.ki-kontext')"), f'{tag}: direkt geoeffneter KI-Tab ohne Herkunftszeile')
+                await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1200)
+                await pg.click('.ereignis-karte .ki-bruecke'); await pg.wait_for_timeout(800)
+                r = await pg.evaluate("({kontext:document.querySelector('.ki-kontext')?.textContent||'',erste:document.querySelector('.ki-gruppe-hervor .ki-frage')?.textContent||''})")
+                pruefe('phase' in r['kontext'].lower() and r['erste'].startswith('Wie verlief'), f'{tag}: Bruecke aus der Ereigniskarte {r}')
                 pruefe(await pg.evaluate("getComputedStyle(document.querySelector('#ki-eingabe')).fontSize") == '16px', f'{tag}: Eingabe 16 px')
                 pruefe(not js, f'{tag}: keine JS-Fehler {js}')
                 await ctx.close()

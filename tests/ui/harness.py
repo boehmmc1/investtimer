@@ -13,11 +13,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC = ROOT / 'public'
 EMAIL = 'test@investtimer.net'
-_p = base64.urlsafe_b64encode(json.dumps({'email': EMAIL, 'exp': int(time.time()) + 86400}).encode()).decode().rstrip('=')
+_p = base64.urlsafe_b64encode(json.dumps({'sub': 'test-uid-1', 'email': EMAIL, 'exp': int(time.time()) + 86400}).encode()).decode().rstrip('=')
 TOKEN = 'eyJhbGciOiJIUzI1NiJ9.' + _p + '.sig'
 LOGIN_HASH = '#access_token=%s&refresh_token=r1&expires_in=3600&type=magiclink' % TOKEN
 ZUSTAND = {'wert': None, 'chat_status': 200, 'chat_ok': True, 'rest': 2, 'chat_verzoegerung': 0.4, 'alarme': None,
-           'antwort': None, 'aufrufe': []}
+           'antwort': None, 'aufrufe': [], 'aktuell_verzoegerung': 0}
 
 
 def _historie_funktion():
@@ -80,6 +80,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if pfad == '/api/chat':
             return self._json({'ok': ZUSTAND['chat_ok']})
         if pfad == '/api/aktuell':
+            time.sleep(ZUSTAND['aktuell_verzoegerung'])
             return self._json(aktuell()) if self._auth() else self._json({'error': 'login'}, 401)
         if pfad == '/api/historie':
             d = HIST()

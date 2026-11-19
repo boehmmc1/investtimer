@@ -35,6 +35,12 @@ sys.path.insert(0, str(ROOT / "volafly-api"))
 sys.path.insert(0, str(ROOT / "tools"))
 import marktstress as engine  # noqa: E402
 from build_public import GAUGE_CSS, GAUGE_JS, MOBILE_CSS, once, sub_once  # noqa: E402
+# Gespeicherter Wert beim Start (angemeldet): sofort stehen lassen, keine Fuellanimation; spaetere Aenderung gleitet
+_G_ALT = "if(!valid||visual==='line'||matchMedia('(prefers-reduced-motion: reduce)').matches||(!gaugeEntrance&&gaugeShown===p)){"
+if GAUGE_JS.count(_G_ALT) != 1:
+    raise SystemExit("GAUGE_JS: Einstiegsbedingung nicht gefunden")
+GAUGE_JS = GAUGE_JS.replace(_G_ALT, "if(!valid||visual==='line'||matchMedia('(prefers-reduced-motion: reduce)').matches||(!gaugeEntrance&&gaugeShown===p)"
+                            "||(gaugeShown===null&&!gaugeEntrance&&window.InvestTimer&&window.InvestTimer.ohneEinstieg)){")
 
 # Halbmond: Zeichen der KI (gefuellt bis zum angezeigten Wert) und Denk-Anzeige
 MOND = ('<svg class="{cls}" viewBox="3 13 42 24" aria-hidden="true">'
@@ -519,8 +525,9 @@ TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com'
 
 # Ersetzt LIVE_JS, wenn die Anmeldung aktiv ist. Sitzung im localStorage, Erneuerung ueber das Refresh-Token.
 LIVE_JS_ANMELDUNG = """/* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
-const IT=window.InvestTimer={live:null,pub:result,member:false,chat:null,session:null,
- get view(){return this.member&&this.live?this.live:this.pub},
+const IT=window.InvestTimer={live:null,pub:result,member:false,chat:null,session:null,gespeichert:null,wertEndgueltig:true,
+ /* Mit Sitzung nie den oeffentlichen bzw. eingebetteten Wert: aktueller Wert, sonst der zuletzt geladene (je Konto gespeichert), sonst keiner */
+ get view(){return this.member?(this.live||this.gespeichert||null):this.pub},
  setMember(v){this.member=!!v;apply()}};
 function apply(){
  const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
@@ -588,7 +595,7 @@ IT.codeFuerAenderung=async()=>{
 };
 IT.emailVonSitzung=()=>{try{return JSON.parse(atob((IT.session||gemerkt()).access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email}catch{return ''}};
 IT.abmelden=async()=>{
- const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;lastSeen='';IT.setMember(false);
+ const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.gespeichert=null;IT.vergesseWert();IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');lastSeen='';IT.setMember(false);
  if(s)sb('/auth/v1/logout',{method:'POST',headers:{Authorization:'Bearer '+s.access_token}}).catch(()=>{});
 };
 let lastLoad=0,lastSeen='';
@@ -606,12 +613,27 @@ function loadLive(force){
   const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
   /* API nicht erreichbar: angemeldet bleiben, gespeicherten Stand zeigen und das sagen (kein Wechsel auf "Anmelden") */
-  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler));apply();
+  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler));
+  if(live){IT.gespeichert=live;merkeWert(live)}
+  /* c) frischer Wert: der Bogen gleitet vom gespeicherten Stand (bzw. fuellt sich einmal aus dem Platzhalter) */
+  if(live||!IT.session||!IT.wertEndgueltig)wertFertig();apply();
   if(liveFehler&&IT.session&&typeof toast==='function')toast(document.documentElement.lang==='en'?'The latest reading isn’t available right now. Showing the saved reading.':'Der aktuelle Wert ist gerade nicht erreichbar. Du siehst den gespeicherten Stand.');
  });
 }
 IT.loadLive=loadLive;
-if(gemerkt())IT.member=true;
+const AKEY='investtimer-aktuell';
+const uid=()=>{try{return JSON.parse(atob((IT.session||gemerkt()).access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub||''}catch{return ''}};
+IT.vergesseWert=()=>{try{localStorage.removeItem(AKEY)}catch{}};
+const merkeWert=d=>{try{const u=uid();if(u&&d)localStorage.setItem(AKEY,JSON.stringify({uid:u,daten:d}))}catch{}};
+const gemerkterWert=()=>{try{const d=JSON.parse(localStorage.getItem(AKEY)||'null'),u=uid();return d&&u&&d.uid===u?normaliseResult(d.daten):null}catch{return null}};
+function wertFertig(){IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');document.dispatchEvent(new Event('investtimer:wertfertig'))}
+if(gemerkt()){
+ IT.member=true;IT.gespeichert=gemerkterWert();IT.wertEndgueltig=false;
+ /* a) gespeicherter Wert sofort und ohne Fuellanimation, b) sonst ruhiger Platzhalter ohne Zahl */
+ IT.ohneEinstieg=!!IT.gespeichert;document.body.classList.toggle('wert-laedt',!IT.gespeichert);apply();
+ /* d) nach 4 s ohne Antwort beim gespeicherten Wert bleiben (Stand-Datum steht ueber dem Wert), nie der oeffentliche Wert */
+ setTimeout(()=>{if(!IT.wertEndgueltig){wertFertig();apply()}},4000);
+}
 loadLive();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadLive()});
 window.addEventListener('pageshow',e=>{if(e.persisted)loadLive()});
@@ -938,7 +960,7 @@ def main(source, target_dir, preview, anmeldung=None):
                         "Fusslinks Rechtstexte")
         print("Registrierung: %s" % ("offen" if offen else "ausgeblendet (Impressum/Datenschutz fehlen)"))
     html = once(html, "stamp.textContent=(member?t('saved'):t('preview'))+' · '+date();stamp.title=member?t('memberNote'):t('noCurrent');",
-                "stamp.textContent=(member&&IT.live?t('current'):t('preview'))+' · '+date();stamp.title=member&&IT.live?'':t('noCurrent');", "Stempel")
+                "stamp.textContent=(member?(IT.live?t('current'):t('stand')):t('preview'))+' · '+date();stamp.title=member?'':t('noCurrent');", "Stempel")
     html = once(html, "memberNote.textContent=t('memberNote');memberNote.hidden=!member;", "memberNote.hidden=true;", "Mitglieder-Hinweis")
     html = once(html, "$('.app-footer [data-i18n=\"timestamp\"]').textContent=t('source')+date();",
                 "$('.app-footer [data-i18n=\"timestamp\"]').textContent=t(member?'sourceLive':'source')+date();", "Fusszeile")
@@ -995,6 +1017,7 @@ def main(source, target_dir, preview, anmeldung=None):
     html = entwurfsreste_entfernen(html)
     import englisch
     html = once(html, "new Intl.DateTimeFormat(lang()==='de'?'de-DE':'en-GB',", "new Intl.DateTimeFormat(lang()==='de'?'de-DE':'en-US',", "Datum Zugang en-US")
+    html = once(html, "const date=()=>new Intl.DateTimeFormat(", "const date=()=>!view().asOf?'—':new Intl.DateTimeFormat(", "Datum ohne Wert")
     html, _ = englisch.anwenden(html)
     import startseite
     html = startseite.anwenden(html)

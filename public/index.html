@@ -495,6 +495,58 @@ body.ansicht-neben .app>main{display:none!important}
 h1,h2,h3,h4,.konto-kopf h2,.ki-start h2{text-wrap:balance}
 .alarm-kanal-wahl{min-height:44px}
 .konto-fuss a{padding:13px 2px}
+
+/* ===== Block 8a ===== */
+/* 1. Desktop-Tabs: groesser, AA-Kontrast, 44 px+, Unterstreichung am Header-Abschluss, vertikal zentriert */
+@media(min-width:760px){
+ .app-header{align-items:center}
+ .it-tabs{align-self:stretch;display:flex;align-items:stretch;gap:10px;margin:0 auto 0 56px}
+ .it-tabs a{display:flex;align-items:center;min-height:44px;padding:0 14px;font-size:16px;font-weight:450;color:#56635d;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s,border-color .15s}
+ .it-tabs a:hover{color:var(--text);border-bottom-color:#c9d6c5}
+ .it-tabs a[aria-current=page]{color:var(--text);font-weight:500;border-bottom-color:var(--accent)}
+ .it-tabs a:focus-visible{outline:2px solid #698dbc;outline-offset:-4px}
+}
+@media(min-width:760px) and (max-width:1100px){.it-tabs{margin-left:28px;gap:4px}.it-tabs a{padding:0 10px}}
+@media(prefers-reduced-motion:reduce){.it-tabs a{transition:none}}
+
+/* 2. KI-Bruecke */
+.ki-bruecke{display:flex;align-items:center;gap:12px;min-height:56px;width:100%;max-width:420px;box-sizing:border-box;margin:0 auto;padding:8px 14px 8px 8px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff);color:var(--text);text-decoration:none;text-align:left;transition:border-color .15s,box-shadow .15s}
+.ki-bruecke:hover{border-color:#a9c2b4;box-shadow:0 4px 16px rgba(27,51,48,.07);filter:none}
+.ki-bruecke:focus-visible{outline:2px solid #698dbc;outline-offset:2px}
+.ki-bruecke-kugel{width:44px;height:44px;flex:none}
+.ki-bruecke-text{flex:1;min-width:0;display:grid;gap:2px}
+.ki-bruecke-eyebrow{font-size:10px;letter-spacing:1.4px;color:var(--accent);font-weight:500}
+.ki-bruecke-satz{font-size:15px;line-height:1.35;color:var(--text)}
+.ki-bruecke-pfeil{width:18px;height:18px;flex:none;color:var(--accent)}
+.ki-bruecke-start{width:100%;margin:22px 0 0}
+.ki-bruecke-gross{display:none}
+.ereignis-karte .ki-bruecke{max-width:none;margin:14px 0 0;background:var(--surface,#fff)}
+@media(min-width:760px){
+ .ki-bruecke-start{display:none}
+ .clarity-page .first-look{display:grid!important;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)!important;column-gap:56px!important;row-gap:4px!important;align-items:center!important;min-height:0!important;padding:28px 0 20px!important}
+ .clarity-page .first-look>.score-column{grid-column:1!important;grid-row:1!important}
+ .clarity-page .first-look>.ki-bruecke-gross{display:flex;flex-direction:column;align-items:center;text-align:center;grid-column:2;grid-row:1;align-self:center;max-width:380px;justify-self:center;padding:28px 28px 30px;border:1px solid var(--line);border-radius:20px;background:var(--surface,#fff)}
+ .clarity-page .first-look>#details-toggle,.clarity-page .first-look>.verlauf-mini{grid-column:1/-1}
+ .ki-bruecke-kugel-gross{width:120px;height:120px;margin:0 0 6px}
+ .ki-bruecke-gross .ki-bruecke-eyebrow{display:block;margin:0 0 8px}
+ .ki-bruecke-gross h2{font:500 26px/1.2 var(--display);letter-spacing:-.5px;margin:0 0 10px}
+ .ki-bruecke-gross-text{margin:0 0 20px;font-size:15px;line-height:1.6;color:var(--sub)}
+ .ki-bruecke-knopf{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 24px;text-decoration:none}
+ .ki-bruecke-knopf .ki-bruecke-pfeil{color:currentColor}
+}
+/* Abstand Wert -> "Mehr erfahren" enger */
+.clarity-page .details-toggle{margin-top:18px}
+@media(max-width:759px){.clarity-page .first-look{gap:18px!important;padding-bottom:18px!important}.clarity-page .verlauf-mini{margin-top:10px}}
+/* KI-Tab: Herkunft und hervorgehobene Gruppe */
+.ki-kontext{display:inline-flex;align-items:center;gap:8px;margin:0 auto 12px;padding:6px 14px;border-radius:999px;background:var(--panel);font-size:13px;color:var(--text)}
+.ki-kontext-punkt{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.ki-gruppe-hervor{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.ki-gruppe-hervor h3::after{content:'';display:inline-block;width:6px;height:6px;margin-left:8px;border-radius:50%;background:var(--accent);vertical-align:middle}
+/* 3. Start mit Sitzung: ruhiger Platzhalter, bis der endgueltige Wert feststeht */
+body.wert-laedt .gauge-stage .score,body.wert-laedt .assessment,body.wert-laedt .snapshot-label,body.wert-laedt .score-unit{visibility:hidden}
+body.wert-laedt .gauge-track{animation:wert-puls 1.6s ease-in-out infinite}
+@keyframes wert-puls{50%{opacity:.45}}
+@media(prefers-reduced-motion:reduce){body.wert-laedt .gauge-track{animation:none}}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -931,8 +983,9 @@ $('#explain-dialog').addEventListener('cancel',e=>{e.preventDefault();closeExpla
 for(const dialog of [$('#alert-dialog'),$('#explain-dialog')])dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){if(dialog.id==='explain-dialog')closeExplanation();else dialog.close()}});
 render();
 /* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
-const IT=window.InvestTimer={live:null,pub:result,member:false,chat:null,session:null,
- get view(){return this.member&&this.live?this.live:this.pub},
+const IT=window.InvestTimer={live:null,pub:result,member:false,chat:null,session:null,gespeichert:null,wertEndgueltig:true,
+ /* Mit Sitzung nie den oeffentlichen bzw. eingebetteten Wert: aktueller Wert, sonst der zuletzt geladene (je Konto gespeichert), sonst keiner */
+ get view(){return this.member?(this.live||this.gespeichert||null):this.pub},
  setMember(v){this.member=!!v;apply()}};
 function apply(){
  const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
@@ -1000,7 +1053,7 @@ IT.codeFuerAenderung=async()=>{
 };
 IT.emailVonSitzung=()=>{try{return JSON.parse(atob((IT.session||gemerkt()).access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email}catch{return ''}};
 IT.abmelden=async()=>{
- const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;lastSeen='';IT.setMember(false);
+ const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.gespeichert=null;IT.vergesseWert();IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');lastSeen='';IT.setMember(false);
  if(s)sb('/auth/v1/logout',{method:'POST',headers:{Authorization:'Bearer '+s.access_token}}).catch(()=>{});
 };
 let lastLoad=0,lastSeen='';
@@ -1018,12 +1071,27 @@ function loadLive(force){
   const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
   /* API nicht erreichbar: angemeldet bleiben, gespeicherten Stand zeigen und das sagen (kein Wechsel auf "Anmelden") */
-  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler));apply();
+  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler));
+  if(live){IT.gespeichert=live;merkeWert(live)}
+  /* c) frischer Wert: der Bogen gleitet vom gespeicherten Stand (bzw. fuellt sich einmal aus dem Platzhalter) */
+  if(live||!IT.session||!IT.wertEndgueltig)wertFertig();apply();
   if(liveFehler&&IT.session&&typeof toast==='function')toast(document.documentElement.lang==='en'?'The latest reading isn’t available right now. Showing the saved reading.':'Der aktuelle Wert ist gerade nicht erreichbar. Du siehst den gespeicherten Stand.');
  });
 }
 IT.loadLive=loadLive;
-if(gemerkt())IT.member=true;
+const AKEY='investtimer-aktuell';
+const uid=()=>{try{return JSON.parse(atob((IT.session||gemerkt()).access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub||''}catch{return ''}};
+IT.vergesseWert=()=>{try{localStorage.removeItem(AKEY)}catch{}};
+const merkeWert=d=>{try{const u=uid();if(u&&d)localStorage.setItem(AKEY,JSON.stringify({uid:u,daten:d}))}catch{}};
+const gemerkterWert=()=>{try{const d=JSON.parse(localStorage.getItem(AKEY)||'null'),u=uid();return d&&u&&d.uid===u?normaliseResult(d.daten):null}catch{return null}};
+function wertFertig(){IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');document.dispatchEvent(new Event('investtimer:wertfertig'))}
+if(gemerkt()){
+ IT.member=true;IT.gespeichert=gemerkterWert();IT.wertEndgueltig=false;
+ /* a) gespeicherter Wert sofort und ohne Fuellanimation, b) sonst ruhiger Platzhalter ohne Zahl */
+ IT.ohneEinstieg=!!IT.gespeichert;document.body.classList.toggle('wert-laedt',!IT.gespeichert);apply();
+ /* d) nach 4 s ohne Antwort beim gespeicherten Wert bleiben (Stand-Datum steht ueber dem Wert), nie der oeffentliche Wert */
+ setTimeout(()=>{if(!IT.wertEndgueltig){wertFertig();apply()}},4000);
+}
 loadLive();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadLive()});
 window.addEventListener('pageshow',e=>{if(e.persisted)loadLive()});
@@ -1092,7 +1160,7 @@ function updateGauge(){
  if($('.signal-marker'))$('.signal-marker').style.display=valid?'':'none';
  document.dispatchEvent(new CustomEvent('investtimer:wert',{detail:valid?p:null}));
  const laufend=gaugeFrame!==0;cancelAnimationFrame(gaugeFrame);gaugeFrame=0;
- if(!valid||visual==='line'||matchMedia('(prefers-reduced-motion: reduce)').matches||(!gaugeEntrance&&gaugeShown===p)){
+ if(!valid||visual==='line'||matchMedia('(prefers-reduced-motion: reduce)').matches||(!gaugeEntrance&&gaugeShown===p)||(gaugeShown===null&&!gaugeEntrance&&window.InvestTimer&&window.InvestTimer.ohneEinstieg)){
   gaugeEntrance=null;gaugeTarget=valid?p:null;if(valid)setScore(String(p));drawGauge(p);gaugeShown=valid?p:null;return}
  // Einstieg (1500 ms ab 0, kurzer Halt auf dem leeren Bogen) oder Gleiten vom angezeigten Stand (700 ms).
  // Ein neues Ziel waehrend des Einstiegs aendert nur das Ziel, nicht Start und Dauer.
@@ -1186,7 +1254,7 @@ const score=()=>view().rounded??'—';
 let member=false, opener=null, question='', turns=[], busy=false, tab=0;
 const arrow='<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 const lang=()=>document.documentElement.lang==='en'?'en':'de';
-const date=()=>new Intl.DateTimeFormat(lang()==='de'?'de-DE':'en-US',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date((view().asOf||'1970-01-01')+'T12:00:00Z'));
+const date=()=>!view().asOf?'—':new Intl.DateTimeFormat(lang()==='de'?'de-DE':'en-US',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date((view().asOf||'1970-01-01')+'T12:00:00Z'));
 const c={de:{current:'Aktueller Stand',sourceLive:'US-Aktienmarkt · Datenstand ',aiNote:'Antworten erzeugt eine KI und können Fehler enthalten · Keine Anlageberatung',thinking:'InvestTimer liest die Daten …',more:'WEITERE FRAGEN',limit:'Für heute ist das Fragenkontingent erreicht — morgen geht es weiter.',offline:'Verbindung fehlgeschlagen — bitte in einem Moment erneut versuchen.',unavailable:'Die KI ist gerade nicht erreichbar.',email:'E-Mail-Adresse',emailPlaceholder:'name@beispiel.de',pw:'Passwort',pwNeu:'Passwort festlegen',pwZeigen:'Passwort anzeigen',pwZeigenKurz:'Anzeigen',pwVerbergenKurz:'Verbergen',pwRegel:'Mindestens 10 Zeichen. Am sichersten ist ein Satz, den nur du kennst.',pwLeer:'Bitte gib dein Passwort ein.',pwFalsch:'E-Mail-Adresse oder Passwort stimmen nicht.',pwSchwach:'Dieses Passwort ist zu schwach. Bitte wähle ein längeres.',pwGleich:'Das neue Passwort muss sich vom bisherigen unterscheiden.',loginSubmit:'Anmelden',registerTab:'Registrieren',registerTitle:'Konto anlegen.',registerSubmit:'Konto anlegen',confirmTitle:'Bestätige deine E-Mail-Adresse.',confirmText:'Wir haben dir an {email} einen sechsstelligen Code geschickt. Gib ihn hier ein, dann ist dein Konto fertig.',confirmSubmit:'Bestätigen',notConfirmed:'Deine E-Mail-Adresse ist noch nicht bestätigt. Wir haben dir einen neuen Code geschickt.',alreadyRegistered:'Schon registriert? Dann melde dich an oder setze dein Passwort zurück.',forgotLink:'Passwort vergessen?',forgotTitle:'Passwort zurücksetzen.',forgotText:'Gib deine E-Mail-Adresse ein. Wir schicken dir einen Code, mit dem du ein neues Passwort festlegst.',forgotSubmit:'Code senden',resetTitle:'Neues Passwort festlegen.',resetText:'Wir haben dir an {email} einen Code geschickt, falls es dazu ein Konto gibt. Gib ihn ein und wähle ein neues Passwort.',newPwText:'Wähle ein neues Passwort für dein Konto.',resetSubmit:'Passwort speichern',backToLogin:'Zurück zur Anmeldung',codeLoginLink:'Mit E-Mail-Code anmelden',codeLoginTitle:'Anmelden ohne Passwort.',codeLoginText:'Wir schicken dir einen einmaligen Code an deine E-Mail-Adresse.',sendLink:'Code senden',sending:'Wird gesendet …',linkSentTitle:'Schau in dein Postfach.',linkSent:'Falls es zu {email} ein Konto gibt, haben wir dir einen sechsstelligen Code geschickt. Gib ihn hier ein.',code:'Code aus der E-Mail',codeSubmit:'Anmelden',checking:'Wird geprüft …',codeInvalid:'Der Code stimmt nicht oder ist abgelaufen. Prüfe ihn oder fordere einen neuen an.',codeShort:'Bitte gib die sechs Ziffern aus der E-Mail ein.',resend:'Neu senden',resendIn:'Neu senden in {s} s',resent:'Neue E-Mail ist unterwegs.',spamHint:'Keine E-Mail da? Sieh im Spam-Ordner nach. Die Zustellung kann eine Minute dauern.',emailInvalid:'Bitte gib eine gültige E-Mail-Adresse ein.',linkRate:'Gerade wurden zu viele Anfragen gestellt. Bitte versuche es in ein paar Minuten erneut.',linkFail:'Das hat nicht geklappt. Bitte versuche es gleich noch einmal.',linkExpired:'Der Link ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen Code an.',legalLinks:'Es gilt unsere <a href=\"/datenschutz.html\">Datenschutzerklärung</a>.',loginNeeded:'Bitte melde dich erneut an, um weiter zu fragen.',alarmEyebrow:'DEINE ALARME',alarmTitle:'Deine Schwelle. Dein Hinweis.',alarmIntro:'Lege fest, bei welchem Marktstress du eine Nachricht aufs Handy bekommst.',alarmWenn:'Benachrichtigen, wenn der Marktstress',alarmSteigt:'über die Schwelle steigt',alarmFaellt:'unter die Schwelle fällt',alarmSchwelle:'Schwelle',alarmSpeichern:'Alarm speichern',alarmUeber:'Steigt über',alarmUnter:'Fällt unter',alarmAktiv:'aktiv',alarmPausiert:'pausiert',alarmLoeschen:'Löschen',alarmKeine:'Noch kein Alarm angelegt.',alarmLaedt:'Wird geladen …',alarmFehler:'Das hat nicht geklappt. Bitte versuche es gleich noch einmal.',alarmDoppelt:'Diesen Alarm gibt es schon.',alarmMax:'Du kannst bis zu fünf Alarme anlegen.',alarmRegel:'Ein Alarm meldet sich, wenn der Wert die Schwelle überquert, höchstens einmal am Tag. Der Hinweis beschreibt nur den Stand und ist keine Anlageberatung.',alarmErklUeber:'Du bekommst eine Nachricht, sobald der Marktstress über {x} steigt (also ab {x1}).',alarmErklUeberSchon:'Der Marktstress liegt mit {w} bereits über {x}. Du bekommst die erste Nachricht, wenn er unter {x} fällt und danach wieder darüber steigt.',alarmErklUnter:'Du bekommst eine Nachricht, sobald der Marktstress unter {x} fällt (also ab {x1}).',alarmErklUnterSchon:'Der Marktstress liegt mit {w} bereits unter {x}. Du bekommst die erste Nachricht, wenn er über {x} steigt und danach wieder darunter fällt.',alarmWartetUeber:'wartet, bis der Wert wieder unter {x} fällt',alarmWartetUnter:'wartet, bis der Wert wieder über {x} steigt',pushAktiv:'Push ist auf diesem Gerät eingeschaltet.',pushTest:'Testnachricht senden',pushTestGesendet:'Testnachricht ist unterwegs',alarmKanal:'Benachrichtigung per',kanal_push:'Push',kanal_email:'E-Mail',kanal_beide:'Push und E-Mail',alarmMailAn:'E-Mails gehen an deine Konto-Adresse {email}. Jede Mail hat einen Abmeldelink.',alarmMailFehlt:'Für E-Mail-Alarme fehlt die Adresse deines Kontos. Bitte melde dich neu an.',pushTestWarten:'Bitte kurz warten, dann noch einmal versuchen.',pushAus:'Push ausschalten',pushTestSendet:'Wird gesendet …',pushTestAngenommen:'Vom Push-Dienst angenommen. Warte auf dein Gerät …',pushTestZugestellt:'Zugestellt: Dein Gerät hat die Testnachricht erhalten.',pushTestTrotzdem:'Trotzdem keine Mitteilung zu sehen?',pushTestNicht:'Nicht angekommen?',pushTestNichtText:'Der Push-Dienst hat die Nachricht angenommen, dein Gerät hat sie aber nicht bestätigt. Meist liegt es an diesen Einstellungen:',pushTestAbgemeldet:'Dieses Gerät ist beim Push-Dienst nicht mehr angemeldet. Schalte Push aus und wieder ein.',pushTestKeinGeraet:'Für dein Konto ist kein Gerät angemeldet. Schalte Push aus und wieder ein.',pushTestAbgelehnt:'Der Push-Dienst hat die Nachricht nicht angenommen. Bitte versuche es später noch einmal.',pushHinweisOs:'Mitteilungen für deinen Browser im Betriebssystem erlauben: am Mac unter Systemeinstellungen → Mitteilungen → Chrome bzw. Safari, unter Windows unter Einstellungen → System → Benachrichtigungen, unter Android unter Einstellungen → Apps → Browser → Benachrichtigungen.',pushHinweisFokus:'Fokus- oder „Nicht stören“-Modus ausschalten oder InvestTimer bzw. den Browser dort zulassen.',pushHinweisIos:'iPhone und iPad: Mitteilungen kommen nur in der installierten Web-App an (vom Home-Bildschirm geöffnet), nicht in Safari.',pushHinweisBrowser:'Am Computer muss der Browser geöffnet sein, damit Mitteilungen ankommen.',pushAusText:'Damit dich ein Alarm erreicht, schalte Mitteilungen auf diesem Gerät ein.',pushAn:'Mitteilungen einschalten',pushBlockiert:'Mitteilungen sind für InvestTimer blockiert. Erlaube sie in den Einstellungen deines Geräts oder Browsers, dann klappt es.',pushNein:'Dieser Browser kann keine Mitteilungen empfangen. Nutze ein aktuelles Chrome, Edge, Firefox oder Safari.',iosTitel:'Auf dem iPhone kommen Mitteilungen nur in der installierten App an:',ios1:'Tippe in Safari unten auf Teilen {teilen}.',ios2:'Wähle „Zum Home-Bildschirm“ und tippe auf „Hinzufügen“.',ios3:'Öffne InvestTimer vom Home-Bildschirm und melde dich dort mit dem Code aus der E-Mail an.',installLink:'App installieren',installTitel:'InvestTimer als App',installIOS:'Ohne App Store, in drei Schritten (iPhone und iPad ab iOS 16.4):',installAndroid:'InvestTimer lässt sich direkt installieren und startet dann wie eine App.',installJetzt:'Jetzt installieren',installAndere:'In Chrome oder Edge: Menü ⋮ öffnen und „App installieren“ oder „Zum Startbildschirm hinzufügen“ wählen. In Safari auf dem Mac: Ablage → „Zum Dock hinzufügen“.',installPush:'In der App kannst du Alarme mit Push-Mitteilung einrichten.',filmEyebrow:'KURZ ERKLÄRT',filmTitel:'Die Idee in 49 Sekunden.',filmSatz:'Wie InvestTimer Kursbewegungen und Marktstress nebeneinanderstellt – in 49 Sekunden, ohne Ton.',limitedData:'Eingeschränkte Datenbasis',filmHinweis:'Der Film veranschaulicht die Idee. Die gezeigten historischen Werte sind vereinfacht.',filmAria:'Erklärfilm, 49 Sekunden, ohne Ton: Kursbewegungen und Marktstress im Vergleich',filmPause:'Film anhalten',filmPlay:'Film abspielen',kontoMenueLabel:'Kontomenü',kontoMenueKonto:'Mein Konto',kontoMenueAlarme:'Meine Alarme',kontoMenueAbo:'Abo verwalten',pwAendernTitel:'Passwort ändern',pwAlt:'Aktuelles Passwort',pwAendernKnopf:'Passwort ändern',pwOhneAlt:'Noch kein Passwort oder vergessen? Code per E-Mail',pwCodeText:'Wir haben dir einen Bestätigungscode geschickt. Gib ihn ein und wähle dein neues Passwort.',pwCodeGesendet:'Code ist unterwegs.',pwAltFalsch:'Das aktuelle Passwort stimmt nicht.',pwGeaendert:'Dein Passwort ist geändert.',kontoLink:'Mein Konto',premiumFreischalten:'Premium freischalten',kontoEyebrow:'DEIN KONTO',kontoTitel:'Mein Konto',kontoAngemeldet:'Angemeldet als {email}',kontoAboTitel:'Abonnement',kontoFreiTitel:'Kostenloser Zugang',kontoFreiOffen:'Aktueller Wert, KI-Fragen und Alarme sind mit deiner Anmeldung derzeit freigeschaltet.',kontoFrei:'Du siehst den zeitversetzten Wert. Aktueller Wert, ganze Historie, KI-Analysen und Alarme gehören zu Premium.',kontoAbgelaufen:'Premium endete am',premiumAnsehen:'Premium ansehen',st_test:'Testphase',st_aktiv:'aktiv',st_gekuendigt:'gekündigt',st_zahlungsproblem:'Zahlung offen',st_abgelaufen:'abgelaufen',st_erstattet:'erstattet',st_frei:'kostenlos',kontoPreis:'Preis',kontoKanal:'Bezahlt über',kontoBeginn:'Beginn',kontoNaechste:'Nächste Verlängerung',kontoEnde:'Premium bis',kontoAuto:'Automatische Verlängerung',kontoTestRest:'Verbleibende Testtage',an:'an',aus:'aus',jahr:'Jahr',monat:'Monat',kanalWeb:'Website (Stripe)',kanalPromo:'Freischaltung',kontoZahlungsproblem:'Die letzte Zahlung hat nicht geklappt. Bitte prüfe deine Zahlungsmethode, sonst endet Premium.',aboVerwalten:'Abo verwalten oder kündigen',aboVerwaltenWeb:'Dort kündigst du, wechselst den Tarif, änderst die Zahlungsmethode und lädst Rechnungen.',aboVerwaltenApple:'Dein Abo läuft über Apple. Kündigen und Tarif wechseln geht in den Abo-Einstellungen deiner Apple-ID.',aboVerwaltenGoogle:'Dein Abo läuft über Google Play. Kündigen und Tarif wechseln geht im Play Store.',aboVerwaltenWebInApp:'Dein Abo hast du auf der Website abgeschlossen. Verwalten und kündigen kannst du es auf investtimer.net unter „Mein Konto“.',kontoKi:'KI-Fragen heute: {n} von {max}',loeschenTitel:'Konto löschen',loeschenText:'Damit löschst du dein Konto, deine Alarme (auch E-Mail-Alarme) und Push-Geräte endgültig. Rechnungen und Zahlungsbelege bewahren Apple bzw. Stripe nach den gesetzlichen Fristen auf.',loeschenEingabe:'Zur Bestätigung „löschen“ eingeben',loeschenKnopf:'Konto endgültig löschen',loeschenWort:'Bitte gib „löschen“ ein.',loeschenAbo:'Dein Abo verlängert sich noch automatisch. Kündige es zuerst unter „Abo verwalten“, dann kannst du das Konto löschen.',geloeschtTitel:'Dein Konto ist gelöscht.',geloeschtText:'Alle Daten zu deinem Konto sind entfernt. Den zeitversetzten Wert siehst du weiter ohne Anmeldung.',paywallEyebrow:'INVESTTIMER PREMIUM',paywallTitel:'Marktstress aktuell, mit KI-Analyse.',paywallIntro:'Premium schaltet alles frei, was über den zeitversetzten Wert hinausgeht:',v1:'Aktueller Marktstress, alle 10 Minuten neu',v2:'Vollständige historische Entwicklung',v3:'Alle Einzelindikatoren im Detail',v4:'KI-Analysen: Fragen zum aktuellen Stand, verständlich beantwortet',v5:'Eigene Schwellen mit Push-Mitteilung',tarifWahl:'Tarif wählen',tarifJahr:'Jährlich',tarifMonat:'Monatlich',tarifSpar:'rund 33 % günstiger',tarifJahrSub:'entspricht 3,33 € im Monat',tarifDanach:'{preis} pro {intervall}',tarifTest:'Die ersten 7 Tage sind kostenlos. Danach {danach}, erste Abbuchung am {datum}.',tarifAuto:'Das Abo verlängert sich automatisch, bis du kündigst. Kündigen geht jederzeit, auch in der Testphase, ohne Kündigungsfrist zum Ende des laufenden Zeitraums.',ctaTest:'7 Tage kostenlos testen',ctaAbo:'Premium abonnieren',wiederherstellen:'Käufe wiederherstellen',paywallFuss:'Preise inkl. USt. Keine Anlageberatung.',agb:'Abo-Bedingungen',datenschutz:'Datenschutz',zurueck:'Zurück',fehlerSchonPremium:'Du hast Premium bereits. Details siehst du unter „Mein Konto“.',fehlerAbbruch:'Der Kauf wurde abgebrochen.',fehlerInaktiv:'Abos sind gerade nicht verfügbar.',verlaufTitel:'Verlauf',verlaufEyebrow:'MARKTSTRESS SEIT 2006',verlaufNeuer:'Neuere Werte nach der Anmeldung',verlaufMiniTitel:'Die letzten 12 Monate',verlaufMiniLink:'Ganzen Verlauf ansehen',verlaufMiniAria:'Marktstress von {a} bis {b}, zuletzt {w}',verlaufMiniEnde:'{w} am {d}',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Wert für Wert ansehen.',verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',verlauf1J:'1J',verlauf5J:'5J',legendeAuf:'aufgezeichnet',legendeRueck:'zurückgerechnet',verlaufEreignisHinweis:'Markierte Ereignisse dienen der zeitlichen Einordnung.',ereignisseLabel:'Ereignisse',karteHoechst:'Höchster Marktstress',karteAm:'{w} am {d}',karteUnter40:'Wieder unter 40',karteNachTagen:'nach {n} Tagen',karteNochNicht:'noch nicht',karteTrieb:'Teilwerte am {d}',triebVol:'Kursschwankungen',triebPreis:'Breite und Trend',triebStimmung:'Stimmung und Absicherung',tipWert:'Marktstress {w}',tipWoche:'Woche bis {d}',tipSchluss:'Marktstress {w} zum Schluss',tipSpanne:'Spanne {a} bis {b}',schlussWoche:'Wochenschluss',schlussMonat:'Monatsschluss',flaecheWoche:'Tief bis Hoch der Woche',flaecheMonat:'Tief bis Hoch des Monats',verlaufAlleHinweis:'Bei „Alle“ sind nur Phasen mit einem Höchstwert ab 70 markiert.',verlaufHinweis:'Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet. In früheren Jahren standen teils weniger Bestandteile zur Verfügung. Vergangene Entwicklungen erlauben keine verlässliche Aussage über die Zukunft. Keine Anlageberatung.',verlaufPremium:'Den vollständigen Verlauf siehst du mit Premium.',verlaufFehlt:'Der Verlauf ist gerade nicht verfügbar.',login:'Anmelden',logout:'Abmelden',preview:'Zeitversetzter Stand',stand:'Stand',register:'Registrieren & aktuellen Wert sehen',accessNote:'Aktueller Marktstress, KI-Einordnung und persönliche Hinweise nach der Anmeldung.',publicEyebrow:'MARKTSTRESS VERSTEHEN',publicTitle:'Ein Wert. Mehr Überblick.',publicIntro:'Wie angespannt ist der US-Aktienmarkt? InvestTimer bündelt 14 Signale in einer Zahl. Der kurze Film zeigt die Idee dahinter.',benefits:'Aktueller Wert · KI für Rückfragen · persönliche Alarme',assistantLabel:'INVESTTIMER KI',assistantTitle:'Was steckt hinter diesem Wert?',assistantIntro:'Frag nach der Einordnung, den Bestandteilen oder dem Zusammenspiel der Signale.',question1:'Warum steht der Marktstress bei {score}?',question2:'Wie setzt sich der Wert zusammen?',placeholder:'Frage zum Marktstress',send:'Frage senden',assistantNote:'KI-Zugang nach Anmeldung. Antworten können Fehler enthalten.',alarm:'Alarm einrichten',alarmNote:'Deine Schwelle. Dein Hinweis.',accessTitle:'Mehr Klarheit nach der Anmeldung.',accessIntro:'Dein Zugang zum aktuellen Marktstress und zu verständlichen Antworten auf deine Fragen.',feature1:'Den neuesten verfügbaren Marktstress sehen',feature2:'Die KI direkt zum angezeigten Wert befragen',feature3:'Hinweise für deine eigene Schwelle einrichten',accessAction:'Anmelden',accessHinweis:'',close:'Schließen',back:'Zurück zum Marktstress',chatTitle:'Marktstress verstehen.',review:'',public:'',members:'',reviewNote:'',source:'US-Aktienmarkt · zeitversetzter Stand ',filmTitle:'Die Idee in 49 Sekunden.',view:'Frage stellen',noCurrent:'Zeitversetzter Stand – nicht der aktuelle Marktstress.'},en:{current:'Latest reading',sourceLive:'US stock market · Data as of ',aiNote:'AI-generated answers may contain errors · Not investment advice',thinking:'Reading the data …',more:'MORE QUESTIONS',limit:'You’ve reached today’s question limit. More tomorrow.',offline:'Connection failed. Try again in a moment.',unavailable:'The AI isn’t available right now.',email:'Email address',emailPlaceholder:'name@example.com',pw:'Password',pwNeu:'Choose a password',pwZeigen:'Show password',pwZeigenKurz:'Show',pwVerbergenKurz:'Hide',pwRegel:'At least 10 characters. A phrase only you know works well.',pwLeer:'Enter your password.',pwFalsch:'Incorrect email or password.',pwSchwach:'That password is too weak. Choose a longer one.',pwGleich:'The new password must differ from the current one.',loginSubmit:'Sign in',registerTab:'Create account',registerTitle:'Create your account.',registerSubmit:'Create account',confirmTitle:'Confirm your email address.',confirmText:'We sent a 6-digit code to {email}. Enter it to finish setting up your account.',confirmSubmit:'Confirm',notConfirmed:'Your email isn’t confirmed yet. We’ve sent you a new code.',alreadyRegistered:'Already have an account? Sign in or reset your password.',forgotLink:'Forgot password?',forgotTitle:'Reset your password.',forgotText:'Enter your email and we’ll send you a code to set a new password.',forgotSubmit:'Send code',resetTitle:'Set a new password.',resetText:'If there’s an account for {email}, we’ve sent a code. Enter it and choose a new password.',newPwText:'Choose a new password for your account.',resetSubmit:'Save password',backToLogin:'Back to sign-in',codeLoginLink:'Sign in with an email code',codeLoginTitle:'Sign in without a password.',codeLoginText:'We’ll email you a one-time code.',sendLink:'Send code',sending:'Sending …',linkSentTitle:'Check your inbox.',linkSent:'If there’s an account for {email}, we’ve sent a 6-digit code. Enter it here.',code:'Code from the email',codeSubmit:'Sign in',checking:'Checking …',codeInvalid:'That code is wrong or has expired. Check it or request a new one.',codeShort:'Enter the 6 digits from the email.',resend:'Resend',resendIn:'Resend in {s} s',resent:'A new email is on its way.',spamHint:'No email? Check your spam folder. Delivery can take a minute.',emailInvalid:'Enter a valid email address.',linkRate:'Too many attempts. Try again in a few minutes.',linkFail:'Something went wrong. Try again in a moment.',linkExpired:'This link has expired or was already used. Request a new code.',legalLinks:'Our <a href=\"/datenschutz.html\">privacy policy</a> (in German) applies.',loginNeeded:'Sign in again to keep asking.',alarmEyebrow:'YOUR ALERTS',alarmTitle:'Your threshold, your alert.',alarmIntro:'Choose the market stress level that triggers an alert.',alarmWenn:'Alert me when market stress',alarmSteigt:'rises above the threshold',alarmFaellt:'falls below the threshold',alarmSchwelle:'Threshold',alarmSpeichern:'Save alert',alarmUeber:'Rises above',alarmUnter:'Falls below',alarmAktiv:'active',alarmPausiert:'paused',alarmLoeschen:'Delete',alarmKeine:'No alerts yet.',alarmLaedt:'Loading …',alarmFehler:'Something went wrong. Try again in a moment.',alarmDoppelt:'You already have this alert.',alarmMax:'You can create up to five alerts.',alarmRegel:'An alert fires when the score crosses your threshold, at most once a day. It reports the reading only. Not investment advice.',alarmErklUeber:'You’ll get an alert as soon as market stress rises above {x} (at {x1} or higher).',alarmErklUeberSchon:'Market stress is already above {x} ({w}). Your first alert comes once it falls back below {x} and then rises above it again.',alarmErklUnter:'You’ll get an alert as soon as market stress falls below {x} (at {x1} or lower).',alarmErklUnterSchon:'Market stress is already below {x} ({w}). Your first alert comes once it rises back above {x} and then falls below it again.',alarmWartetUeber:'waiting for the score to fall below {x} again',alarmWartetUnter:'waiting for the score to rise above {x} again',pushAktiv:'Push notifications are on for this device.',pushTest:'Send test notification',pushTestGesendet:'Test notification sent',alarmKanal:'Alert me by',kanal_push:'Push',kanal_email:'Email',kanal_beide:'Push and email',alarmMailAn:'Emails go to {email}. Each one includes an unsubscribe link.',alarmMailFehlt:'We can’t find your account email. Sign in again.',pushTestWarten:'Wait a moment, then try again.',pushAus:'Turn off push',pushTestSendet:'Sending …',pushTestAngenommen:'Accepted by the push service. Waiting for your device …',pushTestZugestellt:'Delivered. Your device received the test notification.',pushTestTrotzdem:'Don’t see it?',pushTestNicht:'Didn’t arrive?',pushTestNichtText:'The push service accepted the message, but your device didn’t confirm it. Usually one of these settings is the reason:',pushTestAbgemeldet:'This device is no longer registered with the push service. Turn push off and on again.',pushTestKeinGeraet:'No device is registered for your account. Turn push off and on again.',pushTestAbgelehnt:'The push service rejected the message. Try again later.',pushHinweisOs:'Allow notifications for your browser in your system settings: on Mac, System Settings → Notifications → Chrome or Safari; on Windows, Settings → System → Notifications; on Android, Settings → Apps → your browser → Notifications.',pushHinweisFokus:'Turn off Focus or Do Not Disturb, or add InvestTimer or your browser as an exception.',pushHinweisIos:'On iPhone and iPad, notifications only arrive in the installed web app (opened from the Home Screen), not in Safari.',pushHinweisBrowser:'On a computer, your browser must be running to receive notifications.',pushAusText:'Turn on notifications on this device to receive alerts.',pushAn:'Turn on notifications',pushBlockiert:'Notifications are blocked for InvestTimer. Allow them in your device or browser settings.',pushNein:'This browser can’t receive notifications. Use an up-to-date Chrome, Edge, Firefox or Safari.',iosTitel:'On iPhone, notifications only arrive in the installed app:',ios1:'In Safari, tap Share {teilen} at the bottom.',ios2:'Choose “Add to Home Screen”, then tap “Add”.',ios3:'Open InvestTimer from your Home Screen and sign in there.',installLink:'Install app',installTitel:'InvestTimer as an app',installIOS:'No App Store needed. Three steps (iOS 16.4 or later):',installAndroid:'Install InvestTimer directly and open it like any other app.',installJetzt:'Install now',installAndere:'In Chrome or Edge, open the ⋮ menu and choose “Install app” or “Add to Home screen”. In Safari on Mac, choose File → “Add to Dock”.',installPush:'The app can send your alerts as push notifications.',filmEyebrow:'QUICK EXPLAINER',filmTitel:'The idea in 49 seconds.',filmSatz:'How InvestTimer reads price moves against market stress, in 49 seconds.',limitedData:'Limited data today',filmHinweis:'Illustrative only. Historical values are simplified.',filmAria:'Explainer video, 49 seconds, no sound',filmPause:'Pause video',filmPlay:'Play video',kontoMenueLabel:'Account menu',kontoMenueKonto:'Account',kontoMenueAlarme:'Alerts',kontoMenueAbo:'Manage subscription',pwAendernTitel:'Change password',pwAlt:'Current password',pwAendernKnopf:'Change password',pwOhneAlt:'Forgot your password? Get a code by email',pwCodeText:'We’ve sent you a code. Enter it and choose a new password.',pwCodeGesendet:'Code sent.',pwAltFalsch:'The current password is incorrect.',pwGeaendert:'Password changed.',kontoLink:'Account',premiumFreischalten:'Get Premium',kontoEyebrow:'YOUR ACCOUNT',kontoTitel:'Account',kontoAngemeldet:'Signed in as {email}',kontoAboTitel:'Subscription',kontoFreiTitel:'Free access',kontoFreiOffen:'The latest reading, AI questions and alerts are included with your account for now.',kontoFrei:'You’re seeing the delayed reading. The latest reading, full history, AI answers and alerts come with Premium.',kontoAbgelaufen:'Premium ended on',premiumAnsehen:'See Premium',st_test:'trial',st_aktiv:'active',st_gekuendigt:'canceled',st_zahlungsproblem:'payment failed',st_abgelaufen:'expired',st_erstattet:'refunded',st_frei:'free',kontoPreis:'Price',kontoKanal:'Paid via',kontoBeginn:'Started',kontoNaechste:'Next renewal',kontoEnde:'Premium until',kontoAuto:'Auto-renewal',kontoTestRest:'Trial days left',an:'on',aus:'off',jahr:'year',monat:'month',kanalWeb:'Website (Stripe)',kanalPromo:'Complimentary',kontoZahlungsproblem:'Your last payment failed. Update your payment method to keep Premium.',aboVerwalten:'Manage or cancel',aboVerwaltenWeb:'Cancel, change plan, update your payment method or download invoices.',aboVerwaltenApple:'You subscribed through Apple. Cancel or change your plan in your Apple ID settings under Subscriptions.',aboVerwaltenGoogle:'You subscribed through Google Play. Cancel or change your plan in the Play Store.',aboVerwaltenWebInApp:'You subscribed on the website. Manage or cancel it at investtimer.net under “Account”.',kontoKi:'AI questions today: {n} of {max}',loeschenTitel:'Delete account',loeschenText:'This permanently deletes your account, your alerts (including email alerts) and your registered devices. Apple or Stripe keep invoices and receipts as required by law.',loeschenEingabe:'Type “delete” to confirm',loeschenKnopf:'Delete account permanently',loeschenWort:'Type “delete”.',loeschenAbo:'Your subscription still renews automatically. Cancel it under “Manage or cancel” first, then delete your account.',geloeschtTitel:'Your account has been deleted.',geloeschtText:'All data linked to your account has been removed. The delayed reading is still available without an account.',paywallEyebrow:'INVESTTIMER PREMIUM',paywallTitel:'Live market stress, explained by AI.',paywallIntro:'Premium adds everything beyond the delayed reading:',v1:'Latest market stress, updated every 10 minutes',v2:'Full history',v3:'Every indicator in detail',v4:'AI answers to your questions about the latest reading',v5:'Custom alerts by push or email',tarifWahl:'Choose a plan',tarifJahr:'Yearly',tarifMonat:'Monthly',tarifSpar:'save about 33%',tarifJahrSub:'€3.33 a month',tarifDanach:'{preis}/{intervall}',tarifTest:'Free for 7 days, then {danach}. First charge on {datum}.',tarifAuto:'Renews automatically until you cancel. Cancel any time, including during the trial; it ends at the end of the current period.',ctaTest:'Start 7-day free trial',ctaAbo:'Subscribe to Premium',wiederherstellen:'Restore purchases',paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Terms (in German)',datenschutz:'Privacy policy (in German)',zurueck:'Back',fehlerSchonPremium:'You already have Premium. See “Account” for details.',fehlerAbbruch:'Purchase canceled.',fehlerInaktiv:'Subscriptions aren’t available right now.',verlaufTitel:'History',verlaufEyebrow:'MARKET STRESS SINCE 2006',verlaufNeuer:'Newer readings after sign-in',verlaufMiniTitel:'The past 12 months',verlaufMiniLink:'See full history',verlaufMiniAria:'Market stress from {a} to {b}, latest {w}',verlaufMiniEnde:'{w} on {d}',verlaufAria:'Market stress history, {n} readings. Use the arrow keys to step through them.',verlaufSpanne:'Period',verlaufAlle:'All',verlauf1J:'1Y',verlauf5J:'5Y',legendeAuf:'recorded',legendeRueck:'back-calculated',verlaufEreignisHinweis:'Marked events are shown for context.',ereignisseLabel:'Events',karteHoechst:'Peak',karteAm:'{w} on {d}',karteUnter40:'Back below 40',karteNachTagen:'after {n} days',karteNochNicht:'not yet',karteTrieb:'Sub-scores on {d}',triebVol:'Volatility',triebPreis:'Breadth and trend',triebStimmung:'Sentiment and hedging',tipWert:'Market stress {w}',tipWoche:'Week ending {d}',tipSchluss:'Market stress {w} at close',tipSpanne:'Range {a} to {b}',schlussWoche:'Weekly close',schlussMonat:'Monthly close',flaecheWoche:'Weekly low to high',flaecheMonat:'Monthly low to high',verlaufAlleHinweis:'“All” marks only phases that peaked at 70 or higher.',verlaufHinweis:'Readings before Nov 15, 2026 are back-calculated with today’s model; earlier years sometimes had fewer components. Past performance is no guide to the future. Not investment advice.',verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'History isn’t available right now.',login:'Sign in',logout:'Sign out',preview:'Delayed reading',stand:'As of',register:'See the latest score & ask the AI',accessNote:'Sign in for the latest reading, AI answers and alerts.',publicEyebrow:'UNDERSTAND MARKET STRESS',publicTitle:'One score. A clearer picture.',publicIntro:'How tense is the US stock market? InvestTimer combines 14 signals into one number.',benefits:'Latest score · AI answers · alerts',assistantLabel:'INVESTTIMER AI',assistantTitle:'What’s behind this score?',assistantIntro:'Ask about the reading, its components or how the signals interact.',question1:'Why is market stress at {score}?',question2:'What goes into the score?',placeholder:'Ask about market stress',send:'Send question',assistantNote:'Sign in to ask the AI. Answers may contain errors.',alarm:'Set up alerts',alarmNote:'Your threshold, your alert.',accessTitle:'See more when you sign in.',accessIntro:'See the latest market stress and ask the AI what’s behind the score.',feature1:'The latest market stress reading',feature2:'AI answers about the score',feature3:'Alerts at your own threshold',accessAction:'Sign in',accessHinweis:'',close:'Close',back:'Back to market stress',chatTitle:'Understand market stress.',review:'',public:'',members:'',reviewNote:'',source:'US stock market · delayed reading ',filmTitle:'The idea in 49 seconds.',view:'Ask a question',noCurrent:'Delayed reading, not current market stress.'}};
 Object.assign(c.de,{register:'Aktuellen Wert & KI ansehen',purposeTitle:'Eine Zahl für die Anspannung am Aktienmarkt.',purposeBody:'InvestTimer bündelt 14 Marktsignale. So kannst du Kursbewegungen mit Abstand einordnen – gerade dann, wenn die Stimmung kippt.',memberBenefitTitle:'Nach der Anmeldung kannst du die KI fragen.',memberBenefitDetail:'Zum Beispiel: „Was bedeutet dieser Wert für die Marktlage?“',accessIntro:'Sieh den aktuellen Marktstress und lass dir von der KI erklären, was hinter dem Wert steckt.'});
 Object.assign(c.en,{register:'See the latest score & ask the AI',purposeTitle:'One number for stock market stress.',purposeBody:'InvestTimer combines 14 market signals into one score, to help you put price moves in perspective, especially when sentiment turns.',memberBenefitTitle:'Sign in to ask the AI.',memberBenefitDetail:'For example: “What does this score say about the market?”',accessIntro:'See the latest market stress and ask the AI what’s behind the score.'});
@@ -1208,7 +1276,7 @@ const chat=document.createElement('dialog');chat.id='assistant-conversation';cha
 const orbit='<svg class="assistant-orbit ki-halbmond" viewBox="3 13 42 24" aria-hidden="true"><path class="mond-spur" d="M6 34a18 18 0 0 1 36 0" pathLength="100"/><path class="mond-wert" d="M6 34a18 18 0 0 1 36 0" pathLength="100"/></svg>';
 function update(){member=!!IT.member;
  document.body.classList.toggle('members-layout',member);document.body.dataset.access=member?'member-preview':'public-preview';
- stamp.textContent=(member&&IT.live?t('current'):t('preview'))+' · '+date();stamp.title=member&&IT.live?'':t('noCurrent');
+ stamp.textContent=(member?(IT.live?t('current'):t('stand')):t('preview'))+' · '+date();stamp.title=member?'':t('noCurrent');
  purpose.hidden=member;purpose.innerHTML='<h2>'+esc(t('purposeTitle'))+'</h2><p>'+esc(t('purposeBody'))+'</p>';note.innerHTML='<strong>'+esc(t('memberBenefitTitle'))+'</strong><span>'+esc(t('memberBenefitDetail'))+'</span>';memberNote.hidden=true;
  $('#account-login').textContent=t(member?'logout':'login');
  const mainButton=$('#open-subscribe');if(mainButton)mainButton.innerHTML=esc(t(member?'alarm':'register'))+' '+arrow;
@@ -1799,7 +1867,7 @@ function vKarte(m){
   +'<dl class="karte-zahlen"><div><dt>'+t('karteHoechst')+'</dt><dd>'+t('karteAm').replace('{w}',m.spitze.w).replace('{d}',vDatum(m.spitze.d))+'</dd></div>'
   +'<div><dt>'+t('karteUnter40')+'</dt><dd>'+(m.unter40?t('karteNachTagen').replace('{n}',m.unter40.tage):t('karteNochNicht'))+'</dd></div></dl>'
   +(m.bloecke?'<p class="karte-trieb-titel">'+t('karteTrieb').replace('{d}',vDatum(m.spitze.d))+'</p>'+zeile('volatility','triebVol')+zeile('price','triebPreis')+zeile('positioning','triebStimmung'):'')
-  +(IT.kiFrageEreignis?'<p class="ki-frag-link"><a href="#ki" class="ki-frag" data-ki-frage="'+esc(IT.kiFrageEreignis(nm))+'">'+esc(IT.kiText('fragKi'))+'</a></p>':'');
+  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'');
 }
 /* Chip-Leiste: Verlauf am Rand als Scroll-Hinweis, aktiven Chip in Sicht holen (nur die Leiste scrollt, nie die Seite) */
 function vChipsRand(c){if(!c)return;const max=c.scrollWidth-c.clientWidth;c.classList.toggle('rand-l',c.scrollLeft>2);c.classList.toggle('rand-r',max-c.scrollLeft>2)}
@@ -1813,12 +1881,12 @@ function vAktiviere(id){
  verlaufEreignis=id;const box=panel.querySelector('.verlauf');if(!box)return;const {e}=vAuswahl(),m=e.find(x=>x.id===id);if(!m)return;
  box.querySelectorAll('[data-band]').forEach(r=>r.classList.toggle('aktiv',r.dataset.band===id));
  box.querySelectorAll('[data-ereignis]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ereignis===id)));
- const k=box.querySelector('.ereignis-karte');if(k){k.innerHTML=vKarte(m);k.hidden=false}
+ const k=box.querySelector('.ereignis-karte');if(k){k.innerHTML=vKarte(m);k.hidden=false;IT.kiBruecke&&IT.kiBruecke.beleben(k)}
  vChipInSicht(box,true);
 }
 function vZeichnen(fokus){
  const box=panel&&panel.querySelector('.verlauf');if(!box)return;
- box.innerHTML=verlaufHtml();verlaufIndex=null;vChipInSicht(box,false);vKopf();
+ box.innerHTML=verlaufHtml();verlaufIndex=null;vChipInSicht(box,false);vKopf();IT.kiBruecke&&IT.kiBruecke.beleben(box);
  if(fokus)box.querySelector(fokus)?.focus();
 }
 /* Tooltip: naechster Wert zur Zeigerposition bzw. per Pfeiltasten */
@@ -2077,7 +2145,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.19-1825", "d": "19.11.2026"};
+const VERSION={"v": "2026.11.19-1845", "d": "19.11.2026"};
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -2198,7 +2266,8 @@ new MutationObserver(()=>zeichne()).observe(document.documentElement,{attributes
 /* KI-Bereich: eigene Ansicht (#ki) mit Navigation (Desktop: Tabs im Header, mobil: Leiste unten),
    Neuronen-Kugel (Fibonacci-Kugel wie im Volafly-Neural-Core, in InvestTimer-Gruen), Startansicht mit Fragegruppen,
    Gespraech mit Belegen (Verlaufsausschnitt, Teilwerte) und Folgefragen. Gespraech bleibt im App-Zustand (nicht gespeichert).
-   "Frag die KI dazu" (Wert, Ereigniskarten) oeffnet die Ansicht mit vorausgefuellter Frage, ohne zu senden. */
+   KI-Bruecke (Startseite, Ereigniskarten) oeffnet die Ansicht mit Kontext (Wert bzw. Phase): Zeile "Du kommst von",
+   passende Fragengruppe hervorgehoben, passende Frage zuerst. Nichts wird gesendet oder ins Eingabefeld geschrieben. */
 (()=>{
 const KI_KATALOG=[{"id": "verstehen", "de": "Verstehen", "en": "Understand", "fragen": [{"de": "Was bedeutet der heutige Wert?", "en": "What does today’s reading mean?"}, {"de": "Was misst InvestTimer eigentlich?", "en": "What does InvestTimer actually measure?"}, {"de": "Woraus setzt sich der Wert zusammen?", "en": "What goes into the score?"}, {"de": "Was unterscheidet ruhig, erhöht und Panik?", "en": "What’s the difference between calm, elevated and panic?"}]}, {"id": "einordnen", "de": "Einordnen", "en": "Put in context", "fragen": [{"de": "Ist {wert} viel oder wenig?", "en": "Is {wert} high or low?"}, {"de": "Was bewegt den Wert gerade?", "en": "What’s moving the score right now?"}, {"de": "Wie nervös ist der Markt im Moment?", "en": "How nervous is the market right now?"}, {"de": "Hat sich die Lage in den letzten Wochen verändert?", "en": "Has the picture changed over the past few weeks?"}]}, {"id": "verlauf", "de": "Verlauf", "en": "History", "fragen": [{"de": "Wann war der Marktstress zuletzt so hoch?", "en": "When was market stress last this high?"}, {"de": "Wie sah es im Corona-Crash 2020 aus?", "en": "What did the 2020 Covid crash look like?"}, {"de": "Wie lange dauern Stressphasen meistens?", "en": "How long do stress phases usually last?"}, {"de": "Was war die stärkste Stressphase der letzten Jahre?", "en": "What was the most severe stress phase in recent years?"}]}];
 /* Je Gruppe drei von vier Fragen, zufaellig und einmal je Seitenaufruf (bleibt beim Tab- und Sprachwechsel gleich) */
@@ -2217,8 +2286,9 @@ const KT={de:{
  fLogin:'Deine Anmeldung ist abgelaufen. Melde dich neu an, dann kannst du weiterfragen.',fLoginKnopf:'Neu anmelden',
  fAus:'Die KI ist gerade ausgeschaltet. Versuch es später noch einmal.',
  fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',
- fragKi:'Frag die KI dazu',zeile:'Frag die KI zum Wert …',zeileLabel:'Frage an die KI',zumKi:'Zur KI',
- frageWert:'Warum steht der Marktstress bei {w}?',frageEreignis:'Wie lief die Phase „{n}“ ab?',
+ zumKi:'Zur KI',brueckeWert:'Was steckt hinter der {w}?',brueckeOhne:'Was steckt hinter dem Wert?',brueckeGrossText:'Die KI ordnet den Wert ein und beantwortet deine Fragen.',
+ brueckePhase:'{n} mit der KI einordnen',kontextWert:'Du kommst von: Marktstress {w}',kontextPhase:'Du kommst von: {n}',
+ frageEreignis:'Wie verlief „{n}“?',
  verlaufLogin:'Den Verlauf seit 2006 siehst du nach der Anmeldung.',verlaufLoginKnopf:'Anmelden'
 },en:{
  tabStress:'Market stress',tabKi:'AI',tabVerlauf:'History',tabKonto:'Account',nav:'Sections',
@@ -2234,8 +2304,9 @@ const KT={de:{
  fLogin:'Your session has expired. Sign in again to keep asking.',fLoginKnopf:'Sign in again',
  fAus:'The AI is switched off right now. Try again later.',
  fNetz:'Can’t reach the AI. Check your connection and try again.',
- fragKi:'Ask the AI about this',zeile:'Ask the AI about this reading …',zeileLabel:'Question for the AI',zumKi:'Go to AI',
- frageWert:'Why is market stress at {w}?',frageEreignis:'How did “{n}” unfold?',
+ zumKi:'Go to AI',brueckeWert:'What’s behind the {w}?',brueckeOhne:'What’s behind the score?',brueckeGrossText:'The AI puts the score in context and answers your questions.',
+ brueckePhase:'Put {n} in context with the AI',kontextWert:'You came from: market stress {w}',kontextPhase:'You came from: {n}',
+ frageEreignis:'How did “{n}” unfold?',
  verlaufLogin:'Sign in to see the history back to 2006.',verlaufLoginKnopf:'Sign in'
 }};
 const sp=()=>document.documentElement.lang==='en'?'en':'de';
@@ -2318,8 +2389,15 @@ function eingabeHtml(){
   +'<p class="ki-hinweis">'+esc(kt('hinweis'))+(restText()?' · <span class="ki-rest">'+esc(restText())+'</span>':'')+'</p></div>';
 }
 function frageText(f){const w=wert()??(IT.view&&IT.view.rounded);return (f[sp()]||f.de).replace('{wert}',w==null?'…':w)}
+function gruppenMitKontext(){
+ const k=st.kontext;if(!k)return KI_FRAGEN;
+ return KI_FRAGEN.map(g=>{
+  if(k.art==='wert'&&g.id==='einordnen'){const erste=KI_KATALOG.find(x=>x.id==='einordnen').fragen[0];return Object.assign({},g,{hervor:true,fragen:[erste,...g.fragen.filter(f=>f.de!==erste.de)].slice(0,3)})}
+  if(k.art==='phase'&&g.id==='verlauf'){const erste={de:KT.de.frageEreignis.replace('{n}',k.name),en:KT.en.frageEreignis.replace('{n}',k.nameEn||k.name)};return Object.assign({},g,{hervor:true,fragen:[erste,...g.fragen].slice(0,3)})}
+  return g});
+}
 function gruppenHtml(){
- return '<div class="ki-gruppen" role="list">'+KI_FRAGEN.map((g,i)=>'<div class="ki-gruppe" role="listitem" aria-label="'+esc((g[sp()]||g.de)+' · '+kt('karte').replace('{n}',i+1).replace('{m}',KI_FRAGEN.length))+'"><h3>'+esc(g[sp()]||g.de)+'</h3>'
+ return '<div class="ki-gruppen" role="list">'+gruppenMitKontext().map((g,i)=>'<div class="ki-gruppe'+(g.hervor?' ki-gruppe-hervor':'')+'" role="listitem" aria-label="'+esc((g[sp()]||g.de)+' · '+kt('karte').replace('{n}',i+1).replace('{m}',KI_FRAGEN.length))+'"><h3>'+esc(g[sp()]||g.de)+'</h3>'
   +g.fragen.map(f=>{const q=frageText(f);return '<button type="button" class="ki-frage" data-frage="'+esc(q)+'">'+esc(q)+'</button>'}).join('')+'</div>').join('')+'</div>'
   +'<div class="ki-punkte" aria-hidden="true">'+KI_FRAGEN.map((g,i)=>'<button type="button" tabindex="-1" class="ki-punkt'+(i?'':' aktiv')+'" data-karte="'+i+'"></button>').join('')+'</div>';
 }
@@ -2333,14 +2411,22 @@ function kartenEinrichten(){
    const ganz=!mobil()||sicht>0.97;k.classList.toggle('ki-gruppe-halb',!ganz);k.toggleAttribute('inert',!ganz);if(sicht>bestA){bestA=sicht;best=i}});
   punkte.forEach((p,i)=>p.classList.toggle('aktiv',i===best))};
  box.addEventListener('scroll',()=>requestAnimationFrame(pruefen),{passive:true});
- kartenPruefen=pruefen;pruefen();
+ kartenPruefen=pruefen;
+ const h=box.querySelector('.ki-gruppe-hervor');if(h&&mobil())box.scrollLeft=h.offsetLeft-box.offsetLeft-parseFloat(getComputedStyle(box).paddingLeft);
+ pruefen();
  punkte.forEach((p,i)=>p.addEventListener('click',()=>{const k=karten[i];box.scrollTo({left:k.offsetLeft-box.offsetLeft-(box.clientWidth-k.offsetWidth)/2,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}));
+}
+/* "Phase Corona-Crash 2020", aber "Stressphase Fruehjahr 2026" ohne Doppelung */
+const phaseName=n=>/phase/i.test(n)?n:(sp()==='en'?'phase ':'Phase ')+n;
+function kontextHtml(){
+ const k=st.kontext;if(!k)return '';
+ return '<p class="ki-kontext"><span class="ki-kontext-punkt" aria-hidden="true"></span>'+esc(k.art==='wert'?kt('kontextWert').replace('{w}',k.wert):kt('kontextPhase').replace('{n}',phaseName(sp()==='en'&&k.nameEn?k.nameEn:k.name)))+'</p>';
 }
 function startHtml(){
  const w=wert();
  return '<div class="ki-start"><canvas class="ki-kugel" aria-hidden="true"></canvas>'
   +'<p class="eyebrow ki-eyebrow">'+esc(angemeldet()&&w!=null?kt('eyebrowWert').replace('{w}',w):kt('eyebrow'))+'</p>'
-  +'<h2 id="ki-titel" tabindex="-1">'+esc(kt('titel'))+'</h2><p class="ki-unter">'+esc(angemeldet()?kt('unter'):kt('ausgeloggt'))+'</p>'
+  +'<h2 id="ki-titel" tabindex="-1">'+esc(kt('titel'))+'</h2>'+kontextHtml()+'<p class="ki-unter">'+esc(angemeldet()?kt('unter'):kt('ausgeloggt'))+'</p>'
   +gruppenHtml()+'</div>';
 }
 function md(text){return String(text||'').split(/\n\s*\n/).map(b=>b.trim()?'<p>'+esc(b.trim()).replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ')+'</p>':'').join('')}
@@ -2441,7 +2527,7 @@ function klick(e){
  if(f){if(!angemeldet()){$('#account-login')?.click();return}st.notiz=f.dataset.frage;const i=$('#ki-eingabe');if(i){i.value=st.notiz;i.focus();i.setSelectionRange(i.value.length,i.value.length)}return}
  const b=e.target.closest('[data-ki]');if(!b)return;
  if(b.dataset.ki==='anmelden'){$('#account-login')?.click();return}
- if(b.dataset.ki==='neu'){st.gespraech=[];st.notiz='';haftUnten=true;zeichnen('titel');window.scrollTo({top:0})}
+ if(b.dataset.ki==='neu'){st.gespraech=[];st.notiz='';st.kontext=null;haftUnten=true;zeichnen('titel');window.scrollTo({top:0})}
 }
 
 /* ---------- Mobil: Eingabe ueber der Tastatur, Leiste unten ---------- */
@@ -2457,7 +2543,7 @@ if(window.visualViewport){visualViewport.addEventListener('resize',()=>{platzUnt
 addEventListener('resize',platzUnten);
 
 /* ---------- Routing: Marktstress (ohne Raute), #ki, #verlauf, #konto ---------- */
-const scrollMerk={};let letzte=null;
+const scrollMerk={};let letzte=null,kontextNeu=false;
 function route(){
  const a=aktiv();
  if(letzte&&letzte!==a)scrollMerk[letzte]=window.scrollY;
@@ -2467,6 +2553,7 @@ function route(){
  ansicht.hidden=a!=='ki';navRender();
  IT.verlaufAnsicht&&IT.verlaufAnsicht[a==='verlauf'?'zeigen':'verbergen']();
  IT.kontoAnsicht&&IT.kontoAnsicht[a==='konto'?'zeigen':'verbergen']();
+ if(a==='ki'&&letzte!=='ki'){if(!kontextNeu)st.kontext=null;kontextNeu=false}
  if(a==='ki'){zeichnen(st.gespraech.length?null:'titel');restLaden();window.scrollTo({top:st.gespraech.length?document.documentElement.scrollHeight:0});haftUnten=true}
  else{document.body.classList.remove('ki-tastatur');
   if(letzte!==a){window.scrollTo({top:a==='stress'?(scrollMerk.stress||0):0});
@@ -2478,31 +2565,40 @@ addEventListener('popstate',route);
 addEventListener('hashchange',route);
 document.addEventListener('click',e=>{
  const l=e.target.closest('[data-ki-login]');if(l){$('#account-login')?.click();return}
- const q=e.target.closest('[data-ki-frage]');if(!q)return;e.preventDefault();
- st.notiz=q.dataset.kiFrage;if(location.hash!=='#ki')location.hash='ki';else zeichnen('eingabe');
- setTimeout(()=>{const i=$('#ki-eingabe');if(i){i.focus({preventScroll:true});i.setSelectionRange(i.value.length,i.value.length)}},80);
+ const b=e.target.closest('[data-bruecke]');if(!b||e.metaKey||e.ctrlKey)return;e.preventDefault();
+ st.kontext=b.dataset.bruecke==='phase'?{art:'phase',name:b.dataset.name,nameEn:b.dataset.nameEn}:{art:'wert',wert:b.dataset.wert};
+ if(st.kontext.art==='wert'&&!st.kontext.wert)st.kontext=null;
+ kontextNeu=true;st.gespraech.length||(st.notiz='');
+ if(location.hash!=='#ki')location.hash='ki';else{kontextNeu=false;zeichnen('titel')}
 });
 
-/* ---------- "Frag die KI dazu" und schmale KI-Zeile neben dem Wert ---------- */
-const spalte=$('.score-column'),erst=$('.first-look'),modul=$('#subscribe-module');
-const fragLink=document.createElement('p');fragLink.className='ki-frag-link';
-if(modul)modul.before(fragLink);
-const zeile=document.createElement('form');zeile.className='ki-zeile';zeile.id='ki-zeile';
-if(erst)erst.append(zeile);
-zeile.addEventListener('submit',e=>{e.preventDefault();const i=zeile.querySelector('input');st.notiz=i.value.trim()||kt('frageWert').replace('{w}',wert()??'');i.value='';location.hash='ki';
- setTimeout(()=>{const k=$('#ki-eingabe');if(k){k.focus({preventScroll:true});k.setSelectionRange(k.value.length,k.value.length)}},80)});
-function extrasRender(){
- const w=IT.view&&IT.view.rounded;
- fragLink.innerHTML=w!=null?'<a href="#ki" class="ki-frag" data-ki-frage="'+esc(kt('frageWert').replace('{w}',angemeldet()&&wert()!=null?wert():w))+'">'+esc(kt('fragKi'))+'</a>':'';
- zeile.hidden=!angemeldet();
- zeile.innerHTML='<label class="sr-only" for="ki-zeile-eingabe">'+esc(kt('zeileLabel'))+'</label><input id="ki-zeile-eingabe" type="text" maxlength="300" autocomplete="off" enterkeyhint="go" placeholder="'+esc(kt('zeile'))+'"><button type="submit" aria-label="'+esc(kt('zumKi'))+'">'+SVG.pfeil+'</button>';
+/* ---------- KI-Bruecke: Startseite (Desktop gross rechts, mobil kompakt unter der Einordnung), Ereigniskarten ---------- */
+const PFEIL='<svg class="ki-bruecke-pfeil" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const kugelKlein=c=>{if(c&&!c.dataset.an){c.dataset.an='1';kugel(c,{punkte:30,grenze:.72,radius:.44,linie:.6,punkt:.5,punktZu:.35})}};
+const kugelGross=c=>{if(c&&!c.dataset.an){c.dataset.an='1';kugel(c,mobil()?{punkte:48,grenze:.6,impulse:true,schein:true,radius:.4}:{punkte:72,grenze:.5,impulse:true,schein:true,radius:.4})}};
+function brueckeKompakt(attr,satz){return '<a href="#ki" class="ki-bruecke" '+attr+'><canvas class="ki-bruecke-kugel" aria-hidden="true"></canvas><span class="ki-bruecke-text"><span class="ki-bruecke-eyebrow">INVESTTIMER '+esc(kt('tabKi'))+'</span><span class="ki-bruecke-satz">'+esc(satz)+'</span></span>'+PFEIL+'</a>'}
+/* Wert erst zeigen, wenn er feststeht (Startwert, nicht ein Zwischenstand) */
+const wertFertig=()=>{const v=IT.view;return IT.wertEndgueltig!==false&&v&&v.rounded!=null?v.rounded:null};
+const startKlein=document.createElement('div');startKlein.className='ki-bruecke-start';
+const startGross=document.createElement('aside');startGross.className='ki-bruecke-gross';startGross.setAttribute('aria-labelledby','ki-bruecke-titel');
+(()=>{const ziel=$('.assessment');if(ziel)ziel.after(startKlein);const erst=$('.first-look');if(erst)erst.append(startGross)})();
+function brueckenRender(){
+ const w=wertFertig(),satz=w!=null?kt('brueckeWert').replace('{w}',w):kt('brueckeOhne'),attr='data-bruecke="wert" data-wert="'+(w??'')+'"';
+ if(!startKlein.firstChild)startKlein.innerHTML=brueckeKompakt(attr,satz);
+ const kl=startKlein.querySelector('.ki-bruecke');kl.dataset.wert=w??'';kl.querySelector('.ki-bruecke-satz').textContent=satz;kl.querySelector('.ki-bruecke-eyebrow').textContent='INVESTTIMER '+kt('tabKi');
+ if(!startGross.firstChild)startGross.innerHTML='<canvas class="ki-bruecke-kugel-gross" aria-hidden="true"></canvas><span class="eyebrow ki-bruecke-eyebrow">INVESTTIMER '+esc(kt('tabKi'))+'</span><h2 id="ki-bruecke-titel"></h2><p class="ki-bruecke-gross-text"></p><a href="#ki" class="primary ki-bruecke-knopf" '+attr+'></a>';
+ startGross.querySelector('h2').textContent=satz;startGross.querySelector('.ki-bruecke-gross-text').textContent=kt('brueckeGrossText');
+ const k=startGross.querySelector('.ki-bruecke-knopf');k.dataset.wert=w??'';k.innerHTML=esc(kt('zumKi'))+' '+PFEIL;
+ kugelKlein(startKlein.querySelector('canvas'));kugelGross(startGross.querySelector('canvas'));
 }
+IT.kiBruecke={phaseHtml:m=>brueckeKompakt('data-bruecke="phase" data-name="'+esc(m.name)+'" data-name-en="'+esc(m.name_en||m.name)+'"',kt('brueckePhase').replace('{n}',sp()==='en'?(m.name_en||m.name):m.name)),
+ beleben:box=>box&&box.querySelectorAll('.ki-bruecke-kugel').forEach(kugelKlein)};
+document.addEventListener('investtimer:wertfertig',brueckenRender);
 IT.kiGespraechAktiv=()=>st.gespraech.length>0||st.busy||!!(st.notiz&&st.notiz.trim());
-IT.kiFrageEreignis=name=>kt('frageEreignis').replace('{n}',name);
 IT.kiText=kt;
-document.addEventListener('investtimer:update',()=>{extrasRender();navRender();st.restGeladen=false;if(aktiv()==='ki'){zeichnen();restLaden()}});
-new MutationObserver(()=>{extrasRender();navRender();if(aktiv()==='ki')zeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-extrasRender();route();
+document.addEventListener('investtimer:update',()=>{brueckenRender();navRender();st.restGeladen=false;if(aktiv()==='ki'){zeichnen();restLaden()}});
+new MutationObserver(()=>{brueckenRender();navRender();if(aktiv()==='ki')zeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+brueckenRender();route();
 })();
 
 /* Updates der installierten Web-App und Offline-Hinweis (Service Worker: tools/sw.js).

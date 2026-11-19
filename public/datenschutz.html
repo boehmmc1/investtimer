@@ -49,6 +49,7 @@ der Sicherheit und der Abwehr von Missbrauch.</p>
 <p>InvestTimer speichert nur das im Browser (localStorage und Speicher des Service Workers), was für die Funktion nötig ist:</p>
 <ul>
 <li>nach der Anmeldung die Sitzung (Zugangs- und Erneuerungsschlüssel), damit du angemeldet bleibst. Beim Abmelden wird sie gelöscht.</li>
+<li>nach der Anmeldung den zuletzt geladenen aktuellen Marktstress-Wert zusammen mit deiner Nutzerkennung, damit beim nächsten Öffnen sofort dein letzter Stand erscheint. Beim Abmelden und beim Löschen des Kontos wird er entfernt.</li>
 <li>im Speicher des Service Workers die zuletzt geladene Fassung der Seite und den öffentlichen, zeitversetzten Marktstress-Wert, damit die installierte App ohne Verbindung den letzten Stand zeigt. Kontodaten, Alarme und KI-Antworten werden dort nicht gespeichert. Eine neue Version der Seite ersetzt den Speicher.</li>
 </ul>
 <p>Rechtsgrundlage für den Zugriff auf dein Gerät ist § 25 Abs. 2 Nr. 2 TDDDG (unbedingt erforderlich für den von dir gewünschten Dienst).

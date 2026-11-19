@@ -1,7 +1,8 @@
 /* KI-Bereich: eigene Ansicht (#ki) mit Navigation (Desktop: Tabs im Header, mobil: Leiste unten),
    Neuronen-Kugel (Fibonacci-Kugel wie im Volafly-Neural-Core, in InvestTimer-Gruen), Startansicht mit Fragegruppen,
    Gespraech mit Belegen (Verlaufsausschnitt, Teilwerte) und Folgefragen. Gespraech bleibt im App-Zustand (nicht gespeichert).
-   "Frag die KI dazu" (Wert, Ereigniskarten) oeffnet die Ansicht mit vorausgefuellter Frage, ohne zu senden. */
+   KI-Bruecke (Startseite, Ereigniskarten) oeffnet die Ansicht mit Kontext (Wert bzw. Phase): Zeile "Du kommst von",
+   passende Fragengruppe hervorgehoben, passende Frage zuerst. Nichts wird gesendet oder ins Eingabefeld geschrieben. */
 (()=>{
 const KI_KATALOG=__KI_FRAGEN__;
 /* Je Gruppe drei von vier Fragen, zufaellig und einmal je Seitenaufruf (bleibt beim Tab- und Sprachwechsel gleich) */
@@ -20,8 +21,9 @@ const KT={de:{
  fLogin:'Deine Anmeldung ist abgelaufen. Melde dich neu an, dann kannst du weiterfragen.',fLoginKnopf:'Neu anmelden',
  fAus:'Die KI ist gerade ausgeschaltet. Versuch es später noch einmal.',
  fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',
- fragKi:'Frag die KI dazu',zeile:'Frag die KI zum Wert …',zeileLabel:'Frage an die KI',zumKi:'Zur KI',
- frageWert:'Warum steht der Marktstress bei {w}?',frageEreignis:'Wie lief die Phase „{n}“ ab?',
+ zumKi:'Zur KI',brueckeWert:'Was steckt hinter der {w}?',brueckeOhne:'Was steckt hinter dem Wert?',brueckeGrossText:'Die KI ordnet den Wert ein und beantwortet deine Fragen.',
+ brueckePhase:'{n} mit der KI einordnen',kontextWert:'Du kommst von: Marktstress {w}',kontextPhase:'Du kommst von: {n}',
+ frageEreignis:'Wie verlief „{n}“?',
  verlaufLogin:'Den Verlauf seit 2006 siehst du nach der Anmeldung.',verlaufLoginKnopf:'Anmelden'
 },en:{
  tabStress:'Market stress',tabKi:'AI',tabVerlauf:'History',tabKonto:'Account',nav:'Sections',
@@ -37,8 +39,9 @@ const KT={de:{
  fLogin:'Your session has expired. Sign in again to keep asking.',fLoginKnopf:'Sign in again',
  fAus:'The AI is switched off right now. Try again later.',
  fNetz:'Can’t reach the AI. Check your connection and try again.',
- fragKi:'Ask the AI about this',zeile:'Ask the AI about this reading …',zeileLabel:'Question for the AI',zumKi:'Go to AI',
- frageWert:'Why is market stress at {w}?',frageEreignis:'How did “{n}” unfold?',
+ zumKi:'Go to AI',brueckeWert:'What’s behind the {w}?',brueckeOhne:'What’s behind the score?',brueckeGrossText:'The AI puts the score in context and answers your questions.',
+ brueckePhase:'Put {n} in context with the AI',kontextWert:'You came from: market stress {w}',kontextPhase:'You came from: {n}',
+ frageEreignis:'How did “{n}” unfold?',
  verlaufLogin:'Sign in to see the history back to 2006.',verlaufLoginKnopf:'Sign in'
 }};
 const sp=()=>document.documentElement.lang==='en'?'en':'de';
@@ -121,8 +124,15 @@ function eingabeHtml(){
   +'<p class="ki-hinweis">'+esc(kt('hinweis'))+(restText()?' · <span class="ki-rest">'+esc(restText())+'</span>':'')+'</p></div>';
 }
 function frageText(f){const w=wert()??(IT.view&&IT.view.rounded);return (f[sp()]||f.de).replace('{wert}',w==null?'…':w)}
+function gruppenMitKontext(){
+ const k=st.kontext;if(!k)return KI_FRAGEN;
+ return KI_FRAGEN.map(g=>{
+  if(k.art==='wert'&&g.id==='einordnen'){const erste=KI_KATALOG.find(x=>x.id==='einordnen').fragen[0];return Object.assign({},g,{hervor:true,fragen:[erste,...g.fragen.filter(f=>f.de!==erste.de)].slice(0,3)})}
+  if(k.art==='phase'&&g.id==='verlauf'){const erste={de:KT.de.frageEreignis.replace('{n}',k.name),en:KT.en.frageEreignis.replace('{n}',k.nameEn||k.name)};return Object.assign({},g,{hervor:true,fragen:[erste,...g.fragen].slice(0,3)})}
+  return g});
+}
 function gruppenHtml(){
- return '<div class="ki-gruppen" role="list">'+KI_FRAGEN.map((g,i)=>'<div class="ki-gruppe" role="listitem" aria-label="'+esc((g[sp()]||g.de)+' · '+kt('karte').replace('{n}',i+1).replace('{m}',KI_FRAGEN.length))+'"><h3>'+esc(g[sp()]||g.de)+'</h3>'
+ return '<div class="ki-gruppen" role="list">'+gruppenMitKontext().map((g,i)=>'<div class="ki-gruppe'+(g.hervor?' ki-gruppe-hervor':'')+'" role="listitem" aria-label="'+esc((g[sp()]||g.de)+' · '+kt('karte').replace('{n}',i+1).replace('{m}',KI_FRAGEN.length))+'"><h3>'+esc(g[sp()]||g.de)+'</h3>'
   +g.fragen.map(f=>{const q=frageText(f);return '<button type="button" class="ki-frage" data-frage="'+esc(q)+'">'+esc(q)+'</button>'}).join('')+'</div>').join('')+'</div>'
   +'<div class="ki-punkte" aria-hidden="true">'+KI_FRAGEN.map((g,i)=>'<button type="button" tabindex="-1" class="ki-punkt'+(i?'':' aktiv')+'" data-karte="'+i+'"></button>').join('')+'</div>';
 }
@@ -136,14 +146,22 @@ function kartenEinrichten(){
    const ganz=!mobil()||sicht>0.97;k.classList.toggle('ki-gruppe-halb',!ganz);k.toggleAttribute('inert',!ganz);if(sicht>bestA){bestA=sicht;best=i}});
   punkte.forEach((p,i)=>p.classList.toggle('aktiv',i===best))};
  box.addEventListener('scroll',()=>requestAnimationFrame(pruefen),{passive:true});
- kartenPruefen=pruefen;pruefen();
+ kartenPruefen=pruefen;
+ const h=box.querySelector('.ki-gruppe-hervor');if(h&&mobil())box.scrollLeft=h.offsetLeft-box.offsetLeft-parseFloat(getComputedStyle(box).paddingLeft);
+ pruefen();
  punkte.forEach((p,i)=>p.addEventListener('click',()=>{const k=karten[i];box.scrollTo({left:k.offsetLeft-box.offsetLeft-(box.clientWidth-k.offsetWidth)/2,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}));
+}
+/* "Phase Corona-Crash 2020", aber "Stressphase Fruehjahr 2026" ohne Doppelung */
+const phaseName=n=>/phase/i.test(n)?n:(sp()==='en'?'phase ':'Phase ')+n;
+function kontextHtml(){
+ const k=st.kontext;if(!k)return '';
+ return '<p class="ki-kontext"><span class="ki-kontext-punkt" aria-hidden="true"></span>'+esc(k.art==='wert'?kt('kontextWert').replace('{w}',k.wert):kt('kontextPhase').replace('{n}',phaseName(sp()==='en'&&k.nameEn?k.nameEn:k.name)))+'</p>';
 }
 function startHtml(){
  const w=wert();
  return '<div class="ki-start"><canvas class="ki-kugel" aria-hidden="true"></canvas>'
   +'<p class="eyebrow ki-eyebrow">'+esc(angemeldet()&&w!=null?kt('eyebrowWert').replace('{w}',w):kt('eyebrow'))+'</p>'
-  +'<h2 id="ki-titel" tabindex="-1">'+esc(kt('titel'))+'</h2><p class="ki-unter">'+esc(angemeldet()?kt('unter'):kt('ausgeloggt'))+'</p>'
+  +'<h2 id="ki-titel" tabindex="-1">'+esc(kt('titel'))+'</h2>'+kontextHtml()+'<p class="ki-unter">'+esc(angemeldet()?kt('unter'):kt('ausgeloggt'))+'</p>'
   +gruppenHtml()+'</div>';
 }
 function md(text){return String(text||'').split(/\n\s*\n/).map(b=>b.trim()?'<p>'+esc(b.trim()).replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ')+'</p>':'').join('')}
@@ -244,7 +262,7 @@ function klick(e){
  if(f){if(!angemeldet()){$('#account-login')?.click();return}st.notiz=f.dataset.frage;const i=$('#ki-eingabe');if(i){i.value=st.notiz;i.focus();i.setSelectionRange(i.value.length,i.value.length)}return}
  const b=e.target.closest('[data-ki]');if(!b)return;
  if(b.dataset.ki==='anmelden'){$('#account-login')?.click();return}
- if(b.dataset.ki==='neu'){st.gespraech=[];st.notiz='';haftUnten=true;zeichnen('titel');window.scrollTo({top:0})}
+ if(b.dataset.ki==='neu'){st.gespraech=[];st.notiz='';st.kontext=null;haftUnten=true;zeichnen('titel');window.scrollTo({top:0})}
 }
 
 /* ---------- Mobil: Eingabe ueber der Tastatur, Leiste unten ---------- */
@@ -260,7 +278,7 @@ if(window.visualViewport){visualViewport.addEventListener('resize',()=>{platzUnt
 addEventListener('resize',platzUnten);
 
 /* ---------- Routing: Marktstress (ohne Raute), #ki, #verlauf, #konto ---------- */
-const scrollMerk={};let letzte=null;
+const scrollMerk={};let letzte=null,kontextNeu=false;
 function route(){
  const a=aktiv();
  if(letzte&&letzte!==a)scrollMerk[letzte]=window.scrollY;
@@ -270,6 +288,7 @@ function route(){
  ansicht.hidden=a!=='ki';navRender();
  IT.verlaufAnsicht&&IT.verlaufAnsicht[a==='verlauf'?'zeigen':'verbergen']();
  IT.kontoAnsicht&&IT.kontoAnsicht[a==='konto'?'zeigen':'verbergen']();
+ if(a==='ki'&&letzte!=='ki'){if(!kontextNeu)st.kontext=null;kontextNeu=false}
  if(a==='ki'){zeichnen(st.gespraech.length?null:'titel');restLaden();window.scrollTo({top:st.gespraech.length?document.documentElement.scrollHeight:0});haftUnten=true}
  else{document.body.classList.remove('ki-tastatur');
   if(letzte!==a){window.scrollTo({top:a==='stress'?(scrollMerk.stress||0):0});
@@ -281,29 +300,38 @@ addEventListener('popstate',route);
 addEventListener('hashchange',route);
 document.addEventListener('click',e=>{
  const l=e.target.closest('[data-ki-login]');if(l){$('#account-login')?.click();return}
- const q=e.target.closest('[data-ki-frage]');if(!q)return;e.preventDefault();
- st.notiz=q.dataset.kiFrage;if(location.hash!=='#ki')location.hash='ki';else zeichnen('eingabe');
- setTimeout(()=>{const i=$('#ki-eingabe');if(i){i.focus({preventScroll:true});i.setSelectionRange(i.value.length,i.value.length)}},80);
+ const b=e.target.closest('[data-bruecke]');if(!b||e.metaKey||e.ctrlKey)return;e.preventDefault();
+ st.kontext=b.dataset.bruecke==='phase'?{art:'phase',name:b.dataset.name,nameEn:b.dataset.nameEn}:{art:'wert',wert:b.dataset.wert};
+ if(st.kontext.art==='wert'&&!st.kontext.wert)st.kontext=null;
+ kontextNeu=true;st.gespraech.length||(st.notiz='');
+ if(location.hash!=='#ki')location.hash='ki';else{kontextNeu=false;zeichnen('titel')}
 });
 
-/* ---------- "Frag die KI dazu" und schmale KI-Zeile neben dem Wert ---------- */
-const spalte=$('.score-column'),erst=$('.first-look'),modul=$('#subscribe-module');
-const fragLink=document.createElement('p');fragLink.className='ki-frag-link';
-if(modul)modul.before(fragLink);
-const zeile=document.createElement('form');zeile.className='ki-zeile';zeile.id='ki-zeile';
-if(erst)erst.append(zeile);
-zeile.addEventListener('submit',e=>{e.preventDefault();const i=zeile.querySelector('input');st.notiz=i.value.trim()||kt('frageWert').replace('{w}',wert()??'');i.value='';location.hash='ki';
- setTimeout(()=>{const k=$('#ki-eingabe');if(k){k.focus({preventScroll:true});k.setSelectionRange(k.value.length,k.value.length)}},80)});
-function extrasRender(){
- const w=IT.view&&IT.view.rounded;
- fragLink.innerHTML=w!=null?'<a href="#ki" class="ki-frag" data-ki-frage="'+esc(kt('frageWert').replace('{w}',angemeldet()&&wert()!=null?wert():w))+'">'+esc(kt('fragKi'))+'</a>':'';
- zeile.hidden=!angemeldet();
- zeile.innerHTML='<label class="sr-only" for="ki-zeile-eingabe">'+esc(kt('zeileLabel'))+'</label><input id="ki-zeile-eingabe" type="text" maxlength="300" autocomplete="off" enterkeyhint="go" placeholder="'+esc(kt('zeile'))+'"><button type="submit" aria-label="'+esc(kt('zumKi'))+'">'+SVG.pfeil+'</button>';
+/* ---------- KI-Bruecke: Startseite (Desktop gross rechts, mobil kompakt unter der Einordnung), Ereigniskarten ---------- */
+const PFEIL='<svg class="ki-bruecke-pfeil" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const kugelKlein=c=>{if(c&&!c.dataset.an){c.dataset.an='1';kugel(c,{punkte:30,grenze:.72,radius:.44,linie:.6,punkt:.5,punktZu:.35})}};
+const kugelGross=c=>{if(c&&!c.dataset.an){c.dataset.an='1';kugel(c,mobil()?{punkte:48,grenze:.6,impulse:true,schein:true,radius:.4}:{punkte:72,grenze:.5,impulse:true,schein:true,radius:.4})}};
+function brueckeKompakt(attr,satz){return '<a href="#ki" class="ki-bruecke" '+attr+'><canvas class="ki-bruecke-kugel" aria-hidden="true"></canvas><span class="ki-bruecke-text"><span class="ki-bruecke-eyebrow">INVESTTIMER '+esc(kt('tabKi'))+'</span><span class="ki-bruecke-satz">'+esc(satz)+'</span></span>'+PFEIL+'</a>'}
+/* Wert erst zeigen, wenn er feststeht (Startwert, nicht ein Zwischenstand) */
+const wertFertig=()=>{const v=IT.view;return IT.wertEndgueltig!==false&&v&&v.rounded!=null?v.rounded:null};
+const startKlein=document.createElement('div');startKlein.className='ki-bruecke-start';
+const startGross=document.createElement('aside');startGross.className='ki-bruecke-gross';startGross.setAttribute('aria-labelledby','ki-bruecke-titel');
+(()=>{const ziel=$('.assessment');if(ziel)ziel.after(startKlein);const erst=$('.first-look');if(erst)erst.append(startGross)})();
+function brueckenRender(){
+ const w=wertFertig(),satz=w!=null?kt('brueckeWert').replace('{w}',w):kt('brueckeOhne'),attr='data-bruecke="wert" data-wert="'+(w??'')+'"';
+ if(!startKlein.firstChild)startKlein.innerHTML=brueckeKompakt(attr,satz);
+ const kl=startKlein.querySelector('.ki-bruecke');kl.dataset.wert=w??'';kl.querySelector('.ki-bruecke-satz').textContent=satz;kl.querySelector('.ki-bruecke-eyebrow').textContent='INVESTTIMER '+kt('tabKi');
+ if(!startGross.firstChild)startGross.innerHTML='<canvas class="ki-bruecke-kugel-gross" aria-hidden="true"></canvas><span class="eyebrow ki-bruecke-eyebrow">INVESTTIMER '+esc(kt('tabKi'))+'</span><h2 id="ki-bruecke-titel"></h2><p class="ki-bruecke-gross-text"></p><a href="#ki" class="primary ki-bruecke-knopf" '+attr+'></a>';
+ startGross.querySelector('h2').textContent=satz;startGross.querySelector('.ki-bruecke-gross-text').textContent=kt('brueckeGrossText');
+ const k=startGross.querySelector('.ki-bruecke-knopf');k.dataset.wert=w??'';k.innerHTML=esc(kt('zumKi'))+' '+PFEIL;
+ kugelKlein(startKlein.querySelector('canvas'));kugelGross(startGross.querySelector('canvas'));
 }
+IT.kiBruecke={phaseHtml:m=>brueckeKompakt('data-bruecke="phase" data-name="'+esc(m.name)+'" data-name-en="'+esc(m.name_en||m.name)+'"',kt('brueckePhase').replace('{n}',sp()==='en'?(m.name_en||m.name):m.name)),
+ beleben:box=>box&&box.querySelectorAll('.ki-bruecke-kugel').forEach(kugelKlein)};
+document.addEventListener('investtimer:wertfertig',brueckenRender);
 IT.kiGespraechAktiv=()=>st.gespraech.length>0||st.busy||!!(st.notiz&&st.notiz.trim());
-IT.kiFrageEreignis=name=>kt('frageEreignis').replace('{n}',name);
 IT.kiText=kt;
-document.addEventListener('investtimer:update',()=>{extrasRender();navRender();st.restGeladen=false;if(aktiv()==='ki'){zeichnen();restLaden()}});
-new MutationObserver(()=>{extrasRender();navRender();if(aktiv()==='ki')zeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-extrasRender();route();
+document.addEventListener('investtimer:update',()=>{brueckenRender();navRender();st.restGeladen=false;if(aktiv()==='ki'){zeichnen();restLaden()}});
+new MutationObserver(()=>{brueckenRender();navRender();if(aktiv()==='ki')zeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+brueckenRender();route();
 })();

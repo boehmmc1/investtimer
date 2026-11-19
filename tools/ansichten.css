@@ -125,3 +125,55 @@ body.ansicht-neben .app>main{display:none!important}
 h1,h2,h3,h4,.konto-kopf h2,.ki-start h2{text-wrap:balance}
 .alarm-kanal-wahl{min-height:44px}
 .konto-fuss a{padding:13px 2px}
+
+/* ===== Block 8a ===== */
+/* 1. Desktop-Tabs: groesser, AA-Kontrast, 44 px+, Unterstreichung am Header-Abschluss, vertikal zentriert */
+@media(min-width:760px){
+ .app-header{align-items:center}
+ .it-tabs{align-self:stretch;display:flex;align-items:stretch;gap:10px;margin:0 auto 0 56px}
+ .it-tabs a{display:flex;align-items:center;min-height:44px;padding:0 14px;font-size:16px;font-weight:450;color:#56635d;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s,border-color .15s}
+ .it-tabs a:hover{color:var(--text);border-bottom-color:#c9d6c5}
+ .it-tabs a[aria-current=page]{color:var(--text);font-weight:500;border-bottom-color:var(--accent)}
+ .it-tabs a:focus-visible{outline:2px solid #698dbc;outline-offset:-4px}
+}
+@media(min-width:760px) and (max-width:1100px){.it-tabs{margin-left:28px;gap:4px}.it-tabs a{padding:0 10px}}
+@media(prefers-reduced-motion:reduce){.it-tabs a{transition:none}}
+
+/* 2. KI-Bruecke */
+.ki-bruecke{display:flex;align-items:center;gap:12px;min-height:56px;width:100%;max-width:420px;box-sizing:border-box;margin:0 auto;padding:8px 14px 8px 8px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff);color:var(--text);text-decoration:none;text-align:left;transition:border-color .15s,box-shadow .15s}
+.ki-bruecke:hover{border-color:#a9c2b4;box-shadow:0 4px 16px rgba(27,51,48,.07);filter:none}
+.ki-bruecke:focus-visible{outline:2px solid #698dbc;outline-offset:2px}
+.ki-bruecke-kugel{width:44px;height:44px;flex:none}
+.ki-bruecke-text{flex:1;min-width:0;display:grid;gap:2px}
+.ki-bruecke-eyebrow{font-size:10px;letter-spacing:1.4px;color:var(--accent);font-weight:500}
+.ki-bruecke-satz{font-size:15px;line-height:1.35;color:var(--text)}
+.ki-bruecke-pfeil{width:18px;height:18px;flex:none;color:var(--accent)}
+.ki-bruecke-start{width:100%;margin:22px 0 0}
+.ki-bruecke-gross{display:none}
+.ereignis-karte .ki-bruecke{max-width:none;margin:14px 0 0;background:var(--surface,#fff)}
+@media(min-width:760px){
+ .ki-bruecke-start{display:none}
+ .clarity-page .first-look{display:grid!important;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)!important;column-gap:56px!important;row-gap:4px!important;align-items:center!important;min-height:0!important;padding:28px 0 20px!important}
+ .clarity-page .first-look>.score-column{grid-column:1!important;grid-row:1!important}
+ .clarity-page .first-look>.ki-bruecke-gross{display:flex;flex-direction:column;align-items:center;text-align:center;grid-column:2;grid-row:1;align-self:center;max-width:380px;justify-self:center;padding:28px 28px 30px;border:1px solid var(--line);border-radius:20px;background:var(--surface,#fff)}
+ .clarity-page .first-look>#details-toggle,.clarity-page .first-look>.verlauf-mini{grid-column:1/-1}
+ .ki-bruecke-kugel-gross{width:120px;height:120px;margin:0 0 6px}
+ .ki-bruecke-gross .ki-bruecke-eyebrow{display:block;margin:0 0 8px}
+ .ki-bruecke-gross h2{font:500 26px/1.2 var(--display);letter-spacing:-.5px;margin:0 0 10px}
+ .ki-bruecke-gross-text{margin:0 0 20px;font-size:15px;line-height:1.6;color:var(--sub)}
+ .ki-bruecke-knopf{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 24px;text-decoration:none}
+ .ki-bruecke-knopf .ki-bruecke-pfeil{color:currentColor}
+}
+/* Abstand Wert -> "Mehr erfahren" enger */
+.clarity-page .details-toggle{margin-top:18px}
+@media(max-width:759px){.clarity-page .first-look{gap:18px!important;padding-bottom:18px!important}.clarity-page .verlauf-mini{margin-top:10px}}
+/* KI-Tab: Herkunft und hervorgehobene Gruppe */
+.ki-kontext{display:inline-flex;align-items:center;gap:8px;margin:0 auto 12px;padding:6px 14px;border-radius:999px;background:var(--panel);font-size:13px;color:var(--text)}
+.ki-kontext-punkt{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.ki-gruppe-hervor{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.ki-gruppe-hervor h3::after{content:'';display:inline-block;width:6px;height:6px;margin-left:8px;border-radius:50%;background:var(--accent);vertical-align:middle}
+/* 3. Start mit Sitzung: ruhiger Platzhalter, bis der endgueltige Wert feststeht */
+body.wert-laedt .gauge-stage .score,body.wert-laedt .assessment,body.wert-laedt .snapshot-label,body.wert-laedt .score-unit{visibility:hidden}
+body.wert-laedt .gauge-track{animation:wert-puls 1.6s ease-in-out infinite}
+@keyframes wert-puls{50%{opacity:.45}}
+@media(prefers-reduced-motion:reduce){body.wert-laedt .gauge-track{animation:none}}
