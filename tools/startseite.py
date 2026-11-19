@@ -51,7 +51,9 @@ def anwenden(html):
                        "If a component is missing on a given day, the score is calculated from the others. If more than two are missing, the score is marked “Limited data today”.")
     # Detailbereich: ohne Alarm-Sektion und ohne Sprachwahl (Alarme: Konto-Ansicht/Kontomenue, Sprache: Kopf bzw. Konto)
     html = re.sub(r'<section class="notifications" aria-labelledby="notifications-title">.*?</section>', "", html, count=1, flags=re.S)
-    html = _once(html, "<label class=\"language-label\"><span>${t('language')}</span><select id=\"language\" aria-label=\"${t('language')}\"><option value=\"de\" ${state.lang==='de'?'selected':''}>Deutsch</option><option value=\"en\" ${state.lang==='en'?'selected':''}>English</option></select></label>", "", "Sprachwahl Details")
+    html = _once(html, "<label class=\"language-label\"><span>${t('language')}</span><select id=\"language\" aria-label=\"${t('language')}\"><option value=\"de\" ${state.lang==='de'?'selected':''}>Deutsch</option><option value=\"en\" ${state.lang==='en'?'selected':''}>English</option></select></label>",
+                 "<select id=\"language\" hidden aria-hidden=\"true\" tabindex=\"-1\"><option value=\"de\" ${state.lang==='de'?'selected':''}>Deutsch</option><option value=\"en\" ${state.lang==='en'?'selected':''}>English</option></select>",
+                 "Sprachwahl Details (nur noch intern, der Kopf schaltet darueber um)")
     # Unbenutzte Texte zum Datenstand und zur Vollstaendigkeit
     for k in ("complete", "incomplete", "data", "databody", "databodyPublic", "empty", "tipBestandteile", "componentCount"):
         if k == "componentCount":
