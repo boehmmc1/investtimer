@@ -67,7 +67,7 @@ function stressSvg(p,x,e,art){
  s+='<polyline class="chart-line verlauf-linie'+(lang?' verlauf-lang':'')+'" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/>';
  /* Endwert: Punkt exakt auf dem letzten Wert, Zahl rechts daneben (eigener Rand, keine Ueberlappung mit der Linie) */
  const z=p[p.length-1],zx=x(z[0]),zy=y(z[1]);
- s+='<circle class="verlauf-endpunkt" r="3.5" cx="'+zx.toFixed(1)+'" cy="'+zy.toFixed(1)+'"/><text class="chart-label verlauf-endwert" x="'+(zx+7).toFixed(1)+'" y="'+(Math.min(vH-vB-2,Math.max(vT+9,zy+4))).toFixed(1)+'">'+z[1]+'</text>';
+ s+='<circle class="verlauf-endpunkt" style="fill:'+ITStufe.farbe(z[1])+'" r="3.5" cx="'+zx.toFixed(1)+'" cy="'+zy.toFixed(1)+'"/><text class="chart-label verlauf-endwert" x="'+(zx+7).toFixed(1)+'" y="'+(Math.min(vH-vB-2,Math.max(vT+9,zy+4))).toFixed(1)+'">'+z[1]+'</text>';
  s+='<line class="verlauf-cursor" y1="'+vT+'" y2="'+(vH-vB)+'" x1="0" x2="0" visibility="hidden"/><circle class="verlauf-cursor-punkt" r="4" cx="0" cy="0" visibility="hidden"/></svg>';
  return s;
 }
@@ -101,7 +101,7 @@ function vZeitraum(m){const ende=new Date(vMs(m.ende)-864e5).toISOString().slice
 function vKarte(m){
  if(!m)return '';
  const nm=vEn()?m.name_en:m.name,bl=m.bloecke||{};
- const zeile=(k,l)=>bl[k]==null?'':'<div class="trieb-zeile"><span class="trieb-name">'+esc(t(l))+'</span><b>'+Math.round(bl[k])+'</b><span class="trieb-balken" aria-hidden="true"><i style="width:'+Math.round(bl[k])+'%"></i></span></div>';
+ const zeile=(k,l)=>bl[k]==null?'':'<div class="trieb-zeile"><span class="trieb-name">'+esc(t(l))+'</span><b>'+Math.round(bl[k])+'</b><span class="trieb-balken" aria-hidden="true"><i style="width:'+Math.round(bl[k])+'%;background:'+ITStufe.farbe(bl[k])+'"></i></span></div>';
  return '<h4>'+esc(nm)+'</h4><p class="karte-zeit">'+esc(vZeitraum(m))+'</p>'
   +'<dl class="karte-zahlen"><div><dt>'+t('karteHoechst')+'</dt><dd>'+t('karteAm').replace('{w}',m.spitze.w).replace('{d}',vDatum(m.spitze.d))+'</dd></div>'
   +'<div><dt>'+t('karteUnter40')+'</dt><dd>'+(m.unter40?t('karteNachTagen').replace('{n}',m.unter40.tage):t('karteNochNicht'))+'</dd></div></dl>'
@@ -198,7 +198,7 @@ function vMiniHtml(){
   +'<div class="verlauf-mini-flaeche" role="img" aria-label="'+esc(t('verlaufMiniAria').replace('{a}',fmt(p[0],{month:'long',year:'numeric'})).replace('{b}',fmt(z,{day:'numeric',month:'long',year:'numeric'})).replace('{w}',z[1]))+'">'
   +'<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><line class="verlauf-mini-mitte" x1="0" x2="'+W+'" y1="'+y(50)+'" y2="'+y(50)+'"/>'
   +'<polyline points="'+p.map(q=>x(q).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/></svg>'
-  +'<span class="verlauf-mini-punkt" style="left:100%;top:'+(y(z[1])/H*100).toFixed(2)+'%"></span></div>'
+  +'<span class="verlauf-mini-punkt" style="background:'+ITStufe.farbe(z[1])+';left:100%;top:'+(y(z[1])/H*100).toFixed(2)+'%"></span></div>'
   +'<p class="verlauf-mini-achse"><span>'+esc(fmt(p[0],{month:'short',year:'numeric'}))+'</span><span>'+esc(t('verlaufMiniEnde').replace('{w}',z[1]).replace('{d}',fmt(z,{day:'numeric',month:'short'})))+'</span></p>';
 }
 function vMiniZeichnen(){vMini.hidden=vAn()||!vMiniDaten||!!vMiniDaten.fehler;if(!vMini.hidden)vMini.innerHTML=vMiniHtml();if(!vMini.innerHTML)vMini.hidden=true}

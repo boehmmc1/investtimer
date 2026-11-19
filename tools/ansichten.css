@@ -91,3 +91,9 @@ body.ansicht-neben .app>main{display:none!important}
 /* Verlauf: Ereignisbaender deutlich zurueckgenommen, die Linie bleibt lesbar */
 .verlauf-band{opacity:.045}.verlauf-band.aktiv{opacity:.09}
 .verlauf-band-knopf:hover{background:rgba(155,111,50,.04)}
+
+/* Fuenf Stufen (tools/farbskala.py): Text in der AA-Fassung, Punkt in der Stufenfarbe; Ereignisse neutral (unabhaengig vom heutigen Stand) */
+.status{color:var(--stufe-text,var(--stress))}.status:before{background:var(--stress)}
+.verlauf-band{fill:#8c7a58}.verlauf-band-text{fill:#5c5040}
+.verlauf-chip[aria-pressed=true]{border-color:#8c7a58;color:#4f4536;background:#f2ede3}
+.verlauf-band-knopf:hover{background:rgba(140,122,88,.05)}

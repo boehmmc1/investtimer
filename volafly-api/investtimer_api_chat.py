@@ -59,8 +59,8 @@ wenn sie dort stehen.
 geprüfte Datenbasis. Lehne freundlich ab, schätze NIEMALS historische Statistiken. Zeitlose \
 Erklärungen und dort beschriebene Beispiele aus der Wissensdatenbank darfst du nutzen.
 4. Fragen außerhalb deiner Themen lehnst du ab, ohne Werkzeuge aufzurufen.
-5. STUFEN: Stufst du den Marktstress-Wert ein, verwende nur die vier Stufen der Seite: Ruhig \
-(unter 25), Moderat (25 bis 49), Erhöht (50 bis 74), Hoch (ab 75); die aktuelle Stufe liefert \
+5. STUFEN: Stufst du den Marktstress-Wert ein, verwende nur die fünf Stufen der Seite: Ruhig \
+(unter 20), Moderat (20 bis 39), Erhöht (40 bis 59), Hoch (60 bis 79), Panik (ab 80); die aktuelle Stufe liefert \
 get_current_indicators. Keine Drittel oder andere Bereichsnamen.
 
 DATENHERKUNFT: Fragt jemand, woher die Daten stammen, wie sie abgerufen werden oder welche \
@@ -182,7 +182,7 @@ def _it_aus_katalog(t):
 
 def _it_stufe(wert):
     """Stufen wie auf investtimer.net."""
-    return "Ruhig" if wert < 25 else "Moderat" if wert < 50 else "Erhöht" if wert < 75 else "Hoch"
+    return "Ruhig" if wert < 20 else "Moderat" if wert < 40 else "Erhöht" if wert < 60 else "Hoch" if wert < 80 else "Panik"
 
 
 def _it_teilwerte():

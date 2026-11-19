@@ -986,6 +986,8 @@ def main(source, target_dir, preview, anmeldung=None):
     html, _ = englisch.anwenden(html)
     import startseite
     html = startseite.anwenden(html)
+    import farbskala
+    html = farbskala.anwenden(html)
     # Installierte Web-App (iPhone): Safe-Area aktivieren, Bottom-Sheets nicht unter die Statusleiste
     html = once(html, '<meta name="viewport" content="width=device-width,initial-scale=1">',
                 '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">', "viewport-fit")
