@@ -73,7 +73,7 @@ body.ansicht-neben .app>main{display:none!important}
 .konto-version{white-space:nowrap}.konto-fuss-version{margin-top:0}
 @media(max-width:759px){.konto-ansicht{padding-top:4px}.konto-kopf h2{font-size:24px}}
 
-/* Startseite: nur Wert, Einordnung, "Frag die KI dazu", KI-Zeile (angemeldet), Mehr erfahren; ausgeloggt dazu Film und 1J-Ausschnitt */
+/* Startseite: nur Wert, Einordnung, KI-Bruecke, Mehr erfahren; ausgeloggt dazu Film (falls an) und 1J-Ausschnitt */
 .clarity-page .first-look .public-purpose,.clarity-page #subscribe-module,.clarity-page .public-access-note,.clarity-page .benefit-line{display:none!important}
 .verlauf-mini{width:100%;max-width:520px;margin:6px auto 0;text-align:left}
 .verlauf-mini:empty{margin:0}

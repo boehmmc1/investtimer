@@ -256,7 +256,7 @@ body.ansicht-ki .app>main{display:none!important}
 .ki-form:focus-within{border-color:var(--accent)}
 .ki-form input{flex:1;min-width:0;min-height:44px;border:0;background:none;font-size:16px;color:var(--text);outline:none}
 .ki-senden{flex:none;width:44px;height:44px;border-radius:12px;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer}
-.ki-senden svg,.ki-zeile button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ki-senden svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ki-senden:disabled,.ki-form input:disabled{opacity:.5;cursor:default}
 .ki-hinweis{margin:8px 2px 0;font-size:11px;line-height:1.5;color:var(--sub);text-align:center}
 .ki-unten-aus{text-align:center}.ki-anmelden{min-height:48px;padding:0 26px}
@@ -289,16 +289,7 @@ body.ansicht-ki .app>main{display:none!important}
 .ki-folge{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .ki-chip{display:inline-flex;width:auto;align-items:center;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;font-size:13px;line-height:1.35}
 .ki-chip:hover{border-color:var(--accent)}
-.ki-frag-link{margin:8px 0 0;min-height:44px}
-.ki-frag{display:inline-flex;align-items:center;min-height:44px;font-size:12px;color:var(--accent);text-underline-offset:3px}
-.ereignis-karte .ki-frag-link{margin:6px 0 -6px}
-.ki-zeile{display:flex;align-items:center;gap:6px;border:1px solid #c8d4c4;border-radius:14px;background:var(--surface,#fff);padding:4px 4px 4px 14px}
-.ki-zeile[hidden]{display:none}
-.ki-zeile input{flex:1;min-width:0;min-height:44px;border:0;background:none;font-size:16px;color:var(--text);outline:none}
-.ki-zeile:focus-within,.ki-form:focus-within{border-color:var(--accent);outline:2px solid #698dbc;outline-offset:2px}
-.ki-zeile button{flex:none;width:44px;height:44px;border-radius:10px;border:0;background:var(--panel);color:var(--accent);display:grid;place-items:center;cursor:pointer}
-@media(min-width:760px){.members-layout.clarity-page .first-look>.ki-zeile{grid-column:2;grid-row:1;align-self:center;max-width:440px;width:100%;justify-self:start}}
-@media(max-width:759px){.ki-zeile{margin:8px 0 0}}
+.ki-form:focus-within{border-color:var(--accent);outline:2px solid #698dbc;outline-offset:2px}
 .ki-verlauf-login{margin:0 0 30px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
 .ki-verlauf-login p{margin:0 0 10px;font-size:14px}
 @media(max-width:759px){
