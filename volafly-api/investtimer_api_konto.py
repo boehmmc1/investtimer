@@ -492,11 +492,18 @@ def _it_verlauf_werkzeug(von, bis):
             w[(j, k)] = p
         punkte = [w[x] for x in sorted(w)]
     hoch, tief = max(punkte, key=lambda p: p[1]), min(punkte, key=lambda p: p[1])
+    # "Wann war es zuletzt so hoch?": letzter Tag vor dem Ende des Zeitraums mit mindestens dem Endwert (aus allen Tageswerten)
+    ende = punkte[-1]
+    alle_tage = sorted(alle.items())
+    frueher = next((p for t, p in reversed(alle_tage) if t < ende[0] and p[1] >= ende[1]), None)
     return json.dumps({
         "werte": [{"datum": p[0], "wert": p[1], "bestandteile": p[2], "herkunft": "zurückgerechnet" if p[3] == "r" else "aufgezeichnet"} for p in punkte],
+        "heute": _date.today().isoformat(),
+        "letzter_wert_im_zeitraum": {"datum": ende[0], "wert": ende[1]},
+        "zuletzt_mindestens_so_hoch_wie_letzter_wert": {"datum": frueher[0], "wert": frueher[1]} if frueher else None,
         "hoechster": {"datum": hoch[0], "wert": hoch[1]}, "niedrigster": {"datum": tief[0], "wert": tief[1]},
         "hinweis": "Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet (in früheren Jahren teils mit "
                    "weniger Bestandteilen), ab dem 15.11.2026 aufgezeichnet. Wenn du zurückgerechnete Werte nennst, das in einem "
-                   "Halbsatz erwähnen. Keine Prognose, keine Kauf- oder Verkaufssignale. 'Keine Anlageberatung' nicht schreiben, "
+                   "Halbsatz erwähnen. Zeitangaben wie 'vor wenigen Tagen' oder 'zuletzt' immer am Feld 'heute' messen. Keine Prognose, keine Kauf- oder Verkaufssignale. 'Keine Anlageberatung' nicht schreiben, "
                    "der Hinweis steht unter dem Chat."},
         ensure_ascii=False)
