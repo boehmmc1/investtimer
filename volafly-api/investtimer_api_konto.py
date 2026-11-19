@@ -435,7 +435,8 @@ def _it_verlauf_werkzeug(von, bis):
     return json.dumps({
         "werte": [{"datum": p[0], "wert": p[1], "bestandteile": p[2], "herkunft": "zurückgerechnet" if p[3] == "r" else "aufgezeichnet"} for p in punkte],
         "hoechster": {"datum": hoch[0], "wert": hoch[1]}, "niedrigster": {"datum": tief[0], "wert": tief[1]},
-        "hinweis": "Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet; in früheren Jahren standen teils "
-                   "weniger Bestandteile zur Verfügung. Das in der Antwort kurz erwähnen. Vergangene Entwicklungen erlauben keine "
-                   "verlässliche Aussage über die Zukunft. Keine Anlageberatung, keine Kauf- oder Verkaufssignale ableiten."},
+        "hinweis": "Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet (in früheren Jahren teils mit "
+                   "weniger Bestandteilen), ab dem 15.11.2026 aufgezeichnet. Wenn du zurückgerechnete Werte nennst, das in einem "
+                   "Halbsatz erwähnen. Keine Prognose, keine Kauf- oder Verkaufssignale. 'Keine Anlageberatung' nicht schreiben, "
+                   "der Hinweis steht unter dem Chat."},
         ensure_ascii=False)
