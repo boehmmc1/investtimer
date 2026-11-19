@@ -47,7 +47,7 @@ ERSETZEN = [
  ("Alert activated.", "Alert resumed."),
  # Zugang, alter Alarmdialog
  ("Subscribe to market stress", "Set up alerts"),
- ("you@email.com", "you@example.com"),
+ ("you@email.com", "name@example.com"),
  ("Subscribe", "Set up alerts"),
  ("You choose when you want to hear about a change.", "You decide when you hear from us."),
  ("Stay informed when things change.", "Know when things change."),
@@ -69,7 +69,7 @@ ERSETZEN = [
  ("The AI is currently unavailable.", "The AI isn’t available right now."),
  ("What is behind this score?", "What’s behind this score?"),
  ("Ask about the reading, its components or how the signals fit together.", "Ask about the reading, its components or how the signals interact."),
- ("Your question about market stress …", "Ask about market stress …"),
+ ("Your question about market stress …", "Ask about market stress"),
  ("AI access after sign-in. Answers may contain errors.", "Sign in to ask the AI. Answers may contain errors."),
  ("Please sign in again to keep asking.", "Sign in again to keep asking."),
  # Anmeldung
