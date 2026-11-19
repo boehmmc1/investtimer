@@ -1,0 +1,385 @@
+{
+ "hinweis": "InvestTimer-Fassungen fuer den Endpunkt /v1/investtimer/chat. Haben Vorrang vor fragen_templates.json. Schluessel 'id' = Katalog-ID (q..) oder eigene ID (it..). Felder in 'pflicht'/'optional' sind Sheet-Keys oder abgeleitete Kennzahlen aus vorlagen._werte, 'Marktstress' ist das Ergebnis von marktstress.payload_from_rows. Die Volafly-Fassungen bleiben unveraendert. Stand 19.11.2026: Antworten und Vorlagen im Küchentisch-Stil (Prompt-Stilblock), q05/q15/q17 mit eigener InvestTimer-Fassung.",
+ "antworten": [
+  {
+   "id": "it02",
+   "frage": "Wie entsteht der Marktstress-Wert aus den 14 Bestandteilen?",
+   "quelle": "neu",
+   "art": "wissen",
+   "antwort": "Der Wert bündelt 14 Marktsignale zu einer Zahl zwischen 0 und 100. Jedes Signal wird auf dieselbe Skala gebracht und fließt mit einem festen Gewicht ein. Fehlt eins, übernehmen die anderen seinen Anteil.\n\nDie Signale schauen aus drei Richtungen auf den Markt. Die Kursschwankungen zeigen, wie viel Unruhe in Optionspreisen steckt, etwa beim VIX, dem bekanntesten Angstbarometer. Breite und Trend fragen, ob viele Aktien eine Bewegung mittragen oder nur ein paar Schwergewichte. Bei Stimmung und Absicherung geht es darum, wie vorsichtig Anleger sind und wie stark sie sich gegen Verluste schützen.\n\nDeutlich steigt der Wert erst, wenn mehrere Richtungen gleichzeitig Anspannung zeigen. Ein nervöser VIX allein reicht dafür nicht. Welcher Blickwinkel gerade wie viel Gewicht hat, siehst du unter „Mehr erfahren“."
+  },
+  {
+   "id": "it03",
+   "frage": "Was bedeutet antizyklisch beim Blick auf den Marktstress?",
+   "quelle": "neu",
+   "art": "wissen",
+   "antwort": "Antizyklisch heißt, gegen die Stimmung der Mehrheit zu denken. Wenn die Angst am größten ist, steckt oft schon viel Schlechtes in den Kursen. Wenn alle entspannt sind, werden Risiken gern übersehen.\n\nFür den Marktstress bedeutet das: Ein hoher Wert beschreibt eine Lage, in der Anleger nervös sind und sich teuer absichern. In dieser Lesart kann gerade das eine mögliche Gelegenheit sein. Ein sehr niedriger Wert zeigt Sorglosigkeit und gilt eher als Warnzeichen.\n\nEin Signal ist das nicht. Im März 2020 blieb der Stress wochenlang hoch und wurde erst schlimmer, bevor er nachließ. Der Wert sagt dir, wie angespannt der Markt ist, aber nicht, wann sich das dreht."
+  },
+  {
+   "id": "q16",
+   "frage": "Welche Indikatoren ergänzen sich – und wo gibt es Überschneidungen?",
+   "quelle": "katalog",
+   "art": "wissen",
+   "antwort": "Am besten ergänzen sich Signale, die aus verschiedenen Ecken kommen. Der VIX und seine Verwandten zeigen, wie viel Unruhe in Optionspreisen steckt. Die Marktbreite sagt etwas anderes, nämlich ob viele Aktien eine Bewegung tragen oder nur wenige große. Der MOVE schaut auf den Anleihemarkt, eine ganz andere Baustelle.\n\nÜberschneidungen gibt es vor allem bei der Stimmung. Der Fear-&-Greed-Index enthält selbst schon den VIX und ein Put/Call-Ratio, also das Verhältnis von Absicherungs- zu Kaufoptionen. Zeigen diese Werte in dieselbe Richtung, ist das eher ein Echo als eine zweite Meinung.\n\nAussagekräftig wird es, wenn unabhängige Blickwinkel dasselbe sagen. Fünf ähnliche Indikatoren, die einander abschreiben, zählen weniger."
+  },
+  {
+   "id": "q18",
+   "frage": "Wann ist ein hoher VVIX trotz niedrigem VIX auffällig?",
+   "quelle": "katalog",
+   "art": "wissen",
+   "antwort": "Auffällig wird es, wenn der VVIX deutlich steigt, während der VIX noch ruhig wirkt. Der VIX misst, wie stark der Markt in den nächsten 30 Tagen schwanken dürfte. Der VVIX geht eine Ebene tiefer und zeigt, wie unsicher der Markt über genau diese Erwartung ist.\n\nLaufen beide auseinander, sichern sich Profis bereits gegen einen plötzlichen Sprung der Schwankungen ab, obwohl die Oberfläche glatt aussieht. Man kann es sich wie ruhiges Wasser vorstellen, unter dem die Strömung schon zieht. Die VIX-Terminkurve hilft beim Einordnen.\n\nEin Einbruch ist damit nicht angekündigt. Der VVIX zeigt Nervosität im Hintergrund, aber weder Zeitpunkt noch Ausmaß einer Bewegung."
+  },
+  {
+   "id": "q19",
+   "frage": "Wie lässt sich ein niedriger Fear-&-Greed-Wert antizyklisch einordnen?",
+   "quelle": "katalog",
+   "art": "wissen",
+   "antwort": "Ein niedriger Fear-&-Greed-Wert zeigt, dass viele Anleger ängstlich sind, und genau das macht ihn für die antizyklische Sicht interessant. Der Index fasst mehrere Stimmungsmaße zusammen, 0 steht für extreme Angst, 100 für extreme Gier.\n\nWenn viele schon mit dem Schlimmsten rechnen, ist ein Teil davon meist bereits in den Kursen. In dieser Lesart gilt große Angst eher als mögliche Gelegenheit, große Sorglosigkeit eher als Risiko.\n\nEinen Tiefpunkt markiert der Wert trotzdem nicht. Die Stimmung kann extrem schlecht sein, während die Schwankungserwartung noch erstaunlich ruhig bleibt. Deshalb lohnt der Blick auf das Gesamtbild, wie es der Marktstress zusammenführt, statt auf eine einzelne Stimmungszahl."
+  },
+  {
+   "id": "q28",
+   "frage": "Welche Lehren liefern VIX-Spitzen über 40?",
+   "quelle": "katalog",
+   "art": "wissen",
+   "antwort": "VIX-Spitzen über 40 zeigen extreme Unruhe, folgen aber keinem festen Muster. Die Wissensdatenbank unterscheidet kurze, technisch getriebene Panik von längeren Krisen mit echtem wirtschaftlichem Hintergrund.\n\nDer August 2024 war der kurze Typ. Viele mussten gleichzeitig Positionen auflösen, der VIX schoss hoch und fiel fast genauso schnell zurück. Im März 2020 lief es anders, da blieb der Stress wochenlang hoch und wurde zunächst noch schlimmer.\n\nDaraus folgt vor allem eins: Eine sehr hohe Spitze ist kein sicherer Tiefpunkt, und wie lange so eine Phase dauert, sieht man im Moment selbst nicht. Das sind Lehren aus einzelnen Fällen, keine Statistik über alle Spitzen."
+  },
+  {
+   "id": "it17",
+   "frage": "Was zeigt VIX/VIX3M zusätzlich zum VIX?",
+   "quelle": "neu",
+   "ersetzt": "q17",
+   "art": "wissen",
+   "antwort": "Das Verhältnis zeigt, ob die Unruhe eher für die nächsten Wochen oder auf Sicht von Monaten eingepreist ist. Der VIX blickt etwa 30 Tage voraus, der VIX3M rund drei Monate.\n\nLiegt das Verhältnis über 1, erwartet der Markt kurzfristig mehr Schwankung als danach. Das passt zu akutem Stress, kann aber auch an einem bekannten Termin liegen, etwa einer Notenbanksitzung. Darunter ist die Kurve in ihrer üblichen, entspannteren Form.\n\nAllein sagt das Verhältnis wenig. Zusammen mit dem Stand des VIX und der Terminkurve ergibt sich ein rundes Bild, ein besserer Indikator ist es aber nicht."
+  }
+ ],
+ "vorlagen": [
+  {
+   "id": "it01",
+   "frage": "Wie hoch ist der Marktstress aktuell, und was treibt ihn?",
+   "quelle": "neu",
+   "art": "live",
+   "pflicht": [
+    "Marktstress"
+   ],
+   "optional": [
+    "VIX",
+    "VIX_VXV",
+    "VX1",
+    "VX2",
+    "VVIX",
+    "S5FD_Above_5Day_MA",
+    "S5TW_Above_20Day_MA",
+    "S5FI_Above_50Day_MA",
+    "S5TH_Above_200Day_MA",
+    "SPX",
+    "SPX_200D",
+    "MOVE_Index",
+    "Equity_Put_Call_Ratio",
+    "Total_Put_Call_Ratio",
+    "Fear_Greed_Index"
+   ],
+   "vorlage": "{{wert}} heißt: {{stufe_satz}} {{treiber}}\n\n{{vergleich}} {{vollstaendigkeit}}",
+   "bedingungssaetze": {
+    "unvollstaendig": "Gerade fließen nur {{anzahl}} von {{gesamt}} Bestandteilen ein, die übrigen übernehmen deren Anteil.",
+    "vollstaendig": ""
+   },
+   "muss_abdecken": [
+    "aktueller Wert und seine Stufe in Alltagssprache",
+    "welcher Blickwinkel am stärksten zieht (mit seinem Teilwert) und welcher dagegenhält",
+    "ein greifbarer Vergleich oder ein Bild"
+   ],
+   "darf_nicht": [
+    "Anker, Schwellen oder Formeln der Berechnung",
+    "Handlungsempfehlung oder Prognose",
+    "Datenquellen",
+    "mehrere Einzelwerte aufzählen",
+    "Vergleichszahlen, die weder geliefert noch in den Hinweisen stehen"
+   ],
+   "hinweise": [
+    "Der erste Satz beginnt mit dem gelieferten Wert (Marktstress.Wert_0_bis_100), nicht mit der Zahl aus der Frage.",
+    "stufe_satz: die gelieferte Stufe (Ruhig, Moderat, Erhöht, Hoch) in Alltagssprache, z. B. bei Moderat 'spürbare Anspannung, aber weit weg von Panik'. Keine andere Stufenbezeichnung.",
+    "treiber: zwei Sätze. Welcher Blickwinkel zieht am stärksten (Teilwert aus Marktstress.Teilwerte_Blickwinkel_0_bis_100, als 'x von 100'), welcher hält dagegen. Höchstens ein Einzelwert, mit Erklärung im Halbsatz.",
+    "vergleich: ein Bild (z. B. Wellengang statt Sturm) oder eine bekannte Phase. Belegter Vergleichswert, den du nennen darfst: Im April 2025 lag der Wert in der Spitze bei 95. Höchstens vier Messwerte insgesamt (Jahreszahlen zählen nicht).",
+    "vollstaendigkeit nur, wenn weniger als alle Bestandteile einfließen.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'.",
+    "Zahlen gesamt höchstens vier: der aktuelle Wert, ein Teilwert, höchstens zwei weitere. Keine Indexstände, keinen Fear-&-Greed-Wert zusätzlich, wenn das die Grenze sprengt."
+   ],
+   "fehlende_daten": "Den aktuellen Marktstress-Wert kann ich gerade nicht abrufen. Er fasst 14 Indikatoren aus drei Blickwinkeln zusammen: Kursschwankungen, Breite und Trend sowie Stimmung und Absicherung. Der Wert reicht von 0 für extreme Ruhe bis 100 für extremen Stress. Bitte versuche es in einigen Minuten erneut."
+  },
+  {
+   "id": "q01",
+   "frage": "Wie ist die aktuelle Marktlage in drei Sätzen?",
+   "quelle": "katalog",
+   "art": "live",
+   "pflicht": [
+    "VIX",
+    "S5FD_Above_5Day_MA",
+    "S5TW_Above_20Day_MA",
+    "S5FI_Above_50Day_MA",
+    "S5TH_Above_200Day_MA",
+    "Fear_Greed_Index"
+   ],
+   "optional": [
+    "Marktstress",
+    "VVIX",
+    "VIX_VXV",
+    "VX1",
+    "VX2",
+    "MOVE_Index",
+    "SPX",
+    "SPX_200D"
+   ],
+   "vorlage": "{{lage}} {{breite}} {{einordnung}}",
+   "bedingungssaetze": {},
+   "muss_abdecken": [
+    "Schwankungserwartung und Stimmung",
+    "Marktbreite",
+    "Gesamteinordnung mit einer Grenze, gern über den Marktstress-Wert"
+   ],
+   "darf_nicht": [
+    "Kursprognose",
+    "Handlungsempfehlung",
+    "Wochentrend ohne Vergleichsdaten",
+    "fehlende Werte durch historische Archivwerte ersetzen"
+   ],
+   "hinweise": [
+    "Genau drei Sätze, zusammen höchstens 70 Wörter, aus den tatsächlichen Daten. Satz eins: wie nervös der Markt ist (Schwankungserwartung und Stimmung, gern über den Marktstress-Wert). Satz zwei: ob viele Aktien mitziehen. Satz drei: ein Bild oder eine Einordnung. Keine Marktrichtung oder Veränderung erfinden.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'."
+   ],
+   "fehlende_daten": "Für eine aktuelle Einordnung fehlen mir gerade ausreichend aktuelle Werte zu Schwankungserwartung, Stimmung und Marktbreite. Ein ruhiger Index kann gleichzeitig Schwäche bei vielen Einzelaktien verdecken. Deshalb lohnt der Blick auf mehrere Blickwinkel zugleich, wie ihn der Marktstress-Wert zusammenführt."
+  },
+  {
+   "id": "q03",
+   "frage": "Was sagt der aktuelle VIX über die erwarteten Schwankungen aus?",
+   "quelle": "katalog",
+   "art": "live",
+   "pflicht": [
+    "VIX"
+   ],
+   "optional": [
+    "VVIX",
+    "VXV",
+    "VIX_VXV",
+    "Marktstress"
+   ],
+   "vorlage": "Der VIX steht bei {{vix}}. {{vix_context}} {{zusatz_clause}}\n\nGemeint ist die Schwankung, die für die nächsten rund 30 Tage in Optionen auf den S&P 500 eingepreist ist. Er sagt, wie unruhig es werden dürfte, nicht, in welche Richtung.",
+   "bedingungssaetze": {
+    "unclassified": "Ob das viel ist, zeigt der Vergleich über längere Zeit, eine einzelne Zahl ordnet sich schlecht selbst ein.",
+    "mit_marktstress": "Im Marktstress landen die Kursschwankungen damit bei {{teilwert_kursschwankungen}} von 100.",
+    "vvix_clause": "Der VVIX steht bei {{vvix}} und zeigt, wie unsicher der Markt über den VIX selbst ist.",
+    "wenn_vix_kleiner_als_vix3m": "Auf drei Monate rechnet der Markt mit etwas mehr Schwankung als für den nächsten Monat, die akute Anspannung ist also gering.",
+    "wenn_vix_groesser_als_vix3m": "Kurzfristig rechnet der Markt mit mehr Schwankung als auf drei Monate, ein Zeichen akuter Anspannung."
+   },
+   "muss_abdecken": [
+    "Schwankungserwartung des S&P 500 für ungefähr 30 Tage",
+    "Grenzen des Indikators"
+   ],
+   "darf_nicht": [
+    "VIX als Richtungsvorhersage",
+    "Aussagen zu einzelnen Aktienoptionen",
+    "Handlungsempfehlung"
+   ],
+   "hinweise": [
+    "vix_context: wenn Marktstress.Teilwerte_Blickwinkel_0_bis_100 geliefert ist, mit_marktstress verwenden, sonst unclassified.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'.",
+    "Höchstens eine Zusatz-Klausel, den VVIX nur ohne Drei-Monats-Klausel. Vergleiche die gelieferten Werte VIX und VIX3M direkt: Ist der VIX kleiner als der VIX3M, nimm wenn_vix_kleiner_als_vix3m, sonst wenn_vix_groesser_als_vix3m. Weder das Verhältnis noch den VIX3M noch den VVIX als Zahl nennen.",
+    "Genau zwei kurze Absätze, zusammen 60 bis 100 Wörter. Keinen dritten Absatz und keine Wiederholung, dass eine einzelne Zahl schwer einzuordnen ist, wenn mit_marktstress verwendet wird."
+   ],
+   "fehlende_daten": "Den aktuellen VIX-Stand kann ich gerade nicht nennen. Der Index beschreibt die aus Optionspreisen abgeleitete Schwankungserwartung für den S&P 500 über ungefähr 30 Tage, hochgerechnet auf ein Jahr. Ein hoher Wert steht für mehr eingepreiste Unsicherheit, ein niedriger für eine ruhige Erwartung. Eine Vorhersage der Kursrichtung ist der VIX nicht."
+  },
+  {
+   "id": "q04",
+   "frage": "Was zeigt die aktuelle VIX-Terminkurve?",
+   "quelle": "katalog",
+   "art": "live",
+   "pflicht": [
+    "VX1",
+    "VX2"
+   ],
+   "optional": [
+    "VIX",
+    "VX1_Spot_Pct",
+    "VX1_VX2_Pct"
+   ],
+   "vorlage": "{{curve_meaning}} {{spot_relation_clause}}\n\nDie beiden vordersten VIX-Futures, also Terminkontrakte auf den künftigen VIX, stehen bei {{vx1}} und {{vx2}}. Das gilt nur für den kurzen Abschnitt der Kurve.",
+   "bedingungssaetze": {
+    "contango": "Die Kurve hat ihre übliche, entspannte Form: Der spätere Kontrakt ist teurer. Das nennt man Contango, der Markt preist kurzfristig keine besondere Anspannung ein.",
+    "backwardation": "Die Kurve steht kopf: Der vordere Kontrakt ist teurer als der spätere. Diese Backwardation zeigt, dass sich die Unsicherheit auf die nahe Zukunft konzentriert.",
+    "flach": "Die Kurve ist im vorderen Abschnitt fast flach, beide Kontrakte liegen gleichauf.",
+    "spot_available": "Der vordere Future liegt {{vx1_spot_spread_pct}} % {{ueber_unter}} dem aktuellen VIX.",
+    "spot_missing": ""
+   },
+   "muss_abdecken": [
+    "Kurvenform zwischen den beiden vorderen Kontrakten",
+    "Spot-VIX und Futures als unterschiedliche Größen"
+   ],
+   "darf_nicht": [
+    "Aussage über das lange Ende der Kurve",
+    "sichere Volatilitätsprognose",
+    "Handlungsempfehlung"
+   ],
+   "hinweise": [
+    "spot_available sprachlich an das Vorzeichen anpassen (über/unter), Prozent gerundet ohne Nachkommastelle.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'."
+   ],
+   "fehlende_daten": "Ohne aktuelle Futurekurse kann ich die VIX-Terminkurve gerade nicht einordnen. Allgemein bedeutet Contango, dass spätere Terminkontrakte auf den VIX höher bepreist sind, was als ruhige Normalform gilt. Bei Backwardation ist das kurze Ende teurer, ein Zeichen für akute Anspannung. Spot-VIX und Futurekurse sind dabei unterschiedliche Größen."
+  },
+  {
+   "id": "q08",
+   "frage": "Wie unruhig ist der Anleihemarkt aktuell (MOVE)?",
+   "quelle": "neu",
+   "ersetzt": "q08",
+   "art": "live",
+   "pflicht": [
+    "MOVE_Index"
+   ],
+   "optional": [
+    "VIX"
+   ],
+   "vorlage": "Der MOVE steht bei {{move}}. {{bond_market_context}}\n\nEr misst, wie stark sich die Renditen von US-Staatsanleihen in den kommenden Wochen bewegen könnten, also die Unruhe am Anleihemarkt. Das ist etwas anderes als das Zinsniveau selbst, und für Aktien können beide getrennt zur Last werden.",
+   "bedingungssaetze": {
+    "level_only": "Ob das viel ist, zeigt erst der Vergleich über längere Zeit.",
+    "mit_vix": "Zum Vergleich: Der VIX, sein Gegenstück am Aktienmarkt, steht bei {{vix}}. So siehst du, ob die Unruhe eher bei Anleihen oder bei Aktien sitzt."
+   },
+   "muss_abdecken": [
+    "MOVE als eingepreiste Schwankung am Anleihemarkt, getrennt vom Zinsniveau"
+   ],
+   "darf_nicht": [
+    "Renditewerte nennen oder schätzen",
+    "auf fehlende oder nicht genannte Renditen hinweisen",
+    "MOVE-Veränderung ohne Historie",
+    "hoher MOVE als Beweis steigender Zinsen",
+    "Handlungsempfehlung"
+   ],
+   "hinweise": [
+    "Keine Renditezahlen aus dem Gedächtnis.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'."
+   ],
+   "fehlende_daten": "Den aktuellen MOVE-Stand kann ich gerade nicht nennen. Der MOVE misst die erwartete Schwankung am US-Anleihemarkt, also wie unruhig sich die Renditen von Staatsanleihen voraussichtlich bewegen. Das ist etwas anderes als das Zinsniveau selbst. Für Aktien können hohe Zinsen und hohe Zinsunsicherheit gleichzeitig Gegenwind bedeuten."
+  },
+  {
+   "id": "q09",
+   "frage": "Was zeigen die aktuellen Put/Call-Ratios?",
+   "quelle": "katalog",
+   "art": "live",
+   "pflicht": [
+    "Equity_Put_Call_Ratio",
+    "Total_Put_Call_Ratio"
+   ],
+   "optional": [],
+   "vorlage": "{{pcr_context}} Das Equity-Put/Call-Ratio steht bei {{equity_pcr}}, das Total-Put/Call-Ratio bei {{total_pcr}}.\n\nBeide setzen gehandelte Puts, also Absicherungen gegen fallende Kurse, ins Verhältnis zu Calls. Das Equity-Ratio zählt nur Einzelaktien, das Total-Ratio auch Indexoptionen, deshalb liegen sie üblicherweise auf verschiedenen Niveaus. Wer hinter den Geschäften steckt und warum, verraten sie nicht.",
+   "bedingungssaetze": {
+    "unclassified": "Die Put/Call-Ratios zeigen, wie viel Absicherung gerade gekauft wird, eine genaue Einstufung braucht aber den Vergleich über längere Zeit.",
+    "mixed": "Die beiden Put/Call-Ratios erzählen gerade nicht ganz dieselbe Geschichte, was an den unterschiedlichen Marktsegmenten liegen kann."
+   },
+   "muss_abdecken": [
+    "Equity und Total getrennt",
+    "Volumenverhältnis",
+    "Stimmung nur als Näherung"
+   ],
+   "darf_nicht": [
+    "gleiche Normalbereiche für beide Varianten",
+    "Kauf- oder Verkaufsabsicht aus Volumen ableiten",
+    "sicheren Wendepunkt behaupten",
+    "Handlungsempfehlung"
+   ],
+   "hinweise": [
+    "Keine Einstufung als optimistisch oder vorsichtig ohne belegten Vergleichsbereich.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'."
+   ],
+   "fehlende_daten": "Die aktuellen Put/Call-Ratios liegen mir gerade nicht vor. Sie setzen das Handelsvolumen von Puts, also Optionen auf fallende Kurse, ins Verhältnis zu Calls. Equity- und Total-Ratio erfassen unterschiedliche Marktsegmente und werden deshalb getrennt eingeordnet. Sie geben Hinweise auf die Stimmung, aber keine sichere Aussage über die Absicht hinter den Geschäften."
+  },
+  {
+   "id": "it05",
+   "frage": "Wie breit ist die aktuelle Marktbewegung im S&P 500?",
+   "quelle": "neu",
+   "ersetzt": "q05",
+   "art": "live",
+   "pflicht": [
+    "S5FD_Above_5Day_MA",
+    "S5TW_Above_20Day_MA",
+    "S5FI_Above_50Day_MA",
+    "S5TH_Above_200Day_MA"
+   ],
+   "optional": [],
+   "vorlage": "{{breadth_interpretation}}\n\nÜber ihrer 200-Tage-Linie, dem langfristigen Durchschnitt, liegen {{breadth_200d}} % der S&P-500-Aktien, über der 5-Tage-Linie nur {{breadth_5d}} %. {{bild}}",
+   "bedingungssaetze": {
+    "short_stronger_than_long": "Kurzfristig ziehen gerade mehr Aktien mit als auf lange Sicht, die Bewegung ist frisch, die Basis darunter weniger geschlossen.",
+    "long_stronger_than_short": "Auf lange Sicht steht der Markt noch breit da, kurzfristig ziehen aber deutlich weniger Aktien mit.",
+    "aligned": "Kurz und lang zeigen ein ähnliches Bild, entscheidend ist, auf welchem Niveau.",
+    "incomplete": "Die Einordnung gilt nur für die verfügbaren Zeiträume."
+   },
+   "teilvorlagen": {
+    "partial_horizons": "{{breadth_interpretation}} Verfügbar sind nur diese Werte: {{available_breadth_values}}. Fehlende Zeiträume lassen sich daraus nicht ergänzen."
+   },
+   "muss_abdecken": [
+    "Anteile über 5-, 20-, 50- und 200-Tage-Linie, soweit geliefert",
+    "kurzfristige und langfristige Beteiligung unterscheiden",
+    "Breite betrifft Einzelaktien"
+   ],
+   "darf_nicht": [
+    "Rally unterstellen",
+    "aus dem Anteil der Aktien über ihrer 200-Tage-Linie die Lage des Index zu dessen Linie ableiten",
+    "Veränderung ohne Vorwerte behaupten"
+   ],
+   "hinweise": [
+    "Die Varianten sind Einordnungen nach belegten Kriterien, keine neuen starren Grenzwerte. Fehlende Horizonte nicht auffüllen. Aus einem Snapshot keine Verbesserung oder Verschlechterung behaupten.",
+    "Höchstens zwei der vier Breitenwerte als Zahl nennen (5 und 200 Tage), Prozent ohne Nachkommastellen. bild: ein Satz mit einem Bild, etwa ein Rücksetzer in einem breit getragenen Markt. Keine Veränderung ohne Vorwerte behaupten.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'."
+   ],
+   "fehlende_daten": "Für die aktuelle Marktbreite fehlen mir die Anteile der Aktien über ihren gleitenden Durchschnitten. Die Kennzahl zeigt, ob viele Einzelaktien eine Bewegung mittragen oder wenige Schwergewichte dominieren. Die 5- und 20-Tage-Werte beschreiben die kurzfristige Beteiligung, die 50- und 200-Tage-Werte die längerfristige Verfassung."
+  },
+  {
+   "id": "it15",
+   "frage": "Welche aktuellen Marktsignale widersprechen sich?",
+   "quelle": "neu",
+   "ersetzt": "q15",
+   "art": "live",
+   "pflicht": [
+    "VIX",
+    "VVIX",
+    "S5FD_Above_5Day_MA",
+    "S5TW_Above_20Day_MA",
+    "S5FI_Above_50Day_MA",
+    "S5TH_Above_200Day_MA",
+    "Fear_Greed_Index",
+    "MOVE_Index"
+   ],
+   "optional": [
+    "SPX",
+    "SPX_200D",
+    "Stress_Score",
+    "VIXEQ_VIX"
+   ],
+   "vorlage": "{{consistency_label}} {{first_divergence_clause}} {{second_divergence_clause}}\n\n{{overall_interpretation}}",
+   "bedingungssaetze": {
+    "low_vix_weak_breadth": "Der VIX wirkt ruhig, gleichzeitig ziehen nur wenige Aktien mit. Die glatte Oberfläche des Index verdeckt also Schwäche darunter.",
+    "high_vvix_low_vix": "Der VVIX ist erhöht, der VIX aber niedrig. In Optionen auf den VIX steckt mehr Unsicherheit, als das ruhige Niveau zeigt.",
+    "bonds_vs_equities": "Am Anleihemarkt ist es unruhiger als bei Aktien, der MOVE zeigt mehr Anspannung als der VIX.",
+    "fear_vs_calm_vol": "Die Stimmung zeigt deutliche Angst, die Schwankungserwartung ist dagegen gelassener.",
+    "no_relevant_divergence": "Gerade widersprechen sich die Signale kaum.",
+    "interpret_divergence": "Solche Abweichungen sind ein Grund, die Risiken einzeln anzuschauen, statt den Markt nach einem Signal zu beurteilen.",
+    "interpret_consistency": "Die Blickwinkel erzählen weitgehend dieselbe Geschichte."
+   },
+   "teilvorlagen": {
+    "no_clear_divergence": "Gerade widersprechen sich die Signale kaum. Die Blickwinkel erzählen weitgehend dieselbe Geschichte, jedenfalls für die geprüften Werte."
+   },
+   "muss_abdecken": [
+    "höchstens zwei aussagekräftige Abweichungen",
+    "konkrete Werte und jeweilige Messperspektive",
+    "plausible Erklärung als Einordnung"
+   ],
+   "darf_nicht": [
+    "Divergenz erzwingen, wenn das Bild einheitlich ist",
+    "statistische Korrelation oder zeitlichen Vorlauf aus einem Snapshot ableiten",
+    "ohne historische Werte von Anstieg oder Rückgang sprechen"
+   ],
+   "hinweise": [
+    "Höchstens zwei tatsächliche Abweichungen ausweisen. Referenzmaße müssen belegt sein. Keine laufenden Veränderungen oder Vorläufe aus einem Einzelstand behaupten. Kann keine Divergenz belegt werden, die Antwort ohne künstlichen Konflikt formulieren.",
+    "consistency_label: ein direkter erster Satz, ob sich die Signale widersprechen. Höchstens zwei Abweichungen, je mit höchstens einer Zahl.",
+    "Ton wie im Systemauftrag: erster Satz beantwortet die Frage direkt, Zahlen eingebettet, höchstens vier Zahlen, zwei bis drei kurze Absätze, kein Fazit, keine Rückfrage, nicht 'Keine Anlageberatung'."
+   ],
+   "fehlende_daten": "Für konkrete aktuelle Widersprüche fehlen die gemeinsamen Marktwerte. Allgemein lohnt der Vergleich von Indexvolatilität, Einzelaktienvolatilität, Marktbreite, Stimmung und Anleihemarkt. Diese Messgrößen können unterschiedliche Risiken zeigen. Ohne aktuelle Werte würde ich keine Divergenz behaupten."
+  }
+ ]
+}

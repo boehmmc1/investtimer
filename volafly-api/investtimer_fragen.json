@@ -1,14 +1,26 @@
 {
-  "hinweis": "Einzige Quelle der InvestTimer-Musterfragen. Die Seite (tools/build_public.py) und das Backend lesen dieselbe Datei. Fragen mit quelle=katalog stehen wortgleich im Volafly-Katalog fragen_templates.json; Wortlaut nicht aendern, sonst greift der Token-Sparpfad nicht. Fragen mit quelle=neu gibt es nur fuer InvestTimer.",
+  "hinweis": "Einzige Quelle der InvestTimer-Musterfragen. Die Seite (tools/build_public.py) und das Backend lesen dieselbe Datei. Fragen mit quelle=katalog stehen wortgleich im Volafly-Katalog fragen_templates.json; Wortlaut nicht aendern, sonst greift der Token-Sparpfad nicht. Fragen mit quelle=neu gibt es nur fuer InvestTimer. ki_ansicht: Fragen der KI-Ansicht in drei Gruppen (DE/EN, {wert} = angezeigter Wert); Verlaufsfragen gehen an die freie KI.",
   "kategorien": [
     {
       "label": "DER MARKTSTRESS",
       "kurz": "Marktstress",
       "icon": "gauge",
       "fragen": [
-        {"frage": "Wie hoch ist der Marktstress aktuell, und was treibt ihn?", "quelle": "neu", "art": "live"},
-        {"frage": "Wie entsteht der Marktstress-Wert aus den 14 Bestandteilen?", "quelle": "neu", "art": "wissen"},
-        {"frage": "Was bedeutet antizyklisch beim Blick auf den Marktstress?", "quelle": "neu", "art": "wissen"}
+        {
+          "frage": "Wie hoch ist der Marktstress aktuell, und was treibt ihn?",
+          "quelle": "neu",
+          "art": "live"
+        },
+        {
+          "frage": "Wie entsteht der Marktstress-Wert aus den 14 Bestandteilen?",
+          "quelle": "neu",
+          "art": "wissen"
+        },
+        {
+          "frage": "Was bedeutet antizyklisch beim Blick auf den Marktstress?",
+          "quelle": "neu",
+          "art": "wissen"
+        }
       ]
     },
     {
@@ -16,12 +28,37 @@
       "kurz": "Markt",
       "icon": "activity",
       "fragen": [
-        {"frage": "Wie ist die aktuelle Marktlage in drei Sätzen?", "quelle": "katalog", "art": "live"},
-        {"frage": "Was sagt der aktuelle VIX über die erwarteten Schwankungen aus?", "quelle": "katalog", "art": "live"},
-        {"frage": "Was zeigt die aktuelle VIX-Terminkurve?", "quelle": "katalog", "art": "live"},
-        {"frage": "Wie breit ist die aktuelle Marktbewegung im S&P 500?", "quelle": "katalog", "art": "live"},
-        {"frage": "Wie unruhig ist der Anleihemarkt aktuell (MOVE)?", "quelle": "neu", "art": "live", "ersetzt": "q08"},
-        {"frage": "Was zeigen die aktuellen Put/Call-Ratios?", "quelle": "katalog", "art": "live"}
+        {
+          "frage": "Wie ist die aktuelle Marktlage in drei Sätzen?",
+          "quelle": "katalog",
+          "art": "live"
+        },
+        {
+          "frage": "Was sagt der aktuelle VIX über die erwarteten Schwankungen aus?",
+          "quelle": "katalog",
+          "art": "live"
+        },
+        {
+          "frage": "Was zeigt die aktuelle VIX-Terminkurve?",
+          "quelle": "katalog",
+          "art": "live"
+        },
+        {
+          "frage": "Wie breit ist die aktuelle Marktbewegung im S&P 500?",
+          "quelle": "katalog",
+          "art": "live"
+        },
+        {
+          "frage": "Wie unruhig ist der Anleihemarkt aktuell (MOVE)?",
+          "quelle": "neu",
+          "art": "live",
+          "ersetzt": "q08"
+        },
+        {
+          "frage": "Was zeigen die aktuellen Put/Call-Ratios?",
+          "quelle": "katalog",
+          "art": "live"
+        }
       ]
     },
     {
@@ -29,12 +66,95 @@
       "kurz": "Signale",
       "icon": "bars",
       "fragen": [
-        {"frage": "Welche aktuellen Marktsignale widersprechen sich?", "quelle": "katalog", "art": "live"},
-        {"frage": "Welche Indikatoren ergänzen sich – und wo gibt es Überschneidungen?", "quelle": "katalog", "art": "wissen"},
-        {"frage": "Was zeigt VIX/VIX3M zusätzlich zum VIX?", "quelle": "katalog", "art": "wissen"},
-        {"frage": "Wann ist ein hoher VVIX trotz niedrigem VIX auffällig?", "quelle": "katalog", "art": "wissen"},
-        {"frage": "Wie lässt sich ein niedriger Fear-&-Greed-Wert antizyklisch einordnen?", "quelle": "katalog", "art": "wissen"},
-        {"frage": "Welche Lehren liefern VIX-Spitzen über 40?", "quelle": "katalog", "art": "wissen"}
+        {
+          "frage": "Welche aktuellen Marktsignale widersprechen sich?",
+          "quelle": "katalog",
+          "art": "live"
+        },
+        {
+          "frage": "Welche Indikatoren ergänzen sich – und wo gibt es Überschneidungen?",
+          "quelle": "katalog",
+          "art": "wissen"
+        },
+        {
+          "frage": "Was zeigt VIX/VIX3M zusätzlich zum VIX?",
+          "quelle": "katalog",
+          "art": "wissen"
+        },
+        {
+          "frage": "Wann ist ein hoher VVIX trotz niedrigem VIX auffällig?",
+          "quelle": "katalog",
+          "art": "wissen"
+        },
+        {
+          "frage": "Wie lässt sich ein niedriger Fear-&-Greed-Wert antizyklisch einordnen?",
+          "quelle": "katalog",
+          "art": "wissen"
+        },
+        {
+          "frage": "Welche Lehren liefern VIX-Spitzen über 40?",
+          "quelle": "katalog",
+          "art": "wissen"
+        }
+      ]
+    }
+  ],
+  "ki_ansicht": [
+    {
+      "id": "verstehen",
+      "de": "Verstehen",
+      "en": "Understand",
+      "fragen": [
+        {
+          "de": "Wie setzt sich der Wert zusammen?",
+          "en": "What goes into the score?"
+        },
+        {
+          "de": "Was bedeutet antizyklisch beim Blick auf den Marktstress?",
+          "en": "What does contrarian mean for market stress?"
+        },
+        {
+          "de": "Was zeigt VIX/VIX3M zusätzlich zum VIX?",
+          "en": "What does VIX/VIX3M add to the VIX?"
+        }
+      ]
+    },
+    {
+      "id": "einordnen",
+      "de": "Einordnen",
+      "en": "Put in context",
+      "fragen": [
+        {
+          "de": "Warum steht der Marktstress bei {wert}?",
+          "en": "Why is market stress at {wert}?"
+        },
+        {
+          "de": "Was sagt der aktuelle VIX über die erwarteten Schwankungen aus?",
+          "en": "What does the current VIX say about expected volatility?"
+        },
+        {
+          "de": "Wie breit ist die aktuelle Marktbewegung im S&P 500?",
+          "en": "How broad is the current move in the S&P 500?"
+        }
+      ]
+    },
+    {
+      "id": "verlauf",
+      "de": "Verlauf",
+      "en": "History",
+      "fragen": [
+        {
+          "de": "Wie war der Marktstress im April 2025?",
+          "en": "What was market stress like in April 2025?"
+        },
+        {
+          "de": "Wann war der Wert zuletzt so hoch?",
+          "en": "When was the score last this high?"
+        },
+        {
+          "de": "Wie hoch war der Marktstress im März 2020?",
+          "en": "How high was market stress in March 2020?"
+        }
       ]
     }
   ]

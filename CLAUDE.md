@@ -72,8 +72,14 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 
 - Alarme: Ueberqueren mit Ruecklauf (Spalte `scharf`), Kanal push/email/beide, E-Mail ueber Resend von alarm@investtimer.net
   mit signiertem Abmeldelink `/api/alarm-abmelden` (Schluessel `/root/.investtimer/alarm-abmelde-key`). Tests:
-  `/opt/investtimer-push/bin/python -m unittest tests/test_alarm_mail.py`. Die Alarm-Endpunkte liegen ausserhalb der
-  eingebauten Bloecke direkt in `volafly_chat.py` (vor Aenderungen sichern).
+  `/opt/investtimer-push/bin/python -m unittest tests/test_alarm_mail.py`.
+- Seit 19.11.2026 liegt der gesamte InvestTimer-Teil von `volafly_chat.py` im Repo: Chat, Anmeldung, Alarme, Push in
+  `volafly-api/investtimer_api_chat.py` (ab Markierung `# ── InvestTimer-Chat`), dazu Konto, Vertrag, Alarm-Mail.
+  Einbauen: `python3 deploy/api_einbauen.py && systemctl restart volafly-chat`. Nie direkt in `volafly_chat.py` aendern.
+  Vorbereitete KI-Antworten: `volafly-api/investtimer_antworten.json` (gelesen aus `/var/www/investtimer/volafly-api/`).
+- KI: Stilblock in `investtimer_prompt.md`, Stilpruefung im Code (`_it_stil`: Messwerte <= 4, Verbotsliste, Laenge,
+  nur bei Verstoss ein Ueberarbeitungsaufruf). Kontingent je Konto `IT_KI_TAG` in `.env` (2, DEC-015).
+  KI-Bereich der Seite: `tools/ki.js` (#ki, Tabs, Leiste unten, Kugel, Belege), Fragen `investtimer_fragen.json` -> `ki_ansicht`.
 - UI-Vorlage ist jetzt `source/InvestTimer_UI_Signalbogen_v1.3.html`. Der Build lagert alle Base64-Daten nach `public/media/`
   aus und bricht ab, wenn Demo/Entwurf/Vorschau/Beispielantwort oder Base64 in der Seite stehen.
 - Verlauf: Rueckrechnung `historie/holen.py` (TradingView-Websocket ueber `/root/volafly-video/fetch_history.py`, CNN Fear & Greed)
