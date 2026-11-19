@@ -184,3 +184,32 @@ if(panel){
 let vGroesse=null;window.addEventListener('resize',()=>{clearTimeout(vGroesse);vGroesse=setTimeout(()=>{if(verlauf&&panel&&panel.querySelector('.verlauf-diagramm')){const alt=vW,altM=panel.querySelector('.verlauf-chips')!=null;vBreite();if(alt!==vW||altM!==vMobil())vZeichnen();else vChipsRand(panel.querySelector('.verlauf-chips'))}},150)});
 document.addEventListener('investtimer:update',()=>{if(verlaufFuer!==vAn()){verlauf=null}if(!panel.hidden)zeigeVerlauf()});
 new MutationObserver(()=>{if(!panel.hidden&&verlauf&&panel.querySelector('.verlauf'))vZeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+/* Startseite (nur ausgeloggt): kleiner 1J-Ausschnitt ohne Bedienelemente, Daten erst wenn er ins Bild kommt */
+const vMini=document.createElement('section');vMini.className='verlauf-mini';vMini.hidden=true;vMini.setAttribute('aria-labelledby','verlauf-mini-titel');
+($('#details-toggle')||{before:()=>{}}).before(vMini);
+let vMiniDaten=null,vMiniLaedt=false;
+function vMiniHtml(){
+ const d=vMiniDaten;if(!d||d.fehler)return '';
+ const reihe=d.woechentlich||[];if(reihe.length<2)return '';
+ const ende=vMs(reihe[reihe.length-1][0]),p=reihe.filter(q=>vMs(q[0])>=ende-366*864e5);if(p.length<2)return '';
+ const W=600,H=110,a=vMs(p[0][0]),x=q=>(vMs(q[0])-a)/(ende-a||1)*W,y=w=>6+(100-w)*(H-12)/100,z=p[p.length-1];
+ const fmt=(q,o)=>new Date(vMs(q[0])).toLocaleDateString(vLang(),Object.assign({timeZone:'UTC'},o));
+ return '<div class="verlauf-mini-kopf"><h2 id="verlauf-mini-titel">'+esc(t('verlaufMiniTitel'))+'</h2><a href="#verlauf" class="verlauf-mini-link">'+esc(t('verlaufMiniLink'))+'</a></div>'
+  +'<div class="verlauf-mini-flaeche" role="img" aria-label="'+esc(t('verlaufMiniAria').replace('{a}',fmt(p[0],{month:'long',year:'numeric'})).replace('{b}',fmt(z,{day:'numeric',month:'long',year:'numeric'})).replace('{w}',z[1]))+'">'
+  +'<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><line class="verlauf-mini-mitte" x1="0" x2="'+W+'" y1="'+y(50)+'" y2="'+y(50)+'"/>'
+  +'<polyline points="'+p.map(q=>x(q).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/></svg>'
+  +'<span class="verlauf-mini-punkt" style="left:100%;top:'+(y(z[1])/H*100).toFixed(2)+'%"></span></div>'
+  +'<p class="verlauf-mini-achse"><span>'+esc(fmt(p[0],{month:'short',year:'numeric'}))+'</span><span>'+esc(t('verlaufMiniEnde').replace('{w}',z[1]).replace('{d}',fmt(z,{day:'numeric',month:'short'})))+'</span></p>';
+}
+function vMiniZeichnen(){vMini.hidden=vAn()||!vMiniDaten||!!vMiniDaten.fehler;if(!vMini.hidden)vMini.innerHTML=vMiniHtml();if(!vMini.innerHTML)vMini.hidden=true}
+async function vMiniLaden(){
+ if(vMiniLaedt||vAn())return;vMiniLaedt=true;
+ try{vMiniDaten=await fetch('/api/historie-oeffentlich',{cache:'no-cache'}).then(r=>r.ok?r.json():Promise.reject(r.status))}catch(x){vMiniDaten={fehler:x}}
+ vMiniZeichnen();
+}
+if('IntersectionObserver' in window){const io=new IntersectionObserver(e=>{if(e.some(x=>x.isIntersecting)){io.disconnect();vMiniLaden()}},{rootMargin:'300px'});
+ /* leerer Platzhalter (Hoehe 0) nur zum Beobachten; sichtbar wird der Ausschnitt erst mit Daten */
+ vMini.hidden=false;io.observe(vMini)}
+else vMiniLaden();
+document.addEventListener('investtimer:update',()=>{if(vAn())vMini.hidden=true;else if(vMiniDaten)vMiniZeichnen();else vMiniLaden()});
+new MutationObserver(()=>{if(vMiniDaten&&!vAn())vMiniZeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});

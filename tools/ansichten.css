@@ -72,3 +72,19 @@ body.ansicht-neben .app>main{display:none!important}
 .konto-fuss a{color:inherit;display:inline-block;padding:12px 2px;text-underline-offset:3px}
 .konto-version{white-space:nowrap}.konto-fuss-version{margin-top:0}
 @media(max-width:759px){.konto-ansicht{padding-top:4px}.konto-kopf h2{font-size:24px}}
+
+/* Startseite: nur Wert, Einordnung, "Frag die KI dazu", KI-Zeile (angemeldet), Mehr erfahren; ausgeloggt dazu Film und 1J-Ausschnitt */
+.clarity-page .first-look .public-purpose,.clarity-page #subscribe-module,.clarity-page .public-access-note,.clarity-page .benefit-line{display:none!important}
+.verlauf-mini{width:100%;max-width:520px;margin:6px auto 0;text-align:left}
+.verlauf-mini:empty{margin:0}
+.verlauf-mini[hidden]{display:none}
+.verlauf-mini-kopf{display:flex;align-items:baseline;justify-content:space-between;gap:4px 14px;flex-wrap:wrap;margin:0 0 8px}
+.verlauf-mini-kopf h2{font:500 14px/1.4 var(--sans);color:var(--text);margin:0;letter-spacing:0}
+.verlauf-mini-link{display:inline-flex;align-items:center;min-height:44px;font-size:13px;color:var(--accent);text-underline-offset:3px}
+.verlauf-mini-flaeche{position:relative;height:90px;border-bottom:1px solid var(--line)}
+.verlauf-mini-flaeche svg{display:block;width:100%;height:100%;overflow:visible}
+.verlauf-mini-flaeche polyline{fill:none;stroke:var(--accent);stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.verlauf-mini-mitte{stroke:var(--line);stroke-dasharray:3 4;vector-effect:non-scaling-stroke}
+.verlauf-mini-punkt{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--stufe,var(--accent));box-shadow:0 0 0 2px var(--bg)}
+.verlauf-mini-achse{display:flex;justify-content:space-between;margin:6px 0 0;font-size:12px;color:var(--sub)}
+@media(min-width:760px){body.mit-film:not(.members-layout) .first-look>.verlauf-mini{grid-column:1/-1}}
