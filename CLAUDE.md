@@ -46,13 +46,13 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
 - Supabase: Projekt `investtimer` (`owcmsgroqhawcjlehcjk`, Frankfurt), öffentliche Werte in `deploy/supabase.json`.
   Eigene deutsche Mailtexte (mit 6-stelligem Code) erst mit eigenem SMTP möglich; dann
   `deploy/supabase_einrichten.py` erneut laufen lassen, setzt `code: true`, Seite neu bauen.
-- Web-App und Push: `public/sw.js` (nur Push, kein Cache), Dialog/Installationshinweis in `tools/alarme.js`.
+- Web-App und Push: Service Worker aus `tools/sw.js` (Build schreibt `public/sw.js` mit Version, Cache: Seite/Wert Netz zuerst, /media/<hash> Cache zuerst, /api nie; Push), Update-Hinweis/Offline in `tools/update.js`, Dialog/Installationshinweis in `tools/alarme.js`.
   Alarme und Geräte in SQLite `/var/lib/investtimer/alarme.db` (Modul `volafly-api/investtimer_alarme.py`,
   Kopie neben der API in `/root/volafly-chat/`). Versand `server/push_senden.py` mit Python aus
   `/opt/investtimer-push` (pywebpush), läuft als ExecStartPost von `investtimer-data.service`
   (Drop-in `deploy/systemd/investtimer-data-push.conf`). VAPID-Schlüssel `/root/.investtimer/vapid-*`.
   Push-Test im Browser nur mit festem Profil und Bildschirm: `xvfb-run` + `launch_persistent_context`.
-- Prüfen: `python3 tools/check_v12.py` (mobil) und `deploy/supabase_test.py` (Anmeldung echt, mit Admin-API).
+- Prüfen: `tools/check_mobile.py` mit Playwright-Python (UI-Testreihe `tests/ui/`, nachgespielte API `tests/ui/harness.py`, `--voll` = 9 Größen) und `deploy/supabase_test.py` (Anmeldung echt). Nach jedem Deploy `deploy/funktionscheck.sh --ki`.
 - Konto/Premium/Abo: `volafly-api/investtimer_konto.py` (SQLite `/var/lib/investtimer/konto.db`), API-Block
   `volafly-api/investtimer_api_konto.py` (in `volafly_chat.py` vor `/health` eingefuegt), Dialog `tools/konto.js`.
   Schalter in `/root/volafly-chat/.env`: `IT_PREMIUM_PFLICHT`, `IT_PAYWALL`, `IT_ZAHLUNG_LIVE` (alle aus, nur mit Michels
@@ -88,3 +88,7 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   (`/var/lib/investtimer/data/history.json`) werden nie ersetzt oder gekuerzt. Timer `investtimer-historie` holt taeglich den S&P 500.
   S&P-500-Anzeige seit 18.11.2026 entfernt (LIC-001), Timer `investtimer-historie` deaktiviert; SPX.csv nur intern fuer SPX_200D.
   Ereignismarken: `historie/ereignisse.json` (`aus: true` blendet aus). KI-Werkzeug `marktstress_verlauf`.
+- Stand 19.11.2026 (Änderungsauftrag): Ansichten #ki/#verlauf/#konto (Routing in `tools/ki.js`, Konto `tools/kontoansicht.js`), Build-Schritte
+  `tools/startseite.py` (keine Gewichte), `tools/erklaerungen.py` (Alltagssprache), `tools/farbskala.py` (5 Stufen à 20), CSS `tools/ansichten.css`.
+  KI-Einstieg außerhalb des KI-Tabs nur über die KI-Brücke. Mit Sitzung nie den öffentlichen Wert zeigen (gespeicherter Wert `investtimer-aktuell`).
+  Film aus (IT_FILM=0, zeigt S&P-500-Kurse). KI-Tests ohne Kontingent: `tests/ki_instanz.sh start` + `tests/ki_fragen.py`.
