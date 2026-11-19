@@ -103,17 +103,17 @@ alarmDlg.addEventListener('change',async e=>{
  if(e.target.id==='alarm-richtung'){alarmErklaerung();return}
  if(e.target.name==='alarm-kanal'){alarmKanal=e.target.value;return}
  const kid=e.target.dataset.alarmKanal;
- if(kid){e.target.disabled=true;alarmDaten=await api('alarme/'+kid,{method:'PATCH',body:JSON.stringify({kanal:e.target.value})}).catch(()=>alarmDaten);renderAlarme();$('[data-alarm-kanal="'+kid+'"]')?.focus();
+ if(kid){e.target.disabled=true;alarmDaten=await api('alarme/'+kid,{method:'PATCH',body:JSON.stringify({kanal:e.target.value,sprache:document.documentElement.lang})}).catch(()=>alarmDaten);renderAlarme();$('[data-alarm-kanal="'+kid+'"]')?.focus();
   if(e.target.value!=='email'&&pushZustand==='aus'&&!nativ()&&window.Notification&&Notification.permission==='default'){try{if(await Notification.requestPermission()==='granted'){await pushEinschalten(true);pushZustand=await pushStatus();renderAlarme()}}catch{}}
   return}
  const id=e.target.dataset.alarmAktiv;if(!id)return;e.target.disabled=true;
- alarmDaten=await api('alarme/'+id,{method:'PATCH',body:JSON.stringify({aktiv:e.target.checked})}).catch(()=>alarmDaten);renderAlarme();$('[data-alarm-aktiv="'+id+'"]')?.focus()});
+ alarmDaten=await api('alarme/'+id,{method:'PATCH',body:JSON.stringify({aktiv:e.target.checked,sprache:document.documentElement.lang})}).catch(()=>alarmDaten);renderAlarme();$('[data-alarm-aktiv="'+id+'"]')?.focus()});
 alarmDlg.addEventListener('input',e=>{if(e.target.id==='alarm-wert'){$('#alarm-ausgabe').textContent=e.target.value;alarmErklaerung()}});
 alarmDlg.addEventListener('submit',async e=>{e.preventDefault();
  const kanal=(alarmDlg.querySelector('input[name=alarm-kanal]:checked')||{}).value||'push';alarmKanal=kanal;
  const frage=kanal==='email'?null:nativ()?(pushZustand==='aus'?Promise.resolve('nativ'):null):pushZustand==='aus'&&window.Notification&&Notification.permission==='default'?Notification.requestPermission():null;
  const knopf=e.target.querySelector('button[type=submit]');knopf.disabled=true;alarmHinweis='';
- try{alarmDaten=await api('alarme',{method:'POST',body:JSON.stringify({richtung:$('#alarm-richtung').value,schwelle:Number($('#alarm-wert').value),kanal})})}
+ try{alarmDaten=await api('alarme',{method:'POST',body:JSON.stringify({richtung:$('#alarm-richtung').value,schwelle:Number($('#alarm-wert').value),kanal,sprache:document.documentElement.lang})})}
  catch(x){alarmHinweis=t(x==='doppelt'?'alarmDoppelt':x==='max'?'alarmMax':x==='email'?'alarmMailFehlt':'alarmFehler');knopf.disabled=false;$('#alarm-fehler').textContent=alarmHinweis;return}
  if(frage){try{const f=await frage;if(f==='granted'||f==='nativ')await pushEinschalten(true)}catch{}}
  pushZustand=await pushStatus().catch(()=>'nein');renderAlarme();$('#alarm-title').focus({preventScroll:true});
@@ -131,7 +131,7 @@ async function pushTest(b){
   tm=setTimeout(()=>{weg();res(false)},15000);
  });
  let d;
- try{d=await api('push/test',{method:'POST'})}
+ try{d=await api('push/test',{method:'POST',body:JSON.stringify({sprache:document.documentElement.lang})})}
  catch(x){zeige(t(x==='warten'?'pushTestWarten':'alarmFehler'),'fehler');b.disabled=false;return}
  if(!d.angenommen){zeige(t(d.abgemeldet?'pushTestAbgemeldet':d.geraete===0?'pushTestKeinGeraet':'pushTestAbgelehnt'),'fehler');b.disabled=false;return}
  zeige(t('pushTestAngenommen'));

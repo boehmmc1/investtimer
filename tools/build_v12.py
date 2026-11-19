@@ -208,6 +208,7 @@ TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufAria:'Market stress history, 
                     "verlaufHinweis:'Readings before 15 Nov 2026 were calculated afterwards with today’s model. In earlier years, fewer components were sometimes available. Past developments do not allow reliable conclusions about the future. Not investment advice.',"
                     "verlaufPremium:'The full history is part of Premium.',verlaufFehlt:'The history is not available right now.',")
 KONTO_CSS = """
+html[lang=en] .nur-de,html:not([lang=en]) .nur-en{display:none}
 .film-karte,.film-mini{--buehne:#04070b;background:var(--buehne);color:#e9efe9;text-align:left;min-width:0}
 .film-karte{border-radius:17px;overflow:hidden;display:flex;flex-direction:column}
 .film-karte-bild{position:relative;flex:1 1 auto;display:flex;align-items:center;min-height:0}
@@ -405,7 +406,7 @@ TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com'
                       "linkRate:'Too many requests just now. Please try again in a few minutes.',"
                       "linkFail:'That did not work. Please try again in a moment.',"
                       "linkExpired:'The link has expired or was already used. Simply request a new code.',"
-                      "legalLinks:'Our <a href=\\\"/datenschutz.html\\\">privacy policy</a> applies.',"
+                      "legalLinks:'Our <a href=\\\"/datenschutz.html\\\">privacy policy</a> (in German) applies.',"
                       "loginNeeded:'Please sign in again to keep asking.',"
                       + TEXTE_ALARM_EN + TEXTE_KONTO_EN + TEXTE_VERLAUF_EN)
 
@@ -740,7 +741,7 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "timestamp:'US stock market · Data as of 15 Nov 2026'", "timestamp:'US stock market · Data as of {date}'", "timestamp en")
     html = once(html, "const t=k=>copy[state.lang][k];\nconst number=",
                 "const dateLabel=month=>{if(!result?.asOf)return '—';const [y,m,d]=result.asOf.split('-').map(Number);"
-                "return new Date(Date.UTC(y,m-1,d)).toLocaleDateString(state.lang==='de'?'de-DE':'en-GB',{day:'numeric',month,year:'numeric',timeZone:'UTC'})};\n"
+                "return new Date(Date.UTC(y,m-1,d)).toLocaleDateString(state.lang==='de'?'de-DE':'en-US',{day:'numeric',month,year:'numeric',timeZone:'UTC'})};\n"
                 "const t=k=>{const v=copy[state.lang][k];return typeof v==='string'?v.replace('{datelong}',()=>dateLabel('long')).replace('{date}',()=>dateLabel('short')):v};\n"
                 "const number=", "t()")
     html = once(html, "try{result=evaluateSnapshot(JSON.parse(document.getElementById('investtimer-snapshot').textContent))}catch{result=null}",
@@ -797,7 +798,8 @@ def main(source, target_dir, preview, anmeldung=None):
         else:
             html = once(html, '<span data-i18n="tagline">Marktstress verstehen.</span></footer>',
                         '<span data-i18n="tagline">Marktstress verstehen.</span>'
-                        '<nav class="rechtliches"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a>'
+                        '<nav class="rechtliches"><span class="nur-de"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a></span>'
+                        '<span class="nur-en" lang="en"><a href="/impressum.html">Legal notice</a> and <a href="/datenschutz.html">privacy policy</a> are available in German.</span>'
                         + (' · <a href="/vertrag-kuendigen.html">Verträge hier kündigen</a> · <a href="/vertrag-widerrufen.html">Vertrag widerrufen</a>'
                            if json.loads((ROOT / "deploy" / "abo.json").read_text()).get("vertragsseiten") else "")
                         + '</nav></footer>',
@@ -853,6 +855,9 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "note:'The clip illustrates the product idea. Its historical stress values have not yet been checked against the 14-component model.'",
                 "note:'The clip illustrates the product idea. Its historical stress values were back-calculated with today’s model; until mid-2020, 13 of the 14 components were available. Past developments do not allow reliable conclusions about the future.'", "Filmhinweis en")
     html = entwurfsreste_entfernen(html)
+    import englisch
+    html = once(html, "new Intl.DateTimeFormat(lang()==='de'?'de-DE':'en-GB',", "new Intl.DateTimeFormat(lang()==='de'?'de-DE':'en-US',", "Datum Zugang en-US")
+    html, _ = englisch.anwenden(html)
     html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
     print("ok: oeffentlicher Rueckfall %s vom %s, %d Bytes HTML, Film %d Bytes" % (

@@ -9,7 +9,7 @@ async function ladeVerlauf(){
  if(verlauf&&Date.now()-verlaufZeit<600000)return verlauf;
  try{verlauf=await api('historie')}catch(x){verlauf={fehler:x}}verlaufZeit=Date.now();return verlauf;
 }
-const vLang=()=>document.documentElement.lang==='en'?'en-GB':'de-DE';
+const vLang=()=>document.documentElement.lang==='en'?'en-US':'de-DE';
 const vMs=d=>Date.parse(d+'T12:00:00Z');
 function vAuswahl(){
  const [,tage,art]=SPANNEN.find(s=>s[0]===verlaufSpanne)||SPANNEN[2],reihe=verlauf[art]||[];

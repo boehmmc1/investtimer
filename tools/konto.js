@@ -4,7 +4,7 @@
 const app=()=>window.InvestTimerApp||null;
 let konto=null,kontoOpener=null,kontoHinweis='',tarifWahl='jaehrlich',kontoAnsicht='konto';
 const kontoDlg=document.createElement('dialog');kontoDlg.id='konto-dialog';kontoDlg.className='modal access-dialog konto-dialog';kontoDlg.setAttribute('aria-labelledby','konto-title');document.body.append(kontoDlg);
-const datum=ms=>ms?new Date(ms).toLocaleDateString(document.documentElement.lang==='en'?'en-GB':'de-DE',{day:'numeric',month:'long',year:'numeric'}):'—';
+const datum=ms=>ms?new Date(ms).toLocaleDateString(document.documentElement.lang==='en'?'en-US':'de-DE',{day:'numeric',month:'long',year:'numeric'}):'—';
 const verwaltenUrl={apple:'https://apps.apple.com/account/subscriptions',google:'https://play.google.com/store/account/subscriptions'};
 function zeile(k,v){return '<div class="konto-zeile"><dt>'+t(k)+'</dt><dd>'+v+'</dd></div>'}
 function aboBox(){
@@ -120,7 +120,7 @@ kontoDlg.addEventListener('click',async e=>{
  else if(b.id==='abo-verwalten'){b.disabled=true;try{location.href=(await api('abo/verwalten',{method:'POST'})).url}catch{b.disabled=false;b.textContent=t('alarmFehler')}}
  else if(b.id==='konto-loeschen'){
   const wort=$('#loeschen-wort').value.trim().toLowerCase(),f=$('#loeschen-fehler');
-  if(wort!=='löschen'&&wort!=='loeschen'){f.textContent=t('loeschenWort');$('#loeschen-wort').focus();return}
+  if(wort!=='löschen'&&wort!=='loeschen'&&wort!=='delete'){f.textContent=t('loeschenWort');$('#loeschen-wort').focus();return}
   b.disabled=true;
   try{await api('konto/loeschen',{method:'POST',body:JSON.stringify({bestaetigung:'löschen'})});
    const reg=('serviceWorker' in navigator)&&await navigator.serviceWorker.getRegistration().catch(()=>null),abo=reg&&await reg.pushManager?.getSubscription().catch(()=>null);abo&&abo.unsubscribe().catch(()=>{});

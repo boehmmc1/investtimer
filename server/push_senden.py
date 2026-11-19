@@ -46,6 +46,26 @@ SEITE = "https://investtimer.net"
 ABSENDER = "InvestTimer Alarm <alarm@investtimer.net>"
 
 
+TEXTE = {
+    "de": {"alarm_ueber": "Marktstress bei %d: über deiner Schwelle von %d.", "alarm_unter": "Marktstress bei %d: unter deiner Schwelle von %d.",
+           "test": "Push ist eingerichtet. So sieht ein Hinweis zu deiner Schwelle aus.",
+           "ueber": "über", "unter": "unter",
+           "einleitung": "Du hast für den Marktstress einen Alarm %s %d eingerichtet. Den aktuellen Stand und die Einordnung siehst du auf",
+           "hinweis": "Der Hinweis beschreibt nur den Stand des Marktstress-Werts. Er ist keine Anlageberatung und keine Empfehlung zum Kauf oder Verkauf.",
+           "abmelden": "Keine E-Mails mehr zu diesem Alarm", "verwalten": "Alle Alarme verwaltest du auf investtimer.net unter „Marktstress abonnieren“."},
+    "en": {"alarm_ueber": "Market stress at %d: above your threshold of %d.", "alarm_unter": "Market stress at %d: below your threshold of %d.",
+           "test": "Push notifications are set up. This is what an alert looks like.",
+           "ueber": "above", "unter": "below",
+           "einleitung": "You set an alert for market stress %s %d. See the latest reading and context at",
+           "hinweis": "This alert only reports the market stress score. It is not investment advice or a recommendation to buy or sell.",
+           "abmelden": "Stop emails for this alert", "verwalten": "Manage all alerts at investtimer.net under “Set up alerts”."},
+}
+
+
+def texte(sprache):
+    return TEXTE["en" if sprache == "en" else "de"]
+
+
 def mail_senden(alarm, betreff, satz):
     """E-Mail-Alarm (DAT-002) an die Konto-Adresse, mit Abmeldelink ohne Login und One-Click-Abmeldung."""
     import html
@@ -55,22 +75,21 @@ def mail_senden(alarm, betreff, satz):
     except OSError:
         print("[mail] Resend-Schluessel fehlt", flush=True)
         return False
-    abmelden = "%s/api/alarm-abmelden?a=%d&t=%s" % (SEITE, alarm["id"], alarme.abmelde_token(alarm["id"], alarm["uid"]))
-    richtung = "über" if alarm["richtung"] == "ueber" else "unter"
-    text = ("%s\n\nDu hast für den Marktstress einen Alarm %s %d eingerichtet. Den aktuellen Stand und die Einordnung siehst du auf %s\n\n"
-            "Der Hinweis beschreibt nur den Stand des Marktstress-Werts. Er ist keine Anlageberatung und keine Empfehlung zum Kauf oder Verkauf.\n\n"
-            "Keine E-Mails mehr zu diesem Alarm: %s\nAlle Alarme verwalten: %s (Marktstress abonnieren)\n\nInvestTimer · investtimer.net"
-            % (satz, richtung, alarm["schwelle"], SEITE, abmelden, SEITE))
+    sp = "en" if alarm.get("sprache") == "en" else "de"
+    tx = texte(sp)
+    abmelden = "%s/api/alarm-abmelden?a=%d&t=%s%s" % (SEITE, alarm["id"], alarme.abmelde_token(alarm["id"], alarm["uid"]), "&l=en" if sp == "en" else "")
+    richtung = tx["ueber"] if alarm["richtung"] == "ueber" else tx["unter"]
+    einleitung = tx["einleitung"] % (richtung, alarm["schwelle"])
+    text = ("%s\n\n%s %s\n\n%s\n\n%s: %s\n%s\n\nInvestTimer · investtimer.net"
+            % (satz, einleitung, SEITE, tx["hinweis"], tx["abmelden"], abmelden, tx["verwalten"]))
     e = html.escape
     inhalt = ('<div style="font:15px/1.6 -apple-system,Segoe UI,Arial,sans-serif;color:#1c2f2b;max-width:560px">'
               '<p style="font-size:20px;font-weight:600;margin:0 0 12px">%s</p>'
-              '<p>Du hast für den Marktstress einen Alarm %s %d eingerichtet. Den aktuellen Stand und die Einordnung siehst du auf '
-              '<a href="%s" style="color:#2f6b5c">investtimer.net</a>.</p>'
-              '<p style="font-size:13px;color:#5b6b66">Der Hinweis beschreibt nur den Stand des Marktstress-Werts. Er ist keine Anlageberatung '
-              'und keine Empfehlung zum Kauf oder Verkauf.</p>'
+              '<p>%s <a href="%s" style="color:#2f6b5c">investtimer.net</a>.</p>'
+              '<p style="font-size:13px;color:#5b6b66">%s</p>'
               '<p style="font-size:13px;color:#5b6b66;border-top:1px solid #dfe5dc;padding-top:12px">'
-              '<a href="%s" style="color:#5b6b66">Keine E-Mails mehr zu diesem Alarm</a> · Alle Alarme verwaltest du auf investtimer.net unter „Marktstress abonnieren“.</p>'
-              '</div>') % (e(satz), richtung, alarm["schwelle"], SEITE, e(abmelden))
+              '<a href="%s" style="color:#5b6b66">%s</a> · %s</p>'
+              '</div>') % (e(satz), e(einleitung), SEITE, e(tx["hinweis"]), e(abmelden), e(tx["abmelden"]), e(tx["verwalten"]))
     try:
         r = requests.post(RESEND_API + "/emails", timeout=15, headers={"Authorization": "Bearer " + key}, json={
             "from": ABSENDER, "to": [alarm["email"]], "reply_to": "info@investtimer.net", "subject": betreff,
@@ -166,10 +185,10 @@ def an_nutzer(uid, nachricht):
     return ergebnis.count(True), ergebnis.count(False)
 
 
-def test(uid, kennung=None):
+def test(uid, kennung=None, sprache="de"):
     """Testnachricht. Ausgabe als JSON (eine Zeile), damit die API das Ergebnis an die Seite melden kann."""
     geraete = alarme.geraete(uid)
-    ergebnis = [senden(g, {"title": "InvestTimer", "body": "Push ist eingerichtet. So sieht ein Hinweis zu deiner Schwelle aus.",
+    ergebnis = [senden(g, {"title": "InvestTimer", "body": texte(sprache)["test"],
                            "tag": "investtimer-test", "url": "/", "id": kennung}) for g in geraete]
     aus = {"geraete": len(geraete), "angenommen": ergebnis.count(True), "abgemeldet": ergebnis.count(False),
            "fehler": ergebnis.count(None)}
@@ -208,8 +227,8 @@ def pruefen():
         alarme.scharf_setzen(a["id"], False)
         if a["ausgeloest_am"] == tag:  # hoechstens eine Nachricht je Alarm und Tag (Pendeln um die Schwelle)
             continue
-        text = ("Marktstress bei %d: über deiner Schwelle von %d." if a["richtung"] == "ueber"
-                else "Marktstress bei %d: unter deiner Schwelle von %d.") % (jetzt, s)
+        tx = texte(a.get("sprache"))
+        text = (tx["alarm_ueber"] if a["richtung"] == "ueber" else tx["alarm_unter"]) % (jetzt, s)
         kanal = a.get("kanal") or "push"
         ok = 0
         if kanal in ("push", "beide"):
@@ -227,6 +246,6 @@ def pruefen():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) in (3, 4) and sys.argv[1] == "--test":
-        sys.exit(0 if test(sys.argv[2], sys.argv[3] if len(sys.argv) == 4 else None) else 1)
+    if len(sys.argv) in (3, 4, 5) and sys.argv[1] == "--test":
+        sys.exit(0 if test(sys.argv[2], sys.argv[3] if len(sys.argv) >= 4 else None, sys.argv[4] if len(sys.argv) == 5 else "de") else 1)
     pruefen()

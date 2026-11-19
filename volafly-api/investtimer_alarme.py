@@ -50,6 +50,8 @@ def verbinden():
     if "kanal" not in spalten:  # E-Mail-Alarme (DAT-002): Kanal je Alarm, Ziel ist die Konto-Adresse
         db.execute("ALTER TABLE alarme ADD COLUMN kanal TEXT NOT NULL DEFAULT 'push'")
         db.execute("ALTER TABLE alarme ADD COLUMN email TEXT")
+    if "sprache" not in spalten:  # Sprache der Nachrichten (Push/E-Mail), beim Anlegen/Aendern aus der Seite
+        db.execute("ALTER TABLE alarme ADD COLUMN sprache TEXT NOT NULL DEFAULT 'de'")
     if "scharf" not in spalten:  # Ueberqueren mit Ruecklauf: Alarm meldet sich erst nach erneutem Ueberqueren
         db.execute("ALTER TABLE alarme ADD COLUMN scharf INTEGER NOT NULL DEFAULT 1")
         wert = db.execute("SELECT wert FROM stand WHERE schluessel='letzter_wert'").fetchone()
@@ -104,7 +106,11 @@ def liste(uid):
     return {"alarme": alarme, "geraete": geraete, "max": MAX_ALARME, "wert": wert}
 
 
-def neu(uid, richtung, schwelle, kanal="push", email=None):
+def _sprache(s):
+    return "en" if s == "en" else "de"
+
+
+def neu(uid, richtung, schwelle, kanal="push", email=None, sprache="de"):
     kanal = _kanal(kanal, email)
     if richtung not in ("ueber", "unter"):
         raise Fehler("richtung")
@@ -120,15 +126,17 @@ def neu(uid, richtung, schwelle, kanal="push", email=None):
         if db.execute("SELECT 1 FROM alarme WHERE uid=? AND richtung=? AND schwelle=?", (uid, richtung, schwelle)).fetchone():
             raise Fehler("doppelt", 409)
         # Liegt der Wert schon jenseits der Schwelle: keine sofortige Nachricht, Alarm wartet auf Ruecklauf
-        db.execute("INSERT INTO alarme (uid, richtung, schwelle, erstellt, kanal, email, scharf) VALUES (?,?,?,?,?,?,?)",
+        db.execute("INSERT INTO alarme (uid, richtung, schwelle, erstellt, kanal, email, scharf, sprache) VALUES (?,?,?,?,?,?,?,?)",
                    (uid, richtung, schwelle, int(time.time()), kanal, email if kanal != "push" else None,
-                    1 if scharf_bei(richtung, schwelle, _letzter_wert(db)) else 0))
+                    1 if scharf_bei(richtung, schwelle, _letzter_wert(db)) else 0, _sprache(sprache)))
     return liste(uid)
 
 
-def aendern(uid, alarm_id, aktiv=None, kanal=None, email=None):
+def aendern(uid, alarm_id, aktiv=None, kanal=None, email=None, sprache=None):
     with verbinden() as db:
         n = 0
+        if sprache is not None:
+            db.execute("UPDATE alarme SET sprache=? WHERE id=? AND uid=?", (_sprache(sprache), int(alarm_id), uid))
         if aktiv is not None:
             n = db.execute("UPDATE alarme SET aktiv=? WHERE id=? AND uid=?", (1 if aktiv else 0, int(alarm_id), uid)).rowcount
             if aktiv and n:  # Wieder eingeschaltet: wie neu angelegt behandeln
