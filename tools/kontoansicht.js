@@ -14,7 +14,7 @@ const KA={de:{
  emailGleich:'Das ist schon deine Adresse.',emailVergeben:'Diese Adresse gehört schon zu einem anderen Konto.',
  export:'Meine Daten herunterladen',exportText:'Eine Datei mit deinem Konto, deinen Alarmen und deiner KI-Nutzung.',
  ueberall:'Überall abmelden',ueberallText:'Meldet dich auf allen Geräten ab, auch hier.',
- passwort:'Passwort ändern',loeschen:'Konto löschen',abo:'Abo',abmelden:'Abmelden',
+ passwort:'Passwort ändern',feedback:'Feedback geben',feedbackText:'Idee, Kritik oder ein Fehler? Schreib uns.',feedbackLink:'Feedback',loeschen:'Konto löschen',abo:'Abo',abmelden:'Abmelden',
  impressum:'Impressum',datenschutz:'Datenschutz',version:'Version {v} · {d}',fehler:'Das hat nicht geklappt. Bitte versuche es gleich noch einmal.',laedt:'Wird geladen …'
 },en:{
  eyebrow:'YOUR ACCOUNT',titel:'Account',titelAus:'Account',ausSatz:'Sign in to see the latest reading, ask the AI and set up alerts.',
@@ -27,12 +27,12 @@ const KA={de:{
  emailGleich:'That is already your address.',emailVergeben:'This address already belongs to another account.',
  export:'Download my data',exportText:'A file with your account, your alerts and your AI usage.',
  ueberall:'Sign out everywhere',ueberallText:'Signs you out on all devices, including this one.',
- passwort:'Change password',loeschen:'Delete account',abo:'Subscription',abmelden:'Sign out',
+ passwort:'Change password',feedback:'Give feedback',feedbackText:'An idea, criticism or a bug? Write to us.',feedbackLink:'Feedback',loeschen:'Delete account',abo:'Subscription',abmelden:'Sign out',
  impressum:'Legal notice',datenschutz:'Privacy',version:'Version {v} · {d}',fehler:'That did not work. Please try again in a moment.',laedt:'Loading …'
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION=__VERSION__;
+const VERSION=__VERSION__;window.INVESTTIMER_VERSION=VERSION.v;
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -44,7 +44,7 @@ function sprachwahl(){
 }
 function fuss(){
  const v=VERSION.v?'<span class="konto-version">'+esc(ka('version').replace('{v}',VERSION.v).replace('{d}',VERSION.d))+'</span>':'';
- return '<p class="konto-fuss"><a href="/impressum.html">'+ka('impressum')+'</a><span aria-hidden="true"> · </span><a href="/datenschutz.html">'+ka('datenschutz')+'</a>'+'</p>'+(v?'<p class="konto-fuss konto-fuss-version">'+v+'</p>':'');
+ return '<p class="konto-fuss"><a href="/impressum.html">'+ka('impressum')+'</a><span aria-hidden="true"> · </span><a href="/datenschutz.html">'+ka('datenschutz')+'</a><span aria-hidden="true"> · </span><a href="#feedback">'+ka('feedbackLink')+'</a></p>'+(v?'<p class="konto-fuss konto-fuss-version">'+v+'</p>':'');
 }
 function alarmZeile(a){
  const st=!a.aktiv?'pausiert':a.scharf===false?'wartet':'aktiv';
@@ -78,11 +78,13 @@ function htmlAn(){
   +zeileKnopf('export',ka('export'),ka('exportText'))
   +zeileKnopf('ueberall',ka('ueberall'),ka('ueberallText'))
   +zeileKnopf('loeschen',ka('loeschen'),'','konto-gefahr')+'</ul></div>'
+  +'<div class="konto-block"><ul class="konto-liste">'+zeileKnopf('feedback',ka('feedback'),ka('feedbackText'))+'</ul></div>'
   +'<button type="button" class="konto-abmelden" data-konto="abmelden">'+ka('abmelden')+'</button>'+fuss();
 }
 function htmlAus(){
  return '<div class="konto-kopf"><span class="eyebrow konto-eyebrow">'+ka('eyebrow')+'</span><h2 id="konto-ansicht-titel" tabindex="-1">'+ka('titelAus')+'</h2><p class="konto-aus-satz">'+ka('ausSatz')+'</p>'
-  +'<button type="button" class="primary konto-anmelden" data-konto="anmelden">'+ka('anmelden')+'</button></div>'+sprachwahl()+fuss();
+  +'<button type="button" class="primary konto-anmelden" data-konto="anmelden">'+ka('anmelden')+'</button></div>'+sprachwahl()
+  +'<div class="konto-block"><ul class="konto-liste">'+zeileKnopf('feedback',ka('feedback'),ka('feedbackText'))+'</ul></div>'+fuss();
 }
 function zeichne(){
  if(sicht.hidden)return;
@@ -137,6 +139,7 @@ sicht.addEventListener('click',e=>{
  else if(a==='abo')IT.oeffneKonto&&IT.oeffneKonto(b,IT.aboAnsicht?IT.aboAnsicht():'konto');
  else if(a==='passwort'||a==='loeschen'){IT.oeffneKonto&&IT.oeffneKonto(b,'konto').then(()=>{const d=$(a==='passwort'?'.konto-pw':'.konto-loeschen');if(d){d.open=true;d.scrollIntoView({block:'nearest'});d.querySelector('input')?.focus({preventScroll:true})}})}
  else if(a==='export')exportieren(b);
+ else if(a==='feedback')location.hash='feedback';
  else if(a==='ueberall')ueberallAbmelden(b);
  else if(a==='abmelden'){IT.abmelden();setTimeout(()=>$('#konto-ansicht-titel')?.focus({preventScroll:true}),0)}
 });

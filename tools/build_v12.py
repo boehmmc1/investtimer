@@ -200,16 +200,16 @@ TEXTE_KONTO_EN = ("filmEyebrow:'QUICK EXPLAINER',filmTitel:'The idea in 49 secon
                   "paywallFuss:'Prices incl. VAT. Not investment advice.',agb:'Subscription terms',datenschutz:'Privacy',zurueck:'Back',"
                   "fehlerSchonPremium:'You already have Premium. See „My account“ for details.',fehlerAbbruch:'The purchase was cancelled.',"
                   "fehlerInaktiv:'Subscriptions are not available right now.',")
-KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontoansicht.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "ki.js").read_text(encoding="utf-8").replace(
+KONTO_JS = (ROOT / "tools" / "konto.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "verlauf.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontomenue.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "film.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "kontoansicht.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "feedback.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "ki.js").read_text(encoding="utf-8").replace(
     "__KI_FRAGEN__", json.dumps(json.loads((ROOT / "volafly-api" / "investtimer_fragen.json").read_text(encoding="utf-8"))["ki_ansicht"], ensure_ascii=False)) + "\n" + (ROOT / "tools" / "update.js").read_text(encoding="utf-8")
-TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufEyebrow:'MARKTSTRESS SEIT 2006',verlaufNeuer:'Neuere Werte nach der Anmeldung',verlaufMiniTitel:'Die letzten 12 Monate',verlaufMiniLink:'Ganzen Verlauf ansehen',verlaufMiniAria:'Marktstress von {a} bis {b}, zuletzt {w}',verlaufMiniEnde:'{w} am {d}',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Wert für Wert ansehen.',"
+TEXTE_VERLAUF_DE = ("verlaufTitel:'Verlauf',verlaufInfo:'Werte vor November 2026 sind mit dem heutigen Modell zurückgerechnet.',verlaufInfoLabel:'Hinweis zu den Werten',verlaufEyebrow:'MARKTSTRESS SEIT 2006',verlaufNeuer:'Neuere Werte nach der Anmeldung',verlaufMiniTitel:'Die letzten 12 Monate',verlaufMiniLink:'Ganzen Verlauf ansehen',verlaufMiniAria:'Marktstress von {a} bis {b}, zuletzt {w}',verlaufMiniEnde:'{w} am {d}',verlaufAria:'Verlauf des Marktstress, {n} Werte. Mit den Pfeiltasten Wert für Wert ansehen.',"
                     "verlaufSpanne:'Zeitraum',verlaufAlle:'Alle',verlauf1J:'1J',verlauf5J:'5J',legendeAuf:'aufgezeichnet',legendeRueck:'zurückgerechnet',verlaufEreignisHinweis:'Markierte Ereignisse dienen der zeitlichen Einordnung.',ereignisseLabel:'Ereignisse',karteHoechst:'Höchster Marktstress',karteAm:'{w} am {d}',karteUnter40:'Wieder unter 40',karteNachTagen:'nach {n} Tagen',karteNochNicht:'noch nicht',karteTrieb:'Teilwerte am {d}',triebVol:'Kursschwankungen',triebPreis:'Breite und Trend',triebStimmung:'Stimmung und Absicherung',"
                     ""
                     "tipWert:'Marktstress {w}',tipBestandteile:'{n} von 14 Bestandteilen',tipWoche:'Woche bis {d}',tipSchluss:'Marktstress {w} zum Schluss',tipSpanne:'Spanne {a} bis {b}',"
                     "schlussWoche:'Wochenschluss',schlussMonat:'Monatsschluss',flaecheWoche:'Tief bis Hoch der Woche',flaecheMonat:'Tief bis Hoch des Monats',verlaufAlleHinweis:'Bei „Alle“ sind nur Phasen mit einem Höchstwert ab 70 markiert.',"
                     "verlaufHinweis:'Werte vor dem 15.11.2026 sind nachträglich mit dem heutigen Modell berechnet. In früheren Jahren standen teils weniger Bestandteile zur Verfügung. Vergangene Entwicklungen erlauben keine verlässliche Aussage über die Zukunft. Keine Anlageberatung.',"
                     "verlaufPremium:'Den vollständigen Verlauf siehst du mit Premium.',verlaufFehlt:'Der Verlauf ist gerade nicht verfügbar.',")
-TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufEyebrow:'MARKET STRESS SINCE 2006',verlaufNeuer:'Newer readings after sign-in',verlaufMiniTitel:'The past 12 months',verlaufMiniLink:'See full history',verlaufMiniAria:'Market stress from {a} to {b}, latest {w}',verlaufMiniEnde:'{w} on {d}',verlaufAria:'Market stress history, {n} readings. Use the arrow keys to step through them.',"
+TEXTE_VERLAUF_EN = ("verlaufTitel:'History',verlaufInfo:'Readings before November 2026 were back-calculated with today’s model.',verlaufInfoLabel:'About these readings',verlaufEyebrow:'MARKET STRESS SINCE 2006',verlaufNeuer:'Newer readings after sign-in',verlaufMiniTitel:'The past 12 months',verlaufMiniLink:'See full history',verlaufMiniAria:'Market stress from {a} to {b}, latest {w}',verlaufMiniEnde:'{w} on {d}',verlaufAria:'Market stress history, {n} readings. Use the arrow keys to step through them.',"
                     "verlaufSpanne:'Period',verlaufAlle:'All',verlauf1J:'1Y',verlauf5J:'5Y',legendeAuf:'recorded',legendeRueck:'back-calculated',verlaufEreignisHinweis:'Marked events serve as a reference in time.',ereignisseLabel:'Events',karteHoechst:'Highest market stress',karteAm:'{w} on {d}',karteUnter40:'Back below 40',karteNachTagen:'after {n} days',karteNochNicht:'not yet',karteTrieb:'Sub-scores on {d}',triebVol:'Price fluctuations',triebPreis:'Breadth and trend',triebStimmung:'Sentiment and protection',"
                     ""
                     "tipWert:'Market stress {w}',tipBestandteile:'{n} of 14 components',tipWoche:'Week ending {d}',tipSchluss:'Market stress {w} at close',tipSpanne:'Range {a} to {b}',"
@@ -786,6 +786,19 @@ def rechtsseiten(target):
     return all((Path(target) / n).is_file() for n in ("impressum.html", "datenschutz.html"))
 
 
+def schalter(name):
+    """Schalter aus Umgebung bzw. /root/volafly-chat/.env (1 = an)."""
+    wert = os.environ.get(name)
+    if wert is None:
+        try:
+            for zeile in open(os.environ.get("IT_ENV_DATEI", "/root/volafly-chat/.env"), encoding="utf-8"):
+                if zeile.strip().startswith(name + "="):
+                    wert = zeile.split("=", 1)[1].strip()
+        except OSError:
+            pass
+    return wert == "1"
+
+
 def film_schalter():
     """IT_FILM=1 zeigt den Erklaerfilm. Quelle: --film=an|aus, sonst Umgebung, sonst /root/volafly-chat/.env. Standard: aus (LIC-001)."""
     for a in sys.argv[1:]:
@@ -943,8 +956,8 @@ def main(source, target_dir, preview, anmeldung=None):
         else:
             html = once(html, '<span data-i18n="tagline">Marktstress verstehen.</span></footer>',
                         '<span data-i18n="tagline">Marktstress verstehen.</span>'
-                        '<nav class="rechtliches"><span class="nur-de"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a></span>'
-                        '<span class="nur-en" lang="en"><a href="/impressum.html">Legal notice</a> and <a href="/datenschutz.html">privacy policy</a> are available in German.</span>'
+                        '<nav class="rechtliches"><span class="nur-de"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a> · <a href="#feedback">Feedback</a></span>'
+                        '<span class="nur-en" lang="en"><a href="/impressum.html">Legal notice</a> and <a href="/datenschutz.html">privacy policy</a> are available in German. · <a href="#feedback">Feedback</a></span>'
                         + (' · <a href="/vertrag-kuendigen.html">Verträge hier kündigen</a> · <a href="/vertrag-widerrufen.html">Vertrag widerrufen</a>'
                            if json.loads((ROOT / "deploy" / "abo.json").read_text()).get("vertragsseiten") else "")
                         + '</nav></footer>',
@@ -1011,7 +1024,8 @@ def main(source, target_dir, preview, anmeldung=None):
     html = once(html, "const date=()=>new Intl.DateTimeFormat(", "const date=()=>!view().asOf?'—':new Intl.DateTimeFormat(", "Datum ohne Wert")
     html, _ = englisch.anwenden(html)
     import startseite
-    html = startseite.anwenden(html)
+    html = startseite.anwenden(html, narrativ=schalter("IT_NARRATIV"))
+    print("Narrativ: %s" % ("an" if schalter("IT_NARRATIV") else "aus (IT_NARRATIV)"))
     import erklaerungen
     html = erklaerungen.anwenden(html)
     import farbskala

@@ -39,4 +39,22 @@ document.addEventListener('investtimer:offline',()=>{if(zustand!=='neu'){zustand
 document.addEventListener('investtimer:online',()=>{if(zustand==='offline'){zustand=null;zeigen()}});
 if(IT.offline&&zustand!=='neu'){zustand='offline';zeigen()}
 new MutationObserver(()=>{if(zustand)zeigen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+/* Rueckkehr in die App (iOS haelt die installierte Web-App im Speicher): sofort Wert, offene Ansicht und Service Worker neu holen.
+   Kein Neuladen der Seite; der Wert gleitet sanft (Regeln aus 8a). Waehrend die App sichtbar ist zusaetzlich alle 10 Minuten. */
+let letzteRueckkehr=0;
+function rueckkehr(){
+ if(document.visibilityState!=='visible')return;
+ const jetzt=Date.now();if(jetzt-letzteRueckkehr<2000)return;letzteRueckkehr=jetzt;
+ IT.loadLive&&IT.loadLive(true);
+ IT.updatePruefen&&IT.updatePruefen();
+ const a=IT.aktiveAnsicht&&IT.aktiveAnsicht();
+ if(a==='verlauf'&&IT.verlaufNeu)IT.verlaufNeu();
+ if(a==='konto'&&IT.kontoNeuLaden)IT.kontoNeuLaden();
+}
+IT.rueckkehr=rueckkehr;
+document.addEventListener('visibilitychange',rueckkehr);
+addEventListener('pageshow',e=>{if(e.persisted)rueckkehr()});
+addEventListener('focus',rueckkehr);
+addEventListener('online',rueckkehr);
+setInterval(()=>{if(document.visibilityState==='visible'){letzteRueckkehr=0;rueckkehr()}},600000);
 })();

@@ -37,7 +37,18 @@ def _loeschen(html, key):
     return html
 
 
-def anwenden(html):
+NARRATIV = (
+    "Die 14 Bestandteile erfassen Anspannung aus drei Blickwinkeln. Zurückgerechnet seit 2006 verlief der Wert deutlich gegenläufig "
+    "zum US-Aktienmarkt: In gut 9 von 10 Wochen, in denen die Kurse um mehr als zwei Prozent fielen, stieg der Marktstress, und je weiter "
+    "der Markt unter seinem Jahreshoch lag, desto höher stand er meist. Zusammen zeigen die drei Blickwinkel das deutlicher als die "
+    "Kursschwankungen allein. Das beschreibt die Vergangenheit und sagt nichts über künftige Kurse.",
+    "The 14 components capture market tension from three perspectives. Back-calculated since 2006, the score moved clearly against "
+    "the US stock market: in more than 9 out of 10 weeks in which stocks fell by more than two percent, market stress rose, and the "
+    "further the market was below its one-year high, the higher the score usually stood. Together, the three perspectives show this more "
+    "clearly than price swings alone. This describes the past and says nothing about future prices.")
+
+
+def anwenden(html, narrativ=False):
     # Gewichte in den Blickwinkel-Karten, Indikatorzeilen und im Erklaerdialog
     html = _once(html, '<span class="share-number">${percent(block?.effectiveWeight??0)}</span>', "", "Blickwinkel-Prozent")
     html = _once(html, "<span>${percent(row?.effectiveWeight??0)}</span>${info}", "${info}", "Indikator-Prozent")
@@ -73,9 +84,16 @@ def anwenden(html):
     html = html[:m.start(2)] + json.dumps(daten, indent=1) + html[m.end(2):]
     html = _once(html, "const part=r=>r&&typeof r.name==='string'&&Number.isFinite(r.effectiveWeight);",
                  "const part=r=>r&&typeof r.name==='string';", "normaliseResult ohne Gewichte")
+    # "Keine Anlageberatung" in der Fusszeile jeder Ansicht (Nachtrag 2)
+    html = _schluessel(html, "tagline", "Marktstress verstehen · Keine Anlageberatung", "Understand market stress · Not investment advice")
     # Einheitlicher Begriff fuer den oeffentlichen Wert: "zeitversetzter Stand"
     html = _once(html, "source:'US-Aktienmarkt · gespeicherter Stand '", "source:'US-Aktienmarkt · zeitversetzter Stand '", "Fusszeile zeitversetzt")
     html = _once(html, "noCurrent:'Historischer Wert – nicht der aktuelle", "noCurrent:'Zeitversetzter Stand – nicht der aktuelle", "Hinweis zeitversetzt")
+    # Narrativ "So entsteht der Wert" nur mit Schalter IT_NARRATIV=1 (Freigabe Michel), sonst steht nichts davon in der Seite
+    if narrativ:
+        html = _once(html, "<h3 class=\"composition-eyebrow\">${t('groups')}</h3>",
+                     "<h3 class=\"composition-eyebrow\">${t('groups')}</h3><p class=\"narrativ\">${state.lang==='en'?" + repr(NARRATIV[1]) + ":" + repr(NARRATIV[0]) + "}</p>",
+                     "Narrativ")
     for rest in ("effectiveWeight", "von 14", "of 14", "Anteil an der Berechnung", "Share of the calculation", "Datenstand:", "notifications-title"):
         if rest in html:
             i = html.index(rest)

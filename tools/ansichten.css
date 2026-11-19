@@ -177,3 +177,44 @@ body.wert-laedt .gauge-stage .score,body.wert-laedt .assessment,body.wert-laedt 
 body.wert-laedt .gauge-track{animation:wert-puls 1.6s ease-in-out infinite}
 @keyframes wert-puls{50%{opacity:.45}}
 @media(prefers-reduced-motion:reduce){body.wert-laedt .gauge-track{animation:none}}
+
+/* Nachtrag 2: Verlauf ohne Fussnote/Spanne, Info-Symbol; dezente Ladeanzeige an der Stand-Zeile */
+.verlauf-info{display:inline-grid;place-items:center;width:44px;height:44px;margin:-10px -8px -10px 2px;padding:0;border:0;background:none;cursor:pointer;vertical-align:middle;font:600 12px/1 var(--sans);color:var(--sub)}
+.verlauf-info::before{content:'';position:absolute;width:20px;height:20px;border:1px solid #b9c7b6;border-radius:50%}
+.verlauf-info{position:relative}
+.verlauf-info:hover,.verlauf-info[aria-expanded=true]{color:var(--accent)}
+.verlauf-info:focus-visible{outline:2px solid #698dbc;outline-offset:-6px;border-radius:50%}
+.verlauf-info-text{flex-basis:100%;margin:2px 0 0;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface,#fff);font-size:13px;line-height:1.5;color:var(--text);max-width:420px}
+.verlauf-info-text[hidden]{display:none}
+.verlauf-flaeche,.verlauf-legende{display:none}
+.snapshot-label{position:relative}
+body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:-14px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--accent);animation:wert-puls 1s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){body[data-live=laedt] .snapshot-label::after{animation:none;opacity:.6}}
+/* Feedback (#feedback): mobil Vollbild, Desktop zentrierte Karte */
+.feedback-ansicht[hidden]{display:none!important}
+.feedback-ansicht{max-width:560px;margin:0 auto;padding:8px 0 32px;text-align:left}
+.feedback-karte{display:grid;gap:6px}
+.feedback-eyebrow{display:block;color:var(--accent);font-size:10px;letter-spacing:1.6px}
+.feedback-karte h2{font:500 28px/1.2 var(--display);letter-spacing:-.5px;margin:4px 0 4px;outline:none}
+.feedback-unter{margin:0 0 14px;font-size:15px;line-height:1.6;color:var(--sub)}
+.feedback-arten{border:0;margin:0 0 10px;padding:0}
+.feedback-arten legend{font-size:12px;color:var(--sub);margin:0 0 8px;padding:0}
+.feedback-chips{display:flex;flex-wrap:wrap;gap:8px}
+.feedback-chip{min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--surface,#fff);color:var(--text);font:inherit;font-size:14px;cursor:pointer}
+.feedback-chip[aria-checked=true]{border-color:var(--accent);background:#e6efe9;color:#1f4f41;font-weight:500}
+.feedback-chip:focus-visible{outline:2px solid #698dbc;outline-offset:2px}
+.feedback-karte label{font-size:12px;color:var(--sub);margin-top:6px}
+.feedback-karte textarea,.feedback-karte input[type=email]{width:100%;box-sizing:border-box;min-height:48px;padding:12px 14px;border:1px solid #b9c7b6;border-radius:12px;background:var(--surface,#fff);color:var(--text);font:inherit;font-size:16px;line-height:1.5}
+.feedback-karte textarea{min-height:150px;resize:vertical}
+.feedback-karte textarea:focus,.feedback-karte input[type=email]:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.feedback-zaehler{margin:0;text-align:right;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.feedback-hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+.feedback-hinweis{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--sub)}
+.feedback-hinweis a{color:inherit;text-underline-offset:3px}
+.feedback-meldung:empty{display:none}
+.feedback-absenden{min-height:48px;margin-top:6px}
+.feedback-fertig{justify-items:start;gap:14px}
+.feedback-zurueck{min-height:48px;padding:0 28px}
+@media(min-width:760px){.feedback-ansicht{padding-top:24px}.feedback-karte{padding:30px 32px 32px;border:1px solid var(--line);border-radius:20px;background:var(--surface,#fff)}}
+@media(max-width:759px){.feedback-karte h2{font-size:24px}body.ansicht-feedback .app-footer{display:none}}
+.narrativ{max-width:720px;margin:-8px 0 22px;font-size:15px;line-height:1.7;color:var(--text)}

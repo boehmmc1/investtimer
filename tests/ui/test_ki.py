@@ -64,9 +64,10 @@ async def main():
                 await pg.press('#ki-eingabe', 'Enter'); await pg.wait_for_timeout(150)
                 pruefe(await pg.evaluate("document.querySelector('.ki-kugel-klein')?.classList.contains('denkt')"), f'{tag}: kleine Kugel denkt')
                 await pg.wait_for_selector('.ki-antwort', timeout=8000); await pg.wait_for_timeout(900)
-                r = await pg.evaluate("""()=>({du:document.querySelector('.ki-du').getBoundingClientRect().right>innerWidth*0.6,folge:document.querySelectorAll('.ki-folge .ki-chip').length,
-                   spark:!!document.querySelector('.ki-spark polyline'),teile:document.querySelectorAll('.ki-teil').length,log:document.querySelector('.ki-nachrichten').getAttribute('aria-live')})""")
-                pruefe(r['du'] and r['folge'] == 2 and r['spark'] and r['teile'] == 3 and r['log'] == 'polite', f'{tag}: Gespraech mit Frage rechts, Belegen, 2 Folgefragen, aria-live {r}')
+                r = await pg.evaluate("""()=>{const a=document.querySelector('.ki-antwort'),letzt=a.lastElementChild,ab=a.getBoundingClientRect(),lb=letzt.getBoundingClientRect();
+                   return {du:document.querySelector('.ki-du').getBoundingClientRect().right>innerWidth*0.6,folge:document.querySelectorAll('.ki-folge .ki-chip').length,
+                   belege:document.querySelectorAll('.ki-beleg,.ki-spark,.ki-teil').length,letzt:letzt.className,abstand:Math.round(ab.bottom-lb.bottom),log:document.querySelector('.ki-nachrichten').getAttribute('aria-live')}}""")
+                pruefe(r['du'] and r['folge'] == 2 and r['belege'] == 0 and r['letzt'] == 'ki-folge' and 8 <= r['abstand'] <= 24 and r['log'] == 'polite', f'{tag}: Gespraech: Frage rechts, Antwort ohne Belege, endet sauber mit 2 Folgefragen, aria-live {r}')
                 ok = await pg.evaluate("""()=>{const a=[...document.querySelectorAll('.ki-antwort')].pop().getBoundingClientRect(),u=document.querySelector('.ki-unten').getBoundingClientRect();return a.top>=0&&a.top<u.top-40}""")
                 pruefe(ok, f'{tag}: Auto-Scroll zeigt den Anfang der Antwort oberhalb der Eingabe')
                 await pg.evaluate("window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'})"); await pg.wait_for_timeout(300)

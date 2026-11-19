@@ -100,7 +100,7 @@ function navRender(){
  tabs.innerHTML=[['stress','#'],['ki','#ki'],['verlauf','#verlauf']].map(([k,h])=>'<a href="'+h+'" data-ziel="'+k+'"'+(a===k?' aria-current="page"':'')+'>'+kt('tab'+k[0].toUpperCase()+k.slice(1).replace('stress','Stress'))+'</a>').join('');
  leiste.innerHTML=[['stress','#'],['ki','#ki'],['verlauf','#verlauf'],['konto','#konto']].map(([k,h])=>'<a href="'+h+'" data-ziel="'+k+'"'+(a===k?' aria-current="page"':'')+'>'+SVG[k]+'<span>'+kt('tab'+k[0].toUpperCase()+k.slice(1))+'</span></a>').join('');
 }
-function aktiv(){const h=location.hash.replace('#','');return ['ki','verlauf','konto'].includes(h)?h:'stress'}
+function aktiv(){const h=location.hash.replace('#','');return ['ki','verlauf','konto','feedback'].includes(h)?h:'stress'}
 if(kopf){kopf.insertBefore(tabs,werkzeuge||null);document.body.append(leiste);document.body.classList.add('mit-leiste')}
 /* "#" als Ziel fuer Marktstress: ohne Rest-Raute in der Adresse, Zurueck-Taste bleibt nutzbar */
 function navKlick(e){const l=e.target.closest('a[data-ziel]');if(!l||e.metaKey||e.ctrlKey||e.shiftKey)return;
@@ -176,7 +176,7 @@ function nachrichtHtml(m,i){
  if(m.rolle==='du')return '<div class="ki-du"><span class="sr-only">'+esc(kt('du'))+': </span>'+esc(m.text)+'</div>';
  if(m.rolle==='fehler')return '<div class="ki-fehler" role="alert">'+esc(kt(m.text))+(m.text==='fLogin'?' <button type="button" class="text-button" data-ki="anmelden">'+esc(kt('fLoginKnopf'))+'</button>':'')+'</div>';
  const letzte=i===st.gespraech.length-1;
- return '<article class="ki-antwort"><span class="sr-only">'+esc(kt('ki'))+': </span>'+md(m.text)+(m.belege?belegHtml(m.belege):'')
+ return '<article class="ki-antwort"><span class="sr-only">'+esc(kt('ki'))+': </span>'+md(m.text)
   +(letzte&&!st.busy&&m.folge&&m.folge.length?'<div class="ki-folge" aria-label="'+esc(kt('weiter'))+'">'+m.folge.map(q=>'<button type="button" class="ki-frage ki-chip" data-frage="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>':'')+'</article>';
 }
 /* Beleg: Verlaufsausschnitt (Reihe liefert der Server: dieselben Marktstress-Werte, auf die sich die Antwort stuetzt),
@@ -252,7 +252,7 @@ async function fragen(text){
   else if(r.status===503){antwort={rolle:'fehler',text:'fAus'}}
   else if(!r.ok){antwort={rolle:'fehler',text:'fNetz'}}
   else{const d=await r.json();if(d.rest!=null)st.rest=d.rest;
-   antwort={rolle:'ki',text:String(d.antwort||''),belege:d.belege||null,folge:folgefragen(text)}}
+   antwort={rolle:'ki',text:String(d.antwort||''),folge:folgefragen(text)}}
  }catch{antwort={rolle:'fehler',text:'fNetz'}}
  st.busy=false;st.gespraech.push(antwort);
  if(aktiv()==='ki'){zeichnen(document.activeElement&&document.activeElement.id==='ki-eingabe'?'eingabe':null);nachUnten(true)}
@@ -282,17 +282,18 @@ const scrollMerk={};let letzte=null,kontextNeu=false;
 function route(){
  const a=aktiv();
  if(letzte&&letzte!==a)scrollMerk[letzte]=window.scrollY;
- ['ki','verlauf','konto'].forEach(k=>document.body.classList.toggle('ansicht-'+k,a===k));
+ ['ki','verlauf','konto','feedback'].forEach(k=>document.body.classList.toggle('ansicht-'+k,a===k));
  document.body.classList.toggle('ansicht-neben',a!=='stress');
  if(!ansicht)ansichtAnlegen();
  ansicht.hidden=a!=='ki';navRender();
  IT.verlaufAnsicht&&IT.verlaufAnsicht[a==='verlauf'?'zeigen':'verbergen']();
  IT.kontoAnsicht&&IT.kontoAnsicht[a==='konto'?'zeigen':'verbergen']();
+ IT.feedbackAnsicht&&IT.feedbackAnsicht[a==='feedback'?'zeigen':'verbergen']();
  if(a==='ki'&&letzte!=='ki'){if(!kontextNeu)st.kontext=null;kontextNeu=false}
  if(a==='ki'){zeichnen(st.gespraech.length?null:'titel');restLaden();window.scrollTo({top:st.gespraech.length?document.documentElement.scrollHeight:0});haftUnten=true}
  else{document.body.classList.remove('ki-tastatur');
   if(letzte!==a){window.scrollTo({top:a==='stress'?(scrollMerk.stress||0):0});
-   if(letzte){const h=a==='verlauf'?$('#verlauf-ansicht-titel'):a==='konto'?$('#konto-ansicht-titel'):null;h&&h.focus({preventScroll:true})}}}
+   if(letzte){const h=a==='verlauf'?$('#verlauf-ansicht-titel'):a==='konto'?$('#konto-ansicht-titel'):a==='feedback'?$('#feedback-titel'):null;h&&h.focus({preventScroll:true})}}}
  letzte=a;
 }
 IT.route=route;IT.aktiveAnsicht=aktiv;

@@ -446,8 +446,7 @@ def _it_agent(frage, verlauf, sprache="de"):
             print(f"[usage] investtimer frei runden={runde + 1} in={tin} out={tout} "
                   f"cache_read={tcache}", flush=True)
             text = "".join(b.text for b in resp.content if b.type == "text")
-            belege = _it_belege_verlauf(*benutzt["verlauf"]) if benutzt["verlauf"] else _it_belege_heute() if benutzt["aktuell"] else None
-            return text, belege
+            return text, None  # keine Belege mehr (Nachtrag 2)
         messages.append({"role": "assistant", "content": resp.content})
         results = []
         for block in resp.content:
@@ -751,9 +750,7 @@ def it_chat(req: ITChatReq, request: Request):
     sprache = "en" if (req.sprache or "").lower().startswith("en") else "de"
 
     def fertig(text, belege=None):
-        aus = {"antwort": text}
-        if belege:
-            aus["belege"] = belege
+        aus = {"antwort": text}  # Belege (Verlaufsausschnitt, Teilwerte) werden nicht mehr ausgeliefert (Nachtrag 2)
         if rest is not None:
             aus["rest"] = rest
         return aus
@@ -776,7 +773,7 @@ def it_chat(req: ITChatReq, request: Request):
             return fertig(e["antwort"])
         if e:
             # Belege nur fuer Vorlagen, die den Marktstress selbst erklaeren
-            return fertig(_it_vorlage(e, vor_modell), _it_belege_heute() if e["id"] in ("it01", "q01") else None)
+            return fertig(_it_vorlage(e, vor_modell))
         vor_modell()
         text, belege = _it_agent(frage, req.verlauf, sprache)
         return fertig(_it_stil(text, frage) if sprache == "de" else text, belege)

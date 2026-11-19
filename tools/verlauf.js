@@ -63,7 +63,7 @@ function stressSvg(p,x,e,art){
     if(r>=0){reihen[r].push([a,b]);s+='<text class="verlauf-band-text" x="'+(x0+3).toFixed(1)+'" y="'+(vT+10+r*12)+'">'+esc(name)+'</text>'}}}
  });
  /* Spanne Tief bis Hoch je Periode */
- if(lang&&p.length>1&&p[0][5]!=null)s+='<polygon class="verlauf-flaeche" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[5]).toFixed(1)).concat(p.slice().reverse().map(q=>x(q[0]).toFixed(1)+','+y(q[4]).toFixed(1))).join(' ')+'"/>';
+ /* Spanne Tief bis Hoch entfernt (Nachtrag 2): nur die Linie */
  s+='<polyline class="chart-line verlauf-linie'+(lang?' verlauf-lang':'')+'" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/>';
  /* Endwert: Punkt exakt auf dem letzten Wert, Zahl rechts daneben (eigener Rand, keine Ueberlappung mit der Linie) */
  const z=p[p.length-1],zx=x(z[0]),zy=y(z[1]);
@@ -86,13 +86,13 @@ function verlaufHtml(){
  const baender=vMobil()?'':'<div class="verlauf-baender">'+e.map(m=>{const [x0,bx]=vBand(m,x);
   return '<button type="button" class="verlauf-band-knopf" data-ereignis="'+m.id+'" aria-pressed="'+(m.id===aktiv)+'" aria-label="'+esc(name(m)+', '+vZeitraum(m))+'" style="left:'+(x0/vW*100).toFixed(2)+'%;width:'+(bx/vW*100).toFixed(2)+'%;top:'+(vT/vH*100).toFixed(2)+'%;height:'+((vH-vT-vB)/vH*100).toFixed(2)+'%"></button>'}).join('')+'</div>';
  const chips=e.length?'<div class="verlauf-chips" role="group" aria-label="'+t('ereignisseLabel')+'">'+e.slice().reverse().map(m=>'<button type="button" class="verlauf-chip" data-ereignis="'+m.id+'" aria-pressed="'+(m.id===aktiv)+'">'+esc(vEn()?m.kurz_en:m.kurz)+'</button>').join('')+'</div>':'';
- const legende=art==='taeglich'?'':'<p class="verlauf-legende"><span><i class="legende-linie" aria-hidden="true"></i>'+t(art==='monatlich'?'schlussMonat':'schlussWoche')+'</span><span><i class="legende-flaeche" aria-hidden="true"></i>'+t(art==='monatlich'?'flaecheMonat':'flaecheWoche')+'</span></p>';
+const legende='';/* ohne Legende */ const _legendeAlt=art==='taeglich'?'':'<p class="verlauf-legende"><span><i class="legende-linie" aria-hidden="true"></i>'+t(art==='monatlich'?'schlussMonat':'schlussWoche')+'</span><span><i class="legende-flaeche" aria-hidden="true"></i>'+t(art==='monatlich'?'flaecheMonat':'flaecheWoche')+'</span></p>';
  return '<div class="verlauf-kopf"><div class="verlauf-knoepfe" role="group" aria-label="'+t('verlaufSpanne')+'">'+knoepfe+'</div></div>'
   +'<div class="verlauf-diagramm" tabindex="0" role="group" aria-label="'+esc(t('verlaufAria').replace('{n}',p.length))+'">'
   +stressSvg(p,x,e,art)+baender
   +'<div class="verlauf-tip" role="status" aria-live="polite" hidden></div></div>'
   +legende+chips+'<div class="ereignis-karte" aria-live="polite"'+(aktiv?'':' hidden')+'>'+vKarte(e.find(m=>m.id===aktiv))+'</div>'
-  +'<p class="chart-note">'+t('verlaufHinweis')+' '+t('verlaufEreignisHinweis')+(verlaufSpanne==='A'?' '+t('verlaufAlleHinweis'):'')+'</p>';
+  ;
 }
 /* Aktives Ereignis: gewaehltes, wenn sichtbar; sonst das juengste im sichtbaren Zeitraum */
 function vAktivId(e){if(!e||!e.length)return null;if(verlaufEreignis&&e.some(m=>m.id===verlaufEreignis))return verlaufEreignis;return e[e.length-1].id}
@@ -137,7 +137,7 @@ function vZeige(i){
  const c=dia.querySelector('.verlauf-cursor-punkt');c.setAttribute('cx',x);c.setAttribute('cy',yy);c.setAttribute('visibility','visible');
  const tip=dia.querySelector('.verlauf-tip');
  const kopf=art==='monatlich'?new Date(vMs(q[0])).toLocaleDateString(vLang(),{month:'long',year:'numeric',timeZone:'UTC'}):art==='woechentlich'?t('tipWoche').replace('{d}',vDatum(q[0])):vDatum(q[0]);
- const spanne=art!=='taeglich'&&q[4]!=null&&q[4]!==q[5]?'<span>'+t('tipSpanne').replace('{a}',q[4]).replace('{b}',q[5])+'</span>':'';
+ const spanne='';
  tip.innerHTML='<b>'+esc(kopf)+'</b><span>'+t(art==='taeglich'?'tipWert':'tipSchluss').replace('{w}',q[1])+'</span>'+spanne+(art==='taeglich'?'<span>'+t('tipBestandteile').replace('{n}',q[2]==null?'–':q[2])+'</span>':'')+'<span class="'+(q[3]==='a'?'':'tip-rueck')+'">'+t(q[3]==='a'?'legendeAuf':'legendeRueck')+'</span>';
  tip.hidden=false;
  const r=svg.getBoundingClientRect(),d=dia.getBoundingClientRect(),px=r.left-d.left+x/vW*r.width;
@@ -152,7 +152,7 @@ function vIndexBei(ev){
 function vKopf(){
  const k=panel.querySelector('.verlauf-ansicht-kopf');if(!k)return;
  const gesperrt=!vAn()&&verlauf&&!verlauf.fehler;
- k.innerHTML='<div><span class="eyebrow verlauf-eyebrow">'+esc(t('verlaufEyebrow'))+'</span><h2 id="verlauf-ansicht-titel" tabindex="-1">'+esc(t('verlaufTitel'))+'</h2></div>'
+ k.innerHTML='<div><span class="eyebrow verlauf-eyebrow">'+esc(t('verlaufEyebrow'))+'</span><h2 id="verlauf-ansicht-titel" tabindex="-1">'+esc(t('verlaufTitel'))+'<button type="button" class="verlauf-info" aria-expanded="false" aria-controls="verlauf-info-text" aria-label="'+esc(t('verlaufInfoLabel'))+'">i</button></h2><p class="verlauf-info-text" id="verlauf-info-text" role="note" hidden>'+esc(t('verlaufInfo'))+'</p></div>'
   +(gesperrt?'<p class="verlauf-gesperrt"><span>'+esc(t('verlaufNeuer'))+'</span> <button type="button" class="text-button" data-ki-login>'+esc(t('loginSubmit'))+'</button></p>':'');
 }
 function zeigeVerlauf(){
@@ -213,3 +213,12 @@ if('IntersectionObserver' in window){const io=new IntersectionObserver(e=>{if(e.
 else vMiniLaden();
 document.addEventListener('investtimer:update',()=>{if(vAn())vMini.hidden=true;else if(vMiniDaten)vMiniZeichnen();else vMiniLaden()});
 new MutationObserver(()=>{if(vMiniDaten&&!vAn())vMiniZeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+
+/* Info-Symbol am Verlauf-Titel: Tippen/Klick schaltet um, Hover/Fokus zeigt (Desktop) */
+document.addEventListener('click',e=>{const b=e.target.closest('.verlauf-info'),t2=document.getElementById('verlauf-info-text');
+ if(!t2)return;if(b){const auf=t2.hidden;t2.hidden=!auf;b.setAttribute('aria-expanded',String(auf));return}
+ if(!t2.hidden&&!e.target.closest('#verlauf-info-text')){t2.hidden=true;document.querySelector('.verlauf-info')?.setAttribute('aria-expanded','false')}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const t2=document.getElementById('verlauf-info-text');if(t2&&!t2.hidden){t2.hidden=true;document.querySelector('.verlauf-info')?.focus()}}});
+
+/* Neu holen bei Rueckkehr in die App: Daten im Hintergrund laden, dann ohne Flackern neu zeichnen (Zeitraum bleibt) */
+IT.verlaufNeu=async()=>{verlaufZeit=0;await ladeVerlauf();if(!panel.hidden&&panel.querySelector('.verlauf'))vZeichnen()};
