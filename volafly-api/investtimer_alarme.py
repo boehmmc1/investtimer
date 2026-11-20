@@ -44,6 +44,9 @@ CREATE TABLE IF NOT EXISTS stand (schluessel TEXT PRIMARY KEY, wert TEXT);
 def verbinden():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
     db = sqlite3.connect(DB, timeout=10)
+    # WAL: Lesen blockiert Schreiben nicht; busy_timeout wartet bis 10 s auf Sperren (Belastbarkeit 20.11.2026)
+    db.execute("PRAGMA journal_mode=WAL")
+    db.execute("PRAGMA busy_timeout=10000")
     db.row_factory = sqlite3.Row
     db.executescript(SCHEMA)
     spalten = {r[1] for r in db.execute("PRAGMA table_info(alarme)")}

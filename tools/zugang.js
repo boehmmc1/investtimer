@@ -49,7 +49,9 @@ IT.zugangModus=m=>{if(gesendet&&['bestaetigen','zuruecksetzen','code'].includes(
 const fertig=()=>{modus='anmelden';gesendet='';zugangsFehler='';closeAccess()};
 const zeigeFehler=(text,feld)=>{const f=$('#access-error');if(f){f.classList.remove('ok');f.textContent=text}feld&&feld.focus()};
 function fehlerText(c){
- if(c===429||c==='over_email_send_rate_limit'||c==='over_request_rate_limit')return t('linkRate');
+ /* Mail-Limit von Supabase (alle Nutzer zusammen): eigener Hinweis und einmal je Tag Meldung an info@ ueber die Fehlererfassung */
+ if(c==='over_email_send_rate_limit'){try{IT.fehlerMelden&&IT.fehlerMelden('Anmelde-Mail-Limit erreicht (Supabase over_email_send_rate_limit)','zugang.js',0,'')}catch{}return t('mailLimit')}
+ if(c===429||c==='over_request_rate_limit')return t('linkRate');
  if(c==='invalid_credentials'||c==='invalid_grant')return t('pwFalsch');
  if(c==='email_not_confirmed')return t('notConfirmed');
  if(c==='weak_password')return t('pwSchwach');

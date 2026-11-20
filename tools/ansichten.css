@@ -260,7 +260,7 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 .teilen-knopf svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .teilen-knopf:hover{color:var(--accent);border-color:var(--accent)}
 .teilen-knopf:focus-visible{outline:2px solid #698dbc;outline-offset:2px}
-.teilen-start{display:flex;justify-content:center;margin:14px 0 0}
+.teilen-start{display:flex;justify-content:center;margin:14px 0 0;min-height:44px}
 .teilen-karte{margin:12px 0 0}
 .verlauf-kopf .teilen-knopf{margin-left:auto}
 .teilen-dialog{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:20px 22px 22px;border:1px solid var(--line);border-radius:16px;background:var(--bg,#f8f8f3);color:var(--text);box-shadow:0 20px 60px rgba(27,51,48,.22)}
@@ -277,3 +277,6 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 .teilen-netz{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:13px;text-decoration:none}
 .teilen-netz:hover,.teilen-aktion:hover{border-color:var(--accent)}
 @media(max-width:420px){.teilen-netze{grid-template-columns:repeat(2,minmax(0,1fr))}.teilen-aktion{flex:1 1 auto}}
+/* Reservierte Hoehe des 12-Monats-Ausschnitts (ausgeloggt), damit beim Nachladen nichts springt */
+.verlauf-mini{--mini-h:164px}
+@media(max-width:359px){.verlauf-mini{--mini-h:188px}}

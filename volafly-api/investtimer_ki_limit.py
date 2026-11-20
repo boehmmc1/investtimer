@@ -50,6 +50,9 @@ def verbinden():
     os.makedirs(os.path.dirname(pfad), exist_ok=True)
     neu = not os.path.exists(pfad)
     db = sqlite3.connect(pfad, timeout=10, isolation_level=None)
+    # WAL: Lesen blockiert Schreiben nicht; busy_timeout wartet bis 10 s auf Sperren (Belastbarkeit 20.11.2026)
+    db.execute("PRAGMA journal_mode=WAL")
+    db.execute("PRAGMA busy_timeout=10000")
     db.executescript(SCHEMA)
     if neu:
         os.chmod(pfad, 0o600)

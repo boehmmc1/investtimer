@@ -71,6 +71,9 @@ def anwenden(html, narrativ=False):
             html = re.sub(r"componentCount:\(n,total\)=>`[^`]*`,", "", html)
             continue
         html = _loeschen(html, k)
+    # Platz fuer den Teilen-Knopf fest im HTML (sonst Layoutsprung, wenn tools/teilen.js ihn nach dem ersten Zeichnen einfuegt)
+    html = _once(html, '<p id="summary">Der Markt zeigt moderaten Stress.</p></div>',
+                 '<p id="summary">Der Markt zeigt moderaten Stress.</p></div><div class="teilen-start"></div>', "Platz Teilen-Knopf")
     # Verlauf-Tooltip ohne Bestandteile (seit 20.11.2026 schon in tools/verlauf.js: nur Zeitpunkt und Wert)
     if "tipBestandteile')" in html:
         raise SystemExit("startseite: Tooltip zeigt noch Bestandteile")

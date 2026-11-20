@@ -310,7 +310,11 @@ async def it_rc_webhook(request: Request):
     return {"ok": True}
 
 
-_it_hist_cache = {"key": None, "daten": None}
+_it_hist_cache = {"key": None, "daten": None, "json": {}}
+# Belastbarkeit (20.11.2026): Rueckrechnung (11 MB) nur bei Aenderung lesen; eine Sperre, damit bei abgelaufenem Cache nur ein
+# Thread neu rechnet (vorher parsten alle gleichzeitigen Anfragen parallel -> 2,3 GB Speicher im Lasttest); fertige JSON-Antworten je Stand.
+_it_rueck_cache = {"mtime": None, "tage": {}, "bl": {}}
+_it_hist_sperre = __import__("threading").Lock()
 IT_HIST_PFADE = ("/var/lib/investtimer/data/history.json", "/var/lib/investtimer/historie/rueckrechnung.json",
                  "/var/www/investtimer/historie/ereignisse.json")
 
@@ -322,16 +326,28 @@ def _it_historie_daten():
     key = tuple(os.path.getmtime(p) if os.path.exists(p) else 0 for p in IT_HIST_PFADE) + (_date.today().isoformat(),)
     if _it_hist_cache["key"] == key:
         return _it_hist_cache["daten"]
-    tage, bl = {}, {}
-    try:
-        with open(IT_HIST_PFADE[1]) as f:
-            for d, t in json.load(f).get("tage", {}).items():
-                if t.get("count", 0) >= 8:
-                    tage[d] = (t["rounded"], t["count"], "r")
-                    if t.get("bloecke"):
-                        bl[d] = t["bloecke"]
-    except (OSError, ValueError):
-        pass
+    with _it_hist_sperre:
+        if _it_hist_cache["key"] == key:
+            return _it_hist_cache["daten"]
+        return _it_historie_rechnen(key)
+
+
+def _it_historie_rechnen(key):
+    from datetime import date as _date, timedelta as _td
+    m = os.path.getmtime(IT_HIST_PFADE[1]) if os.path.exists(IT_HIST_PFADE[1]) else 0
+    if _it_rueck_cache["mtime"] != m:
+        rt, rb = {}, {}
+        try:
+            with open(IT_HIST_PFADE[1]) as f:
+                for d, t in json.load(f).get("tage", {}).items():
+                    if t.get("count", 0) >= 8:
+                        rt[d] = (t["rounded"], t["count"], "r")
+                        if t.get("bloecke"):
+                            rb[d] = t["bloecke"]
+        except (OSError, ValueError):
+            pass
+        _it_rueck_cache.update(mtime=m, tage=rt, bl=rb)
+    tage, bl = dict(_it_rueck_cache["tage"]), _it_rueck_cache["bl"]
     try:
         with open(IT_HIST_PFADE[0]) as f:
             auf = json.load(f)
@@ -386,8 +402,18 @@ def _it_historie_daten():
                            "bloecke": bl.get(spitze[0])})
     daten = {"taeglich": [p for p in punkte if p[0] >= grenze], "woechentlich": woechentlich(punkte), "monatlich": monatlich(punkte),
              "ersterAufgezeichnet": min(auf) if auf else None, "ereignisse": sorted(ereignisse, key=lambda x: x["start"])}
-    _it_hist_cache.update(key=key, daten=daten)
+    _it_hist_cache.update(key=key, daten=daten, json={})
     return daten
+
+
+def _it_json_antwort(name, builder, headers):
+    """Fertige JSON-Antwort je Stand des Verlaufs zwischenspeichern (spart das Serialisieren bei jeder Anfrage)."""
+    from fastapi.responses import Response as _R
+    roh = _it_hist_cache["json"].get(name)
+    if roh is None:
+        roh = json.dumps(builder(), ensure_ascii=False, separators=(",", ":")).encode()
+        _it_hist_cache["json"][name] = roh
+    return _R(content=roh, media_type="application/json", headers=headers)
 
 
 def _it_historie_bis(d, bis):
@@ -421,8 +447,8 @@ def it_historie(request: Request):
     if not d["taeglich"] and not d["woechentlich"]:
         return _it_aus()
     # S&P 500 wird nicht mehr ausgeliefert (Datenrechte LIC-001, 18.11.2026)
-    aus = {k: d[k] for k in ("taeglich", "woechentlich", "monatlich", "ersterAufgezeichnet", "ereignisse")}
-    return _JSONResp(aus, headers={"Cache-Control": "no-store"})
+    return _it_json_antwort("historie", lambda: {k: d[k] for k in ("taeglich", "woechentlich", "monatlich", "ersterAufgezeichnet", "ereignisse")},
+                            {"Cache-Control": "no-store"})
 
 
 @app.get("/v1/investtimer/historie-oeffentlich")
@@ -436,8 +462,7 @@ def it_historie_oeffentlich():
     d = _it_historie_daten()
     if not bis or not (d["taeglich"] or d["woechentlich"]):
         return _it_aus()
-    aus = _it_historie_bis(d, bis)
-    return _JSONResp(aus, headers={"Cache-Control": "public, max-age=600"})
+    return _it_json_antwort("oeffentlich|" + bis, lambda: _it_historie_bis(d, bis), {"Cache-Control": "public, max-age=600"})
 
 
 @app.get("/v1/investtimer/konto/export")

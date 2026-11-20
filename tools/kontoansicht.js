@@ -115,7 +115,7 @@ async function emailAendern(form){
   const r=await fetch(IT.authUrl+'/auth/v1/user?redirect_to='+encodeURIComponent(location.origin+'/#konto'),{method:'PUT',headers:{apikey:IT.authKey,'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({email:neu})});
   if(!r.ok){const d=await r.json().catch(()=>({}));throw d.error_code||d.code||r.status}
   melde(ka('emailGesendet'),true);i.value='';
- }catch(c){melde(c==='email_exists'||c===422?ka('emailVergeben'):c===429||c==='over_email_send_rate_limit'?t('linkRate'):ka('fehler'))}
+ }catch(c){melde(c==='email_exists'||c===422?ka('emailVergeben'):c==='over_email_send_rate_limit'?t('mailLimit'):c===429?t('linkRate'):ka('fehler'))}
  knopf.disabled=false;
 }
 async function exportieren(b){

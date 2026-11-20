@@ -217,7 +217,8 @@ function vMiniHtml(){
   +'<span class="verlauf-mini-punkt" style="background:'+ITStufe.farbe(z[1])+';left:100%;top:'+(y(z[1])/H*100).toFixed(2)+'%"></span></div>'
   +'<p class="verlauf-mini-achse"><span>'+esc(fmt(p[0],{month:'short',year:'numeric'}))+'</span><span>'+esc(t('verlaufMiniEnde').replace('{w}',z[1]).replace('{d}',fmt(z,{day:'numeric',month:'short'})))+'</span></p>';
 }
-function vMiniZeichnen(){vMini.hidden=vAn()||!vMiniDaten||!!vMiniDaten.fehler;if(!vMini.hidden)vMini.innerHTML=vMiniHtml();if(!vMini.innerHTML)vMini.hidden=true}
+/* Platz ist ausgeloggt schon beim Laden reserviert (kein Layoutsprung, wenn die Daten nach dem ersten Zeichnen kommen) */
+function vMiniZeichnen(){vMini.style.minHeight='';vMini.hidden=vAn()||!vMiniDaten||!!vMiniDaten.fehler;if(!vMini.hidden)vMini.innerHTML=vMiniHtml();if(!vMini.innerHTML)vMini.hidden=true}
 async function vMiniLaden(){
  if(vMiniLaedt||vAn())return;vMiniLaedt=true;
  try{vMiniDaten=await fetch('/api/historie-oeffentlich',{cache:'no-cache'}).then(r=>r.ok?r.json():Promise.reject(r.status))}catch(x){vMiniDaten={fehler:x}}
@@ -225,7 +226,7 @@ async function vMiniLaden(){
 }
 if('IntersectionObserver' in window){const io=new IntersectionObserver(e=>{if(e.some(x=>x.isIntersecting)){io.disconnect();vMiniLaden()}},{rootMargin:'300px'});
  /* leerer Platzhalter (Hoehe 0) nur zum Beobachten; sichtbar wird der Ausschnitt erst mit Daten */
- vMini.hidden=false;io.observe(vMini)}
+ vMini.hidden=false;if(!vAn())vMini.style.minHeight='var(--mini-h,164px)';io.observe(vMini)}
 else vMiniLaden();
 document.addEventListener('investtimer:update',()=>{if(vAn())vMini.hidden=true;else if(vMiniDaten)vMiniZeichnen();else vMiniLaden()});
 new MutationObserver(()=>{if(vMiniDaten&&!vAn())vMiniZeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});

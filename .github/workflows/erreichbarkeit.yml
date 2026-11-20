@@ -1,0 +1,27 @@
+# Externe Erreichbarkeitspruefung investtimer.net (Belastbarkeit 20.11.2026).
+# Laeuft bei GitHub (ausserhalb des Servers) alle 5 Minuten, ruft nur die Startseite und /data/stress.json ab (keine Nutzerdaten).
+# Schlaegt erst fehl, wenn die Seite ueber gut 5 Minuten (6 Versuche im Abstand von 60 s) nicht erreichbar ist.
+# Ein fehlgeschlagener Lauf loest die Fehler-Mail von GitHub an den Repo-Inhaber aus (Einstellungen > Notifications > Actions).
+name: Erreichbarkeit
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Startseite und stress.json
+        run: |
+          for i in 1 2 3 4 5 6; do
+            s=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 https://investtimer.net/ || echo 000)
+            j=$(curl -s --max-time 20 https://investtimer.net/data/stress.json | python3 -c "import json,sys;print(json.load(sys.stdin)['publicSnapshot']['rounded'])" 2>/dev/null || echo fehlt)
+            echo "Versuch $i: Startseite $s, stress.json rounded=$j"
+            if [ "$s" = "200" ] && [ "$j" != "fehlt" ]; then exit 0; fi
+            sleep 60
+          done
+          echo "::error::investtimer.net seit mehr als 5 Minuten nicht erreichbar (Startseite $s, stress.json $j)"
+          exit 1

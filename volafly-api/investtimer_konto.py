@@ -78,6 +78,9 @@ def verbinden():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
     neu = not os.path.exists(DB)
     db = sqlite3.connect(DB, timeout=10)
+    # WAL: Lesen blockiert Schreiben nicht; busy_timeout wartet bis 10 s auf Sperren (Belastbarkeit 20.11.2026)
+    db.execute("PRAGMA journal_mode=WAL")
+    db.execute("PRAGMA busy_timeout=10000")
     db.row_factory = sqlite3.Row
     db.executescript(SCHEMA)
     if neu:

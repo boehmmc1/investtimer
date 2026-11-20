@@ -47,6 +47,21 @@ def dienste():
     melde(B, "stress.json aktualisiert (vor %d Min.)" % alter, alter < 30, "hoch", "/var/lib/investtimer/data/stress.json")
 
 
+def nginx_wirksam():
+    """Ein abgelehnter Reload faellt sonst nicht auf: nginx -t und systemctl reload melden Erfolg, der Master behaelt die alte Konfiguration."""
+    worker = sh("ps -o lstart= -C nginx --sort=-start_time | tail -1")
+    import email.utils
+    try:
+        start = datetime.strptime(worker.strip(), "%a %b %d %H:%M:%S %Y").timestamp()
+    except ValueError:
+        start = 0
+    dateien = [Path("/etc/nginx/sites-available/investtimer"), Path("/etc/nginx/snippets/investtimer-sicherheit.conf"), Path("/etc/nginx/investtimer-lasttest.conf")]
+    neueste = max(p.stat().st_mtime for p in dateien if p.exists())
+    emerg = sh("grep -c '\\[emerg\\]' /var/log/nginx/error.log 2>/dev/null || true")
+    melde(B, "nginx laeuft mit der aktuellen Konfiguration (Worker nach letzter Aenderung gestartet)", start >= neueste - 2, "hoch",
+          "ps nginx worker vs mtime der Konfiguration", "Worker %s, Konfiguration %s, emerg im error.log: %s" % (worker.strip(), time.ctime(neueste), emerg))
+
+
 def logs():
     for seit, schwere in (("-48h", "mittel"), ("-7d", "info")):
         j = sh("journalctl -p err -S %s --no-pager -o cat -u volafly-chat -u nginx -u 'investtimer-*' 2>/dev/null | grep -v '^-- ' | wc -l" % seit)
@@ -155,7 +170,7 @@ def mails():
 
 
 def main():
-    blocks = [dienste, logs, sicherung, dns] + ([mails] if "--mails" in sys.argv else [])
+    blocks = [dienste, nginx_wirksam, logs, sicherung, dns] + ([mails] if "--mails" in sys.argv else [])
     for f in blocks:
         try:
             f()

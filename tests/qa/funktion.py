@@ -174,7 +174,7 @@ def mail(a, betreff, satz):
         return orig(a, betreff, satz)
     return True
 ps.mail_senden = mail
-ps.an_nutzer = lambda uid, n: (0, None)
+ps.an_nutzer = lambda uid, n: (0, 0, 0)
 TAG = {"d": dt.datetime(2026, 11, 20, 10, 0)}
 class FakeDT(dt.datetime):
     @classmethod

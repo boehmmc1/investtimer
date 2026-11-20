@@ -628,14 +628,33 @@ def it_aktuell(request: Request):
     sperre = _it_premium_noetig(uid)
     if sperre:
         return sperre
-    try:
-        get_current_indicators()
-        daten = marktstress.payload_from_rows(_cache["haupt"], _cache.get("stress_cfg"))
-    except Exception as e:
-        print(f"[investtimer] aktuell: {type(e).__name__}", flush=True)
+    roh = _it_aktuell_roh()
+    if roh is None:
         return _it_aus()
-    daten["berechnetUm"] = _it_berechnet_um()
-    return _JSONResp(daten, headers={"Cache-Control": "no-store"})
+    from fastapi.responses import Response as _R
+    return _R(content=roh, media_type="application/json", headers={"Cache-Control": "no-store"})
+
+
+_it_ak = {"t": 0.0, "roh": None}
+_it_ak_sperre = __import__("threading").Lock()
+
+
+def _it_aktuell_roh():
+    """Aktueller Wert als fertige JSON-Antwort, 30 s zwischengespeichert; nur ein Thread rechnet neu (Belastbarkeit 20.11.2026)."""
+    if _it_ak["roh"] is not None and time.time() - _it_ak["t"] < 30:
+        return _it_ak["roh"]
+    with _it_ak_sperre:
+        if _it_ak["roh"] is not None and time.time() - _it_ak["t"] < 30:
+            return _it_ak["roh"]
+        try:
+            get_current_indicators()
+            daten = marktstress.payload_from_rows(_cache["haupt"], _cache.get("stress_cfg"))
+        except Exception as e:
+            print(f"[investtimer] aktuell: {type(e).__name__}", flush=True)
+            return _it_ak["roh"]   # letzter guter Stand, sonst None
+        daten["berechnetUm"] = _it_berechnet_um()
+        _it_ak.update(t=time.time(), roh=json.dumps(daten, ensure_ascii=False).encode())
+        return _it_ak["roh"]
 
 
 _it_bu = {"t": 0.0, "wert": None}

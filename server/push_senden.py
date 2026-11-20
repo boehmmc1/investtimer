@@ -15,6 +15,7 @@ beschreibt nur den Stand, ohne Handlungsempfehlung.
 import json
 import os
 import sys
+import time
 import urllib.request
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -90,18 +91,36 @@ def mail_senden(alarm, betreff, satz):
               '<p style="font-size:13px;color:#5b6b66;border-top:1px solid #dfe5dc;padding-top:12px">'
               '<a href="%s" style="color:#5b6b66">%s</a> · %s</p>'
               '</div>') % (e(satz), e(einleitung), SEITE, e(tx["hinweis"]), e(abmelden), e(tx["abmelden"]), e(tx["verwalten"]))
-    try:
-        r = requests.post(RESEND_API + "/emails", timeout=15, headers={"Authorization": "Bearer " + key}, json={
-            "from": ABSENDER, "to": [alarm["email"]], "reply_to": "info@investtimer.net", "subject": betreff,
-            "text": text, "html": inhalt,
-            "headers": {"List-Unsubscribe": "<%s>" % abmelden, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"}})
-    except Exception as fehler:
-        print("[mail] Fehler: %s" % type(fehler).__name__, flush=True)
-        return False
-    if r.status_code >= 300:
-        print("[mail] Resend %s %s" % (r.status_code, (r.json() if r.content else {}).get("name")), flush=True)
-        return False
-    return True
+    # Drosselung und Wiederholung (Belastbarkeit 20.11.2026): Resend erlaubt 10 Anfragen/s; bei 429/5xx/Netzfehler bis zu 3 Versuche
+    # mit Wartezeit. Rueckgabe True = angenommen, False = dauerhaft abgelehnt, None = voruebergehend (Alarm bleibt scharf, naechster Lauf).
+    for versuch in range(3):
+        _drosseln()
+        try:
+            r = requests.post(RESEND_API + "/emails", timeout=15, headers={"Authorization": "Bearer " + key}, json={
+                "from": ABSENDER, "to": [alarm["email"]], "reply_to": "info@investtimer.net", "subject": betreff,
+                "text": text, "html": inhalt,
+                "headers": {"List-Unsubscribe": "<%s>" % abmelden, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"}})
+        except Exception as fehler:
+            print("[mail] Fehler: %s (Versuch %d)" % (type(fehler).__name__, versuch + 1), flush=True)
+            time.sleep(2 ** versuch)
+            continue
+        if r.status_code < 300:
+            return True
+        print("[mail] Resend %s %s (Versuch %d)" % (r.status_code, (r.json() if r.content else {}).get("name"), versuch + 1), flush=True)
+        if r.status_code != 429 and r.status_code < 500:
+            return False
+        time.sleep(float(r.headers.get("retry-after") or 2 ** versuch))
+    return None
+
+
+_letzte_mail = [0.0]
+
+
+def _drosseln(abstand=0.15):
+    warte = abstand - (time.time() - _letzte_mail[0])
+    if warte > 0:
+        time.sleep(warte)
+    _letzte_mail[0] = time.time()
 
 
 APNS = os.environ.get("INVESTTIMER_APNS", "/root/.investtimer/apns.json")
@@ -181,8 +200,9 @@ def senden(geraet, nachricht):
 
 
 def an_nutzer(uid, nachricht):
+    """Rueckgabe: (zugestellt, abgemeldet, voruebergehend fehlgeschlagen)."""
     ergebnis = [senden(g, nachricht) for g in alarme.geraete(uid)]
-    return ergebnis.count(True), ergebnis.count(False)
+    return ergebnis.count(True), ergebnis.count(False), ergebnis.count(None)
 
 
 def test(uid, kennung=None, sprache="de"):
@@ -230,17 +250,24 @@ def pruefen():
         tx = texte(a.get("sprache"))
         text = (tx["alarm_ueber"] if a["richtung"] == "ueber" else tx["alarm_unter"]) % (jetzt, s)
         kanal = a.get("kanal") or "push"
-        ok = 0
+        ok = spaeter = 0
         if kanal in ("push", "beide"):
-            ok, _ = an_nutzer(a["uid"], {"title": "InvestTimer", "body": text, "tag": "investtimer-alarm-%d" % a["id"], "url": "/"})
+            ok, _, spaeter = an_nutzer(a["uid"], {"title": "InvestTimer", "body": text, "tag": "investtimer-alarm-%d" % a["id"], "url": "/"})
         if kanal in ("email", "beide") and a.get("email"):
-            if mail_senden(a, text.rstrip("."), text):
+            m = mail_senden(a, text.rstrip("."), text)
+            if m:
                 ok += 1
                 mails += 1
+            elif m is None:
+                spaeter += 1
         if ok:
             alarme.ausgeloest(a["id"], tag)
             ausgeloest += 1
             zugestellt += ok
+        elif spaeter:
+            # nichts zugestellt, aber nur voruebergehend: Alarm bleibt scharf und wird im naechsten Lauf (10 Min.) erneut versucht
+            alarme.scharf_setzen(a["id"], True)
+            print("[push] Alarm %d: Zustellung voruebergehend fehlgeschlagen, erneuter Versuch im naechsten Lauf" % a["id"], flush=True)
     if ausgeloest or vorher != jetzt:
         print("[push] Wert %d -> %d: %d Alarme ausgeloest, %d Nachrichten (davon %d E-Mails)" % (vorher, jetzt, ausgeloest, zugestellt, mails), flush=True)
 
