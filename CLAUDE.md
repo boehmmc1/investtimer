@@ -112,3 +112,8 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   Timer `investtimer-qa` sonntags 06:00 Europe/Berlin (nur Kurzbericht per Mail). Nur Testkonten (qa-*@investtimer.net, werden geloescht). QA-Laeufe nie parallel
   zu anderen Browser-Tests (1 CPU-Kern, sonst falsche Befunde). Sicherheits-Header: Snippet `deploy/nginx-snippets/investtimer-sicherheit.conf`
   (/etc/nginx/snippets/), in server und JEDER location mit eigenem add_header einbinden (nginx 1.18 vererbt sonst nicht).
+- Belastbarkeit 20.11.2026: Lasttest `tests/last/lauf.sh <name>` (k6 in /opt/investtimer-qa, Testkonten `tests/last/konten.py anlegen|loeschen`,
+  nur ausserhalb :00-:05/:30-:35, Abbruch bei Fehlern/Volafly langsam/API > 1,2 GB). Ratenlimits per Schluessel `$it_limit_key`; Ausnahme nur waehrend
+  Lasttests ueber /etc/nginx/investtimer-lasttest.conf (sonst leer!). Limit-Zonen heissen it_chat/it_api: Key einer bestehenden Zone NIE aendern
+  (nginx verwirft dann jeden Reload still) – neue Zone mit neuem Namen anlegen und nach Reload `ps -o lstart -C nginx` (Worker-Startzeit) pruefen.
+  Externe Erreichbarkeit: .github/workflows/erreichbarkeit.yml (alle 5 Min., Fehler -> GitHub-Mail an den Repo-Inhaber).
