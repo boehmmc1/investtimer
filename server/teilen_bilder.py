@@ -61,6 +61,14 @@ def monat(d, sp):
     return "%s %d" % (T[sp]["monate"][d.month - 1], d.year)
 
 
+def stand_zeit(iso, sp):
+    """Zeitpunkt der Berechnung (UTC, ISO) als "20. Nov. 2026, 15:30" bzw. "Nov 20, 2026, 15:30" in Europe/Berlin."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    z = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(ZoneInfo("Europe/Berlin"))
+    return "%s, %02d:%02d" % (datum(z.date(), sp), z.hour, z.minute)
+
+
 def zeitraum(e, sp):
     a, b = monat(e["start"], sp), monat(date.fromisoformat(e["ende"]) - timedelta(days=1), sp)
     return a if a == b else a + " – " + b
@@ -232,7 +240,7 @@ def html_wert(d, fmt, sp):
     t, w = T[sp], d["wert"]
     s = stufe(w)
     W, H = FORMATE[fmt]
-    stand = t["stand"].format(d=datum(d["asOf"], sp))
+    stand = t["stand"].format(d=stand_zeit(d["zeit"], sp) if d.get("zeit") else datum(d["asOf"], sp))
     st = '<span class="stufe" style="color:%s"><i style="background:%s"></i>%s</span>' % (TEXTF[s], FARBEN[s], t["stufen"][s])
     if fmt == "quer":
         inhalt = (LOGO.replace('class="logo"', 'class="logo" style="left:72px;top:58px"')
@@ -264,7 +272,7 @@ def html_verlauf(d, spanne, fmt, sp):
     if not p:
         return None
     titel = t["verlauf"].format(z=t["spannen"][spanne])
-    stand = t["stand"].format(d=datum(p[-1][0], sp))
+    stand = t["stand"].format(d=stand_zeit(d["zeit"], sp) if d.get("zeit") else datum(p[-1][0], sp))
     if fmt == "quer":
         kopf = LOGO.replace('class="logo"', 'class="logo" style="left:60px;top:40px;font-size:28px"').replace("width:44px", "width:36px")
         inhalt = (kopf + '<div style="position:absolute;right:60px;top:46px;font-size:22px;color:#5f6c66">%s</div>' % esc(stand)
@@ -348,7 +356,7 @@ def rendern(html_text, W, H, ziel):
 
 def manifest(d):
     hist = d["historie"]
-    return {"asOf": d["asOf"], "wert": d["wert"], "stufe": stufe(d["wert"]),
+    return {"asOf": d["asOf"], "wert": d["wert"], "stufe": stufe(d["wert"]), "zeit": d.get("zeit"),
             "spannen": {z: (auswahl(hist, z)[0] or [[None]])[-1][0] for z in SPANNEN},
             "phasen": {e["id"]: {"name": e["name"], "name_en": e.get("name_en") or e["name"], "start": e["start"], "ende": e["ende"],
                                  "spitze": e["spitze"], "unter40": e.get("unter40")} for e in hist.get("ereignisse") or []}}
@@ -382,6 +390,11 @@ def main():
     if neueste.is_symlink() or neueste.exists():
         neueste.unlink()
     neueste.symlink_to(ordner.name)
+    live = ziel_basis / "live"
+    if live.is_dir():   # Live-Staende (aktueller Wert, eingeloggt geteilt) 30 Tage
+        for alt in live.iterdir():
+            if alt.is_dir() and time.time() - alt.stat().st_mtime > 30 * 86400:
+                shutil.rmtree(alt)
     for alt in ziel_basis.iterdir():
         if alt.is_dir() and not alt.is_symlink() and alt.name[:2] == "20" and time.time() - alt.stat().st_mtime > 60 * 86400:
             shutil.rmtree(alt)

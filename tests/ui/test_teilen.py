@@ -111,6 +111,83 @@ async def main():
             pruefe(ok and any('a=besuch-teilen-' + erwartet['m'] in a for a in harness.ZUSTAND['ansichten']), f'Ankunft {ziel}: {r}')
             pruefe(not js, f'Ankunft {ziel}: keine JS-Fehler {js[:2]}')
             await ctx.close()
+        # Kompakter Knopf: Symbol + "Teilen", 13-14 px, Sekundaerfarbe, ohne Rahmen/Hintergrund, Klickflaeche >= 44 px;
+        # Startseite in der Stufen-Zeile, Verlauf in der Zeitraum-Zeile (kein Umbruch), Ereigniskarte oben rechts
+        STIL = """b=>{const s=getComputedStyle(b),r=b.getBoundingClientRect();return {text:b.innerText.trim(),fs:parseFloat(s.fontSize),farbe:s.color,
+            rahmen:s.borderTopWidth,bg:s.backgroundColor,h:r.height,w:r.width,top:r.top,bottom:r.bottom,left:r.left,right:r.right,mitte:(r.top+r.bottom)/2}}"""
+        for w, h in ((320, 568), (390, 844), (1280, 860)):
+            for sp in ('de', 'en'):
+                for ein in (False, True):
+                    harness.ZUSTAND['teilen_aktuell'] = False
+                    ctx = await b.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 760, has_touch=w < 760)
+                    await harness.supabase_route(ctx)
+                    pg = await ctx.new_page(); js = []
+                    pg.on('pageerror', lambda e: js.append(str(e)))
+                    await pg.goto(url + (harness.LOGIN_HASH if ein else '')); await pg.wait_for_timeout(1300)
+                    if sp == 'en': await pg.evaluate("()=>{const h=document.querySelector('#header-language');h.value='en';h.dispatchEvent(new Event('change',{bubbles:true}))}"); await pg.wait_for_timeout(300)
+                    tag = f'{w} {sp} {"ein" if ein else "aus"}'
+                    wort = 'Share' if sp == 'en' else 'Teilen'
+                    k = await pg.evaluate("(STIL)=>{const f=eval(STIL),b=document.querySelector('.status-zeile .teilen-knopf'),st=document.querySelector('#status');return b&&st?{k:f(b),st:f(st),sub:getComputedStyle(document.body).getPropertyValue('--sub')}:null}", STIL)
+                    pruefe(k and k['k']['text'] == wort and 13 <= k['k']['fs'] <= 14 and k['k']['rahmen'] == '0px' and k['k']['bg'] in ('rgba(0, 0, 0, 0)', 'transparent')
+                           and k['k']['h'] >= 44 and k['k']['w'] >= 44 and abs(k['k']['mitte'] - k['st']['mitte']) < 6, f'{tag}: Startseite kompakter Knopf in der Stufen-Zeile {k and (k["k"]["text"], k["k"]["fs"], round(k["k"]["mitte"] - k["st"]["mitte"]))}')
+                    await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1400)
+                    v = await pg.evaluate("(STIL)=>{const f=eval(STIL),b=document.querySelector('.verlauf-kopf .teilen-knopf'),z=[...document.querySelectorAll('.verlauf-spanne')];return b?{k:f(b),z:z.map(f),vw:innerWidth,sw:document.documentElement.scrollWidth}:null}", STIL)
+                    gleiche_zeile = v and all(abs(x['mitte'] - v['k']['mitte']) < 4 for x in v['z'])
+                    pruefe(v and gleiche_zeile and v['k']['right'] <= v['vw'] and v['sw'] <= v['vw'] and v['k']['left'] >= max(x['right'] for x in v['z'])
+                           and v['k']['h'] >= 44 and (v['k']['text'] in (wort, '')), f'{tag}: Verlauf-Knopf in der Zeitraum-Zeile ohne Umbruch {v and (v["k"]["text"], round(v["k"]["left"]), round(v["k"]["right"]), v["vw"])}')
+                    kk = await pg.evaluate("(STIL)=>{const f=eval(STIL),c=document.querySelector('#verlauf-ansicht .ereignis-karte'),b=c&&c.querySelector('.karte-kopf .teilen-knopf'),h=c&&c.querySelector('h4');if(!b)return null;const r=c.getBoundingClientRect();return {k:f(b),h4:f(h),karte:{right:r.right,top:r.top}}}", STIL)
+                    pruefe(kk and kk['k']['right'] <= kk['karte']['right'] and kk['karte']['right'] - kk['k']['right'] < 24 and kk['k']['top'] - kk['karte']['top'] < 20
+                           and kk['k']['right'] > kk['h4']['right'], f'{tag}: Ereigniskarte Knopf oben rechts')
+                    pruefe(not js, f'{tag}: keine JS-Fehler {js[:2]}')
+                    if SHOT and sp == 'de' and not ein:
+                        await pg.screenshot(path=str(SHOT / f'teilen2_verlauf_{w}.png'))
+                        await pg.evaluate("history.pushState(null,'',location.pathname);dispatchEvent(new PopStateEvent('popstate'))"); await pg.wait_for_timeout(600)
+                        await pg.screenshot(path=str(SHOT / f'teilen2_start_{w}.png'))
+                    await ctx.close()
+        # Eingeloggt mit IT_TEILEN_AKTUELL: aktueller Wert, Stand mit Uhrzeit, Link mit Zeitstempel; Werte ueberall gleich
+        harness.ZUSTAND.update(teilen_aktuell=True, wert=77)
+        ctx = await b.new_context(viewport={'width': 1280, 'height': 860}); await harness.supabase_route(ctx)
+        await ctx.grant_permissions(['clipboard-read', 'clipboard-write'], origin=url.rstrip('/'))
+        pg = await ctx.new_page(); js = []
+        pg.on('pageerror', lambda e: js.append(str(e)))
+        await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(1500)
+        harness.ZUSTAND['teilen_bild'] = []
+        await pg.click('.status-zeile .teilen-knopf'); await pg.wait_for_timeout(1200)
+        d = await pg.evaluate(DIALOG_JS)
+        pruefe(d and '77 von 100 (Hoch)' in d['text'] and '· Stand 20. Nov. 2026, 15:34' in d['text'] and '/s/wert/2026-11-20T1534' in d['kopieren']
+               and any('aktuell=1' in x for x in harness.ZUSTAND['teilen_bild']), f'eingeloggt: aktueller Wert mit Uhrzeit und Zeitstempel-Link "{d and d["text"]}"')
+        await pg.keyboard.press('Escape')
+        start = await pg.evaluate("document.querySelector('.score')?.textContent?.trim()||document.querySelector('#score')?.textContent?.trim()")
+        werte = {}
+        await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1500)
+        for sp_ in ('1M', '3M', '1J', '5J', 'A'):
+            await pg.click('[data-spanne="%s"]' % sp_); await pg.wait_for_timeout(400)
+            werte[sp_] = await pg.evaluate("document.querySelector('.verlauf-endwert')?.textContent")
+        await pg.evaluate("location.hash='ki'"); await pg.wait_for_timeout(900)
+        ki = await pg.evaluate("document.querySelector('#ki-ansicht').innerText")
+        await pg.evaluate("history.pushState(null,'',location.pathname);dispatchEvent(new PopStateEvent('popstate'))"); await pg.wait_for_timeout(700)
+        bruecke = await pg.evaluate("[...document.querySelectorAll('.ki-bruecke-start, .ki-bruecke-knopf, .ki-bruecke')].map(x=>x.innerText).join(' ')")
+        pruefe(all(x == '77' for x in werte.values()) and 'HEUTE 77' in ki.upper() and 'hinter der 77' in bruecke, f'Werte ueberall gleich: Verlauf-Endpunkte {werte}, KI-Eyebrow, KI-Bruecke ({start})')
+        pruefe(not js, f'eingeloggt aktuell: keine JS-Fehler {js[:2]}')
+        await ctx.close()
+        harness.ZUSTAND.update(teilen_aktuell=False, wert=None)
+        # Landeseite eines geteilten Links (ausgeloggt): Band mit Wert, Stufe, Stand; Registrieren; schliessbar
+        for sp, ziel_, text in (('de', '?geteilt=wert&st=%s&utm_source=teilen&utm_medium=x' % STAND, 'Geteilt: Marktstress %d (' % MANI['wert']),
+                                ('en', '?geteilt=wert&st=%s&lang=en&utm_source=teilen&utm_medium=x' % STAND, 'Shared: market stress %d (' % MANI['wert'])):
+            ctx = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True); pg = await ctx.new_page(); js = []
+            pg.on('pageerror', lambda e: js.append(str(e)))
+            await pg.goto(url + ziel_); await pg.wait_for_timeout(2000)
+            band = await pg.evaluate("document.querySelector('.geteilt-band')?.innerText||''")
+            pruefe(text in band and ('Kostenlos registrieren' in band or 'Sign up free' in band), f'Band {sp}: "{band[:90]}"')
+            if SHOT and sp == 'de': await pg.screenshot(path=str(SHOT / 'teilen2_band_390.png'))
+            await pg.click('[data-band-registrieren]'); await pg.wait_for_timeout(700)
+            reg = await pg.evaluate("document.querySelector('#access-dialog[open], dialog[open]')?.innerText||''")
+            pruefe(('Konto anlegen' in reg) if sp == 'de' else ('Create your account' in reg), f'Band {sp}: Registrieren oeffnet den Dialog "{reg[:60]}"')
+            await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
+            await pg.click('[data-band-zu]'); await pg.wait_for_timeout(200)
+            pruefe(await pg.evaluate("!document.querySelector('.geteilt-band')"), f'Band {sp}: schliessbar')
+            pruefe(not js, f'Band {sp}: keine JS-Fehler {js[:2]}')
+            await ctx.close()
         await b.close()
     print('FEHLER:', len(fehler)); return 1 if fehler else 0
 sys.exit(asyncio.run(main()))

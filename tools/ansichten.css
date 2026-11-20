@@ -255,14 +255,27 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 .ki-frei-leer .ki-frage:hover{text-decoration:underline;text-underline-offset:3px}
 .ki-frei-leer .ki-chip{border-color:var(--accent);background:var(--surface,#fff)}
 @media(max-width:759px){.ki-limit{font-size:11px;margin-top:6px}}
-/* Teilen (20.11.2026): dezenter Knopf mit Symbol, mind. 44 px; Dialog mit Bild, Download, Link, Netzwerke */
-.teilen-knopf{display:inline-flex;align-items:center;gap:7px;min-height:44px;min-width:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--sub);font-size:13px;cursor:pointer;white-space:nowrap}
-.teilen-knopf svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.teilen-knopf:hover{color:var(--accent);border-color:var(--accent)}
-.teilen-knopf:focus-visible{outline:2px solid #698dbc;outline-offset:2px}
-.teilen-start{display:flex;justify-content:center;margin:14px 0 0;min-height:44px}
-.teilen-karte{margin:12px 0 0}
-.verlauf-kopf .teilen-knopf{margin-left:auto}
+/* Teilen (20.11.2026, kompakt): nur Symbol + Wort, Sekundaerfarbe, ohne Rahmen/Hintergrund; Klickflaeche 44 px ueber Innenabstand */
+.teilen-knopf{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;min-width:44px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:var(--sub);font-size:13px;line-height:1;cursor:pointer;white-space:nowrap}
+.teilen-knopf svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.teilen-knopf:hover,.teilen-knopf:focus-visible{color:var(--text)}
+.teilen-knopf:focus-visible{outline:2px solid #698dbc;outline-offset:0}
+/* Startseite: in der Stufen-Zeile, ohne die Zeile hoeher zu machen (negativer Rand gleicht die 44 px Klickflaeche aus) */
+.status-zeile{display:flex;align-items:center;justify-content:center;gap:2px;min-height:20px}
+.teilen-start{display:inline-flex;min-width:66px;height:44px;margin:-12px 0;align-items:center}
+.teilen-start:empty{visibility:hidden}
+.score-column .assessment .status-zeile .status{margin:0}
+/* Verlauf: in derselben Zeile wie die Zeitraeume, rechts */
+.verlauf-kopf{flex-wrap:nowrap}
+.verlauf-kopf .teilen-knopf{margin-left:auto;flex:none}
+@media(max-width:379px){.verlauf-kopf .verlauf-knoepfe{gap:4px}.verlauf-kopf .verlauf-spanne{padding:0 8px}.verlauf-kopf .teilen-knopf span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.verlauf-kopf .teilen-knopf{padding:0}}
+/* Ereigniskarte: oben rechts */
+.karte-kopf{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.karte-kopf .teilen-knopf{margin:-12px -8px -8px 0;flex:none}
+/* Band fuer Besucher eines geteilten Links (ausgeloggt) */
+.geteilt-band{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin:0 0 14px;padding:8px 44px 8px 14px;position:relative;border:1px solid var(--line);border-radius:10px;background:var(--panel,#f1f3ef);font-size:13px;line-height:1.45;color:var(--text);text-align:center}
+.geteilt-band .primary{min-height:44px;padding:0 14px;font-size:13px}
+.geteilt-band .geteilt-zu{position:absolute;right:0;top:50%;transform:translateY(-50%);min-width:44px;min-height:44px;border:0;background:none;color:var(--sub);font-size:20px;cursor:pointer}
 .teilen-dialog{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:20px 22px 22px;border:1px solid var(--line);border-radius:16px;background:var(--bg,#f8f8f3);color:var(--text);box-shadow:0 20px 60px rgba(27,51,48,.22)}
 .teilen-dialog::backdrop{background:rgba(27,51,48,.35)}
 .teilen-kopf{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}

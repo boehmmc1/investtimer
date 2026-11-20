@@ -75,6 +75,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         pfad = self.path.split('?')[0]
         ZUSTAND['aufrufe'].append(('GET', pfad))
+        if pfad == '/api/teilen/stand':
+            if not self._auth():
+                return self._json({'error': 'login'}, 401)
+            if not ZUSTAND.get('teilen_aktuell'):
+                return self._json({'aktuell': False})
+            basis = Path(os.environ.get('IT_TEILEN_DIR', '/var/lib/investtimer/teilen'))
+            m = json.loads((basis / 'aktuell' / 'manifest.json').read_text())
+            d = aktuell()
+            m.update(aktuell=True, stamp='2026-11-20T1534', wert=d['rounded'], zeit='2026-11-20T14:34:00Z', asOf=d['asOf'])
+            return self._json(m)
+        if pfad == '/api/teilen/bild':
+            # Live-Bild: Weiterleitung auf eine vorhandene Datei (nachgespielt), Aufrufe werden fuer den Test gezaehlt
+            ZUSTAND.setdefault('teilen_bild', []).append(self.path)
+            q = dict(x.split('=', 1) for x in self.path.split('?', 1)[1].split('&') if '=' in x)
+            name = {'wert': 'wert', 'verlauf': 'verlauf-' + q.get('zeitraum', '1J'), 'phase': 'phase-' + q.get('phase', '')}[q.get('art', 'wert')]
+            self.send_response(302)
+            self.send_header('Location', '/teilen/aktuell/%s-%s-%s.png' % (name, q.get('format', 'quer'), q.get('l', 'de')))
+            self.end_headers(); return
         if pfad.startswith('/teilen/'):
             # Teilen-Bilder und Manifest aus dem gerenderten Stand (server/teilen_bilder.py)
             basis = Path(os.environ.get('IT_TEILEN_DIR', '/var/lib/investtimer/teilen')).resolve()

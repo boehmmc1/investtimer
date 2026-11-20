@@ -45,6 +45,7 @@ function renderAccess(){
  if(['bestaetigen','zuruecksetzen','code'].includes(modus)){neuKnopf();if(warte()&&!uhr)uhr=setInterval(neuKnopf,1000)}
 }
 function wechsel(m,fokus){modus=m;zugangsFehler='';renderAccess();($(fokus||'')||$('#access-title'))?.focus({preventScroll:true})}
+IT.zugangNeu=()=>{renderAccess()};
 IT.zugangModus=m=>{if(gesendet&&['bestaetigen','zuruecksetzen','code'].includes(modus)&&m!=='neu')return;modus=m||'anmelden';zugangsFehler=''};
 const fertig=()=>{modus='anmelden';gesendet='';zugangsFehler='';closeAccess()};
 const zeigeFehler=(text,feld)=>{const f=$('#access-error');if(f){f.classList.remove('ok');f.textContent=text}feld&&feld.focus()};

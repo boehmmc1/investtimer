@@ -10,7 +10,6 @@ import html as _thtml
 from fastapi.responses import HTMLResponse as _THTML, RedirectResponse as _TRedirect, FileResponse as _TFile
 
 IT_TEILEN_DIR = os.environ.get("IT_TEILEN_DIR", "/var/lib/investtimer/teilen")
-IT_TEILEN_AKTUELL_DIR = os.environ.get("IT_TEILEN_AKTUELL_DIR", "/var/lib/investtimer/teilen-aktuell")
 IT_TEILEN_SERVER = "/var/www/investtimer/server"
 IT_TEILEN_BASIS = "https://investtimer.net"
 _IT_SPANNEN = ("1M", "3M", "1J", "5J", "A")
@@ -35,6 +34,16 @@ def _it_t_datum(d, sp):
     d = _d.fromisoformat(d)
     m = _IT_TEXTE[sp]["monate"][d.month - 1]
     return "%d. %s %d" % (d.day, m, d.year) if sp == "de" else "%s %d, %d" % (m, d.day, d.year)
+
+
+def _it_t_stand(m, sp, datum=None):
+    """Stand mit Uhrzeit (Live-Stand) oder nur Datum (zeitversetzter Tagesstand)."""
+    if m.get("zeit") and not datum:
+        from datetime import datetime as _dt
+        from zoneinfo import ZoneInfo as _Z
+        z = _dt.fromisoformat(m["zeit"].replace("Z", "+00:00")).astimezone(_Z("Europe/Berlin"))
+        return "%s, %02d:%02d" % (_it_t_datum(z.date().isoformat(), sp), z.hour, z.minute)
+    return _it_t_datum(datum or m["asOf"], sp)
 
 
 def _it_t_stufe(w):
@@ -71,7 +80,7 @@ def it_teilen_bild(request: Request, art: str = "wert", zeitraum: str = "1J", ph
         uid = _it_check_user(request.headers.get("authorization"))
         if not uid:
             return _JSONResp({"error": "login"}, status_code=401)
-        return _it_teilen_aktuell(name)
+        return _it_teilen_live_bild(name)
     m = _it_t_manifest()
     if not m:
         return _JSONResp({"error": "noch_nicht"}, status_code=503)
@@ -83,32 +92,108 @@ def it_teilen_bild(request: Request, art: str = "wert", zeitraum: str = "1J", ph
 _it_teilen_sperre = __import__("threading").Lock()
 
 
-def _it_teilen_aktuell(name):
-    """Bild mit aktuellem Stand (nur IT_TEILEN_AKTUELL=1 und Login): einmal je Tag und Variante rendern, privat ablegen."""
+def _it_hist_sync(hist, wert, as_of):
+    """Verlauf mit dem aktuellen Wert als letztem Punkt (gleiche Quelle wie /api/aktuell): heutiger Tag, laufende Woche und Monat."""
+    from datetime import date as _d
+    aus = dict(hist)
+    for art, schl in (("taeglich", lambda x: x), ("woechentlich", lambda x: _d.fromisoformat(x).isocalendar()[:2]), ("monatlich", lambda x: x[:7])):
+        r = list(hist.get(art) or [])
+        if r and r[-1][0] <= as_of:
+            letzt = r[-1]
+            if schl(letzt[0]) == schl(as_of):
+                lo, hi = (letzt[4], letzt[5]) if len(letzt) > 5 else (wert, wert)
+                r[-1] = [as_of, wert, letzt[2], "a"] + ([min(lo, wert), max(hi, wert)] if len(letzt) > 5 else [])
+            else:
+                r.append([as_of, wert, 14, "a"] + ([wert, wert] if art != "taeglich" else []))
+        aus[art] = r
+    return aus
+
+
+def _it_teilen_live():
+    """Aktueller Stand fuer das Teilen (IT_TEILEN_AKTUELL=1, nur mit Login): Ordner /teilen/live/<stamp>/ mit Manifest.
+    stamp = Zeitpunkt der Berechnung in Europe/Berlin (JJJJ-MM-TTTHHMM); gleicher Wert wie /api/aktuell."""
     import sys as _sys
-    tag = _kilim.tag()
-    ordner = os.path.join(IT_TEILEN_AKTUELL_DIR, tag)
-    datei = os.path.join(ordner, name + ".png")
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo as _Z
+    roh = _it_aktuell_roh()
+    if roh is None:
+        return None
+    live = json.loads(roh)
+    zeit = live.get("berechnetUm") or _dt.utcnow().strftime("%Y-%m-%dT%H:%M:00Z")
+    stamp = _dt.fromisoformat(zeit.replace("Z", "+00:00")).astimezone(_Z("Europe/Berlin")).strftime("%Y-%m-%dT%H%M")
+    ordner = os.path.join(IT_TEILEN_DIR, "live", stamp)
+    if IT_TEILEN_SERVER not in _sys.path:
+        _sys.path.insert(0, IT_TEILEN_SERVER)
+    import teilen_bilder as _tb
+    hist = _it_hist_sync(_it_historie_daten(), int(live["rounded"]), live["asOf"])
+    d = {"wert": int(live["rounded"]), "asOf": live["asOf"], "zeit": zeit, "historie": hist}
+    mf = os.path.join(ordner, "manifest.json")
+    if not os.path.exists(mf):
+        with _it_teilen_sperre:
+            if not os.path.exists(mf):
+                os.makedirs(ordner, exist_ok=True)
+                os.chmod(os.path.join(IT_TEILEN_DIR, "live"), 0o755)
+                os.chmod(ordner, 0o755)
+                m = _tb.manifest(d)
+                m["stamp"] = stamp
+                with open(mf + ".tmp", "w", encoding="utf-8") as f:
+                    json.dump(m, f, ensure_ascii=False)
+                os.chmod(mf + ".tmp", 0o644)
+                os.replace(mf + ".tmp", mf)
+    return {"d": d, "ordner": ordner, "stamp": stamp, "tb": _tb}
+
+
+def _it_teilen_rendern(stand, name):
+    """Ein Bild eines Stands einmal rendern (Sperre); Rueckgabe: Dateipfad oder None."""
+    datei = os.path.join(stand["ordner"], name + ".png")
     if not os.path.exists(datei):
         with _it_teilen_sperre:
             if not os.path.exists(datei):
-                if IT_TEILEN_SERVER not in _sys.path:
-                    _sys.path.insert(0, IT_TEILEN_SERVER)
-                import teilen_bilder as _tb
-                get_current_indicators()
-                live = marktstress.payload_from_rows(_cache["haupt"], _cache.get("stress_cfg"))
-                hist = _it_historie_daten()
-                d = {"wert": int(live["rounded"]), "asOf": hist["taeglich"][-1][0] if hist.get("taeglich") else tag, "historie": hist}
-                eintrag = next((v for v in _tb.varianten(d) if v[0] == name), None)
-                if not eintrag:
-                    return _JSONResp({"error": "variante"}, status_code=404)
-                h = eintrag[1](*eintrag[2])
-                if h is None:
-                    return _JSONResp({"error": "variante"}, status_code=404)
-                os.makedirs(ordner, mode=0o700, exist_ok=True)
+                _tb = stand["tb"]
+                eintrag = next((v for v in _tb.varianten(stand["d"]) if v[0] == name), None)
+                h = eintrag and eintrag[1](*eintrag[2])
+                if not h:
+                    return None
                 _tb.rendern(h, *_tb.FORMATE["quer" if "-quer-" in name else "hoch"], datei)
-                print(f"[investtimer] Teilen aktuell gerendert: {name}", flush=True)
-    return _TFile(datei, media_type="image/png", headers={"Cache-Control": "private, max-age=3600"})
+                print(f"[investtimer] Teilen live gerendert: {stand['stamp']}/{name}", flush=True)
+    return datei
+
+
+def _it_teilen_live_bild(name):
+    stand = _it_teilen_live()
+    if not stand:
+        return _it_aus()
+    if not _it_teilen_rendern(stand, name):
+        return _JSONResp({"error": "variante"}, status_code=404)
+    return _TRedirect("/teilen/live/%s/%s.png" % (stand["stamp"], name), status_code=302, headers={"Cache-Control": "private, no-store"})
+
+
+@app.get("/v1/investtimer/teilen/stand")
+def it_teilen_stand(request: Request):
+    """Fuer das Teilen mit Login: aktueller Stand (Wert, Stufe, Zeitpunkt, Stamp fuer Links). Ohne Schalter: zeitversetzter Stand."""
+    uid = _it_check_user(request.headers.get("authorization"))
+    if not uid:
+        return _JSONResp({"error": "login"}, status_code=401)
+    if _it_env("IT_TEILEN_AKTUELL") != "1":
+        return _JSONResp({"aktuell": False}, headers={"Cache-Control": "no-store"})
+    stand = _it_teilen_live()
+    if not stand:
+        return _it_aus()
+    with open(os.path.join(stand["ordner"], "manifest.json"), encoding="utf-8") as f:
+        m = json.load(f)
+    m["aktuell"] = True
+    return _JSONResp(m, headers={"Cache-Control": "no-store"})
+
+
+_IT_STAMP = __import__("re").compile(r"\d{4}-\d{2}-\d{2}T\d{4}")
+
+
+def _it_t_live_manifest(stamp):
+    try:
+        with open(os.path.join(IT_TEILEN_DIR, "live", stamp, "manifest.json"), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
 
 
 @app.get("/v1/investtimer/teilen/s/{pfad:path}")
@@ -119,26 +204,29 @@ def it_teilen_seite(request: Request, pfad: str, l: str = "de", utm_source: str 
     medium = _re.sub(r"[^a-z0-9-]", "", (utm_medium or "link").lower())[:20] or "link"
     utm = "utm_source=teilen&utm_medium=" + medium + ("&lang=en" if sp == "en" else "")
     datum = None
+    live = None
+    if teile[:1] in (["wert"], ["verlauf"]) and teile[-1:] and _IT_STAMP.fullmatch(teile[-1]):
+        live = _it_t_live_manifest(teile[-1])
     if teile[:1] == ["wert"] and len(teile) <= 2:
         datum = teile[1] if len(teile) == 2 else None
-        m = _it_t_manifest(datum)
+        m = live or _it_t_manifest(datum)
         if not m:
             return _TRedirect("/", status_code=302)
         s = _it_t_stufe(m["wert"])
         titel = t["wert"].format(w=m["wert"], s=t["stufen"][s])
-        text = t["stand"].format(d=_it_t_datum(m["asOf"], sp)) + " " + t["zusatz"]
+        text = t["stand"].format(d=_it_t_stand(m, sp)) + " " + t["zusatz"]
         bild = "wert-quer-" + sp
-        ziel = "/?" + utm
+        ziel = "/?geteilt=wert&st=%s&%s" % (m.get("stamp") or m["asOf"], utm)
     elif teile[:1] == ["verlauf"] and len(teile) in (2, 3) and teile[1] in _IT_SPANNEN:
         z = teile[1]
         datum = teile[2] if len(teile) == 3 else None
-        m = _it_t_manifest(datum)
+        m = live or _it_t_manifest(datum)
         if not m:
             return _TRedirect("/#verlauf", status_code=302)
         titel = t["verlauf"].format(z=t["spannen"][z])
-        text = t["stand"].format(d=_it_t_datum((m.get("spannen") or {}).get(z) or m["asOf"], sp)) + " " + t["zusatz"]
+        text = t["stand"].format(d=_it_t_stand(m, sp, None if live else (m.get("spannen") or {}).get(z))) + " " + t["zusatz"]
         bild = "verlauf-%s-quer-%s" % (z, sp)
-        ziel = "/?z=%s&%s#verlauf" % (z, utm)
+        ziel = "/?z=%s&geteilt=verlauf&st=%s&%s#verlauf" % (z, m.get("stamp") or m["asOf"], utm)
     elif teile[:1] == ["phase"] and len(teile) == 2 and _re.fullmatch(r"[a-z0-9]{2,40}", teile[1]):
         m = _it_t_manifest()
         ph = (m or {}).get("phasen", {}).get(teile[1])
@@ -151,7 +239,19 @@ def it_teilen_seite(request: Request, pfad: str, l: str = "de", utm_source: str 
         ziel = "/?phase=%s&%s#verlauf" % (teile[1], utm)
     else:
         return _TRedirect("/", status_code=302)
-    ordner = m["asOf"]
+    ordner = ("live/" + m["stamp"]) if live else m["asOf"]
+    if live and not os.path.exists(os.path.join(IT_TEILEN_DIR, ordner, bild + ".png")):
+        # Vorschaubild des geteilten Stands fehlt (z. B. nur im Hochformat geteilt): einmal nachrendern
+        try:
+            import sys as _sys
+            if IT_TEILEN_SERVER not in _sys.path:
+                _sys.path.insert(0, IT_TEILEN_SERVER)
+            import teilen_bilder as _tb
+            hist = _it_hist_sync(_it_historie_daten(), int(live["wert"]), live["asOf"])
+            _it_teilen_rendern({"d": {"wert": live["wert"], "asOf": live["asOf"], "zeit": live.get("zeit"), "historie": hist},
+                                "ordner": os.path.join(IT_TEILEN_DIR, ordner), "stamp": live["stamp"], "tb": _tb}, bild)
+        except Exception as e:
+            print(f"[investtimer] Teilen Vorschau: {type(e).__name__}", flush=True)
     bild_url = "%s/teilen/%s/%s.png" % (IT_TEILEN_BASIS, ordner, bild)
     adresse = "%s/s/%s%s" % (IT_TEILEN_BASIS, "/".join(teile), "?l=en" if sp == "en" else "")
     e = lambda x: _thtml.escape(str(x), quote=True)

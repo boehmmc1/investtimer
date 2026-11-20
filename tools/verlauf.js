@@ -31,9 +31,21 @@ const vMs=d=>Date.parse(d+'T12:00:00Z');
 const vEn=()=>document.documentElement.lang==='en';
 /* Monatswerte aus Wochenwerten, falls die API (aelterer Stand) keine liefert */
 function vMonate(w){const m={};(w||[]).forEach(p=>{const k=p[0].slice(0,7),lo=p[4]??p[1],hi=p[5]??p[1],a=m[k];m[k]=a?[p[0],p[1],p[2],p[3],Math.min(a[4],lo),Math.max(a[5],hi)]:[p[0],p[1],p[2],p[3],lo,hi]});return Object.keys(m).sort().map(k=>m[k])}
+/* Eine Quelle fuer den aktuellen Wert (Auftrag 20.11.2026): eingeloggt endet jede Reihe (Tag, laufende Woche, laufender Monat)
+   mit dem Wert aus /api/aktuell (IT.live) - gleich wie Startseite, KI-Bruecke, KI-Eyebrow und Teilen. */
+function vMitAktuell(reihe,art){
+ const v=vAn()&&IT.live;if(!v||v.rounded==null||!v.asOf||!reihe.length)return reihe;
+ const w=v.rounded,d=v.asOf,letzt=reihe[reihe.length-1];if(letzt[0]>d)return reihe;
+ const kw=x=>{const t=new Date(vMs(x));t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7));return t.toISOString().slice(0,10)};
+ const gleich=art==='taeglich'?letzt[0]===d:art==='woechentlich'?kw(letzt[0])===kw(d):letzt[0].slice(0,7)===d.slice(0,7);
+ const r=reihe.slice();
+ if(gleich)r[r.length-1]=[d,w,letzt[2],'a'].concat(letzt.length>5?[Math.min(letzt[4],w),Math.max(letzt[5],w)]:[]);
+ else r.push([d,w,v.count??14,'a'].concat(art==='taeglich'?[]:[w,w]));
+ return r;
+}
 function vAuswahl(){
  const [,tage,art]=SPANNEN.find(s=>s[0]===verlaufSpanne)||SPANNEN[2];
- const reihe=(art==='monatlich'&&!verlauf.monatlich?vMonate(verlauf.woechentlich):verlauf[art])||[];
+ const reihe=vMitAktuell((art==='monatlich'&&!verlauf.monatlich?vMonate(verlauf.woechentlich):verlauf[art])||[],art);
  const ende=reihe.length?vMs(reihe[reihe.length-1][0]):Date.now(),start=tage?ende-tage*864e5:-Infinity;
  const p=reihe.filter(x=>vMs(x[0])>=start);
  const a=p.length?p[0][0]:'',b=p.length?p[p.length-1][0]:'';
@@ -116,11 +128,11 @@ function vKarte(m){
  if(!m)return '';
  const nm=vEn()?m.name_en:m.name,bl=m.bloecke||{};
  const zeile=(k,l)=>bl[k]==null?'':'<div class="trieb-zeile"><span class="trieb-name">'+esc(t(l))+'</span><b>'+Math.round(bl[k])+'</b><span class="trieb-balken" aria-hidden="true"><i style="width:'+Math.round(bl[k])+'%;background:'+ITStufe.farbe(bl[k])+'"></i></span></div>';
- return '<h4>'+esc(nm)+'</h4><p class="karte-zeit">'+esc(vZeitraum(m))+'</p>'
+ return '<div class="karte-kopf"><h4>'+esc(nm)+'</h4>'+(IT.teilenKnopf?IT.teilenKnopf('phase',m.id):'')+'</div><p class="karte-zeit">'+esc(vZeitraum(m))+'</p>'
   +'<dl class="karte-zahlen"><div><dt>'+t('karteHoechst')+'</dt><dd>'+t('karteAm').replace('{w}',m.spitze.w).replace('{d}',vDatum(m.spitze.d))+'</dd></div>'
   +'<div><dt>'+t('karteUnter40')+'</dt><dd>'+(m.unter40?t('karteNachTagen').replace('{n}',m.unter40.tage):t('karteNochNicht'))+'</dd></div></dl>'
   +(m.bloecke?'<p class="karte-trieb-titel">'+t('karteTrieb').replace('{d}',vDatum(m.spitze.d))+'</p>'+zeile('volatility','triebVol')+zeile('price','triebPreis')+zeile('positioning','triebStimmung'):'')
-  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'')+(IT.teilenKnopf?'<div class="teilen-karte">'+IT.teilenKnopf('phase',m.id)+'</div>':'');
+  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'');
 }
 /* Chip-Leiste: Verlauf am Rand als Scroll-Hinweis, aktiven Chip in Sicht holen (nur die Leiste scrollt, nie die Seite) */
 function vChipsRand(c){if(!c)return;const max=c.scrollWidth-c.clientWidth;c.classList.toggle('rand-l',c.scrollLeft>2);c.classList.toggle('rand-r',max-c.scrollLeft>2)}

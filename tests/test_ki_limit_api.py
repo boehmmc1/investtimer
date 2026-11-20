@@ -64,6 +64,17 @@ class Dienste(BaseHTTPRequestHandler):
         self._json({}, 404)
 
 
+def teilen_testordner(tmp):
+    """Eigenes Teilen-Verzeichnis: zeitversetzte Staende als Verweis auf die echten Bilder (nur lesen), live/ beschreibbar im Testordner."""
+    d = tmp / "teilen"
+    d.mkdir()
+    echt = Path("/var/lib/investtimer/teilen")
+    for e in echt.iterdir():
+        if e.name != "live":
+            (d / e.name).symlink_to(e.resolve() if e.is_symlink() else e)
+    return d
+
+
 def frage(text, nutzer, ip, sprache="de"):
     req = urllib.request.Request("http://127.0.0.1:%d/v1/investtimer/chat" % PORT, method="POST",
                                  data=json.dumps({"frage": text, "verlauf": [], "sprache": sprache}).encode(),
@@ -101,7 +112,7 @@ def main():
         umgebung = dict(os.environ, IT_ENV_DATEI=str(tmp / "it.env"), IT_KI_DB=str(tmp / "ki.db"),
                         INVESTTIMER_KONTO_DB=str(tmp / "konto.db"), IT_GEHEIM_DIR=str(geheim),
                         ANTHROPIC_BASE_URL=dienst, ANTHROPIC_API_KEY="test", IT_RESEND_API=dienst,
-                        IT_TEILEN_AKTUELL_DIR=str(tmp / "teilen-aktuell"))
+                        IT_TEILEN_DIR=str(teilen_testordner(tmp)))
         log = open(tmp / "log", "w")
         api = subprocess.Popen(["/usr/local/bin/uvicorn", "volafly_chat:app", "--host", "127.0.0.1", "--port", str(PORT)],
                                cwd=tmp, env=umgebung, stdout=log, stderr=subprocess.STDOUT)
@@ -152,10 +163,21 @@ def teilen_pruefen(tmp):
     t0 = time.time()
     s, h, b = hole("/v1/investtimer/teilen/bild?art=wert&format=quer&l=de&aktuell=1", "nutzerT")
     t1 = time.time()
-    s2, _, b2 = hole("/v1/investtimer/teilen/bild?art=wert&format=quer&l=de&aktuell=1", "nutzerT")
+    ort = h.get("Location") or ""
+    stamp = ort.split("/")[3] if ort.startswith("/teilen/live/") else ""
+    datei = tmp / "teilen" / "live" / stamp / "wert-quer-de.png"
+    s2, h2, _ = hole("/v1/investtimer/teilen/bild?art=wert&format=quer&l=de&aktuell=1", "nutzerT")
     t2 = time.time()
-    pruefe(s == 200 and b[:4] == b"\x89PNG" and "private" in (h.get("Cache-Control") or "") and s2 == 200 and b2 == b and t2 - t1 < (t1 - t0) / 2,
-           f"Teilen aktuell: mit Login PNG, privat, zweiter Abruf aus dem Tages-Cache ({t1 - t0:.1f} s / {t2 - t1:.2f} s)")
+    pruefe(s == 302 and stamp and datei.exists() and datei.read_bytes()[:4] == b"\x89PNG" and s2 == 302 and t2 - t1 < (t1 - t0) / 2,
+           f"Teilen aktuell: mit Login Bild je Zeitstempel ({ort}), zweiter Abruf ohne neues Rendern ({t1 - t0:.1f} s / {t2 - t1:.2f} s)")
+    s, _, b = hole("/v1/investtimer/teilen/stand", "nutzerT")
+    m = json.loads(b) if s == 200 else {}
+    pruefe(m.get("aktuell") and m.get("stamp") == stamp and isinstance(m.get("wert"), int) and m.get("zeit"), f"Teilen-Stand mit Wert und Zeitpunkt {m.get('stamp')}")
+    s, _, b = hole("/v1/investtimer/teilen/s/wert/%s?utm_medium=x" % stamp)
+    pruefe(s == 200 and ("/teilen/live/%s/wert-quer-de.png" % stamp).encode() in b and b"geteilt=wert&st=" + stamp.encode() in b,
+           "Teilen-Link mit Zeitstempel: Vorschau zeigt genau das geteilte Bild, Weiterleitung mit Band-Angaben")
+    s, _, b = hole("/v1/investtimer/teilen/s/verlauf/1J/%s" % stamp)
+    pruefe(s == 200 and (tmp / "teilen" / "live" / stamp / "verlauf-1J-quer-de.png").exists(), "Verlauf-Link mit Zeitstempel: fehlendes Vorschaubild wird nachgerendert")
     (tmp / "it.env").write_text(env)
 
 
