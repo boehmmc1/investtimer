@@ -96,3 +96,9 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   Abo-Fragen nur mit IT_PAYWALL), Aktualität + Fehlererfassung (`tools/aktualitaet.js`, API `investtimer_api_fehler.py`, DB `/var/lib/investtimer/fehler.db`),
   Vorschaubild `server/og_bild.py` (Timer investtimer-og), Statistik `server/statistik.py` (Timer investtimer-statistik/-wochenbericht, Zugang
   `/root/.investtimer/statistik-zugang`, nginx-Snippet `/etc/nginx/investtimer-statistik.conf` nur auf dem Server). Narrativ hinter IT_NARRATIV (aus).
+- KI-Limit seit 20.11.2026 (DEC-016): Modul `volafly-api/investtimer_ki_limit.py` (SQLite `/var/lib/investtimer/ki.db`, `IT_KI_DB` ueberschreibt),
+  Preise `volafly-api/investtimer_ki_preise.json`. Freie Fragen: `IT_KI_TAG` (1) je Konto, `IT_KI_IP_TAG` (3) je IP (nur Arbeitsspeicher, wie in der
+  Datenschutzerklaerung), `INVESTTIMER_CHAT_TAGESLIMIT` (150) gesamt, Tag = Europe/Berlin. Beispiel-/Folge-/Ereignisfragen (feste Liste aus
+  `investtimer_fragen.json` ki_ansicht + `historie/ereignisse.json`) zaehlen nicht, Modell ohne Denken + effort low, Tages-Cache in ki.db.
+  Jeder Modellaufruf ueber `_it_usage` (usage-Zeile + Kostenbuchung). Kostenmail `IT_KI_KOSTEN_TAG_EUR`/`IT_KI_KOSTEN_MONAT_EUR` an `IT_KI_KOSTEN_AN`,
+  Pause ab 2x Tagesschwelle. Tests: `tests/test_ki_limit.py`, `tests/test_ki_limit_api.py` (ohne Kosten, nachgebaute Dienste), `tests/ui/test_ki_limit.py`.
