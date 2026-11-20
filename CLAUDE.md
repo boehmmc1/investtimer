@@ -117,3 +117,7 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   Lasttests ueber /etc/nginx/investtimer-lasttest.conf (sonst leer!). Limit-Zonen heissen it_chat/it_api: Key einer bestehenden Zone NIE aendern
   (nginx verwirft dann jeden Reload still) – neue Zone mit neuem Namen anlegen und nach Reload `ps -o lstart -C nginx` (Worker-Startzeit) pruefen.
   Externe Erreichbarkeit: .github/workflows/erreichbarkeit.yml (alle 5 Min., Fehler -> GitHub-Mail an den Repo-Inhaber).
+- Teilen v2 (20.11.2026 abends): IT_TEILEN_AKTUELL=1 (Michel). Eingeloggt: `/api/teilen/stand` (gleiche Quelle wie /api/aktuell, `_it_aktuell_roh`) und
+  `/api/teilen/bild?aktuell=1` rendern je Wert+Zeitstempel einmal nach `/var/lib/investtimer/teilen/live/<JJJJ-MM-TTTHHMM>/` (oeffentlich, 30 Tage),
+  Links `/s/wert/<stamp>`, `/s/verlauf/<Z>/<stamp>` (og:image = geteiltes Bild, fehlendes Querformat wird nachgerendert), Ziel `?geteilt=..&st=..` -> Band.
+  Verlauf-Endpunkt eingeloggt = IT.live (`vMitAktuell` in tools/verlauf.js). Neue API-Pfade brauchen eine eigene nginx-Location (UI-Tests sehen das nicht!).
