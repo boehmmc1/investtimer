@@ -6,14 +6,15 @@
   Frage gespeichert (gleiche Frage am gleichen Tag = gleiche Antwort, kein neuer Aufruf).
 - Kosten: jeder Modellaufruf wird mit seinen usage-Zahlen gebucht (Preise je Modell in investtimer_ki_preise.json).
   Ab dem Doppelten der Tagesschwelle sind freie Fragen bis Mitternacht pausiert.
-- IP-Adressen werden nur als Hash mit Tagesdatum gespeichert und nach drei Tagen geloescht.
+- IP-Adressen werden nur im Arbeitsspeicher bis zum Ende des Tages gezaehlt (wie in der Datenschutzerklaerung), nie auf der Platte.
+  Die API laeuft mit einem uvicorn-Prozess; nach einem Neustart beginnt die IP-Zaehlung neu.
 SQLite: /var/lib/investtimer/ki.db (IT_KI_DB ueberschreibt, z. B. fuer Tests).
 """
 import datetime
-import hashlib
 import json
 import os
 import sqlite3
+import threading
 from zoneinfo import ZoneInfo
 
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -64,8 +65,21 @@ def tag(zeit=None):
     return (zeit or jetzt()).astimezone(BERLIN).strftime("%Y-%m-%d")
 
 
-def ip_hash(ip, t=None):
-    return hashlib.sha256(("investtimer-ki|" + (t or tag()) + "|" + str(ip or "")).encode()).hexdigest()[:32]
+_IP = {}                     # (tag, ip) -> Anzahl freier Fragen, nur im Arbeitsspeicher
+_IP_SPERRE = threading.Lock()
+
+
+def _ip_anzahl(t, ip):
+    return _IP.get((t, str(ip or "")), 0) if ip else 0
+
+
+def _ip_plus(t, ip, n):
+    if not ip:
+        return
+    with _IP_SPERRE:
+        for k in [k for k in _IP if k[0] != t]:
+            del _IP[k]
+        _IP[(t, str(ip))] = max(0, _IP.get((t, str(ip)), 0) + n)
 
 
 def _anzahl(db, t, art, schluessel):
@@ -100,7 +114,7 @@ def stand(uid, ip, limit_konto, limit_ip, limit_gesamt, tagesschwelle_eur, t=Non
     db = verbinden()
     try:
         konto = _anzahl(db, t, "konto", uid) if uid else 0
-        ipz = _anzahl(db, t, "ip", ip_hash(ip, t)) if ip else 0
+        ipz = _ip_anzahl(t, ip)
         gesamt = _anzahl(db, t, "gesamt", "-")
         return {"heute": konto, "frei": limit_konto,
                 "verbraucht": konto >= limit_konto or ipz >= limit_ip,
@@ -113,21 +127,23 @@ def buchen(uid, ip, limit_konto, limit_ip, limit_gesamt, tagesschwelle_eur, t=No
     """Bucht eine freie Frage, wenn alle Grenzen es erlauben. Rueckgabe: None (gebucht) oder Grund
     'konto' | 'ip' | 'gesamt' | 'pause'. Alles in einer Transaktion (parallele Anfragen)."""
     t = t or tag()
-    h = ip_hash(ip, t)
     db = verbinden()
+    _IP_SPERRE.acquire()
     try:
         db.execute("BEGIN IMMEDIATE")
         if pausiert(tagesschwelle_eur, t, db):
             grund = "pause"
         elif uid and _anzahl(db, t, "konto", uid) >= limit_konto:
             grund = "konto"
-        elif _anzahl(db, t, "ip", h) >= limit_ip:
+        elif ip and _IP.get((t, str(ip)), 0) >= limit_ip:
             grund = "ip"
         elif _anzahl(db, t, "gesamt", "-") >= limit_gesamt:
             grund = "gesamt"
         else:
             grund = None
-            for art, schluessel in (("konto", uid), ("ip", h), ("gesamt", "-")):
+            if ip:
+                _IP[(t, str(ip))] = _IP.get((t, str(ip)), 0) + 1
+            for art, schluessel in (("konto", uid), ("gesamt", "-")):
                 if schluessel:
                     db.execute("INSERT INTO frei VALUES (?,?,?,1) ON CONFLICT(tag, art, schluessel) DO UPDATE SET anzahl=anzahl+1",
                                (t, art, schluessel))
@@ -140,14 +156,27 @@ def buchen(uid, ip, limit_konto, limit_ip, limit_gesamt, tagesschwelle_eur, t=No
         db.execute("ROLLBACK")
         raise
     finally:
+        _IP_SPERRE.release()
+        db.close()
+
+
+def konto_loeschen(uid):
+    """Kontoloeschung: Zaehler der KI-Fragen des Kontos entfernen (Kosten und Antwort-Cache enthalten keine Kontodaten)."""
+    if not uid:
+        return
+    db = verbinden()
+    try:
+        db.execute("DELETE FROM frei WHERE art='konto' AND schluessel=?", (uid,))
+    finally:
         db.close()
 
 
 def zurueckbuchen(uid, ip, t):
     """Frage ohne Antwort (Fehler beim Modell): Buchung zuruecknehmen."""
+    _ip_plus(t, ip, -1)
     db = verbinden()
     try:
-        for art, schluessel in (("konto", uid), ("ip", ip_hash(ip, t)), ("gesamt", "-")):
+        for art, schluessel in (("konto", uid), ("gesamt", "-")):
             if schluessel:
                 db.execute("UPDATE frei SET anzahl=MAX(0, anzahl-1) WHERE tag=? AND art=? AND schluessel=?", (t, art, schluessel))
     finally:

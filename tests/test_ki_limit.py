@@ -20,6 +20,7 @@ class KiLimit(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+        k._IP.clear()
 
     def test_konto_einmal_je_tag(self):
         self.assertIsNone(k.buchen("u1", "1.1.1.1", *GRENZEN, t="2026-11-20"))
@@ -73,16 +74,21 @@ class KiLimit(unittest.TestCase):
         k.warnung_zuruecknehmen("monat", "2026-11")
         self.assertEqual([w[0] for w in k.faellige_warnungen(1.0, 2.0, t="2026-11-21")], ["monat"])
 
+    def test_konto_loeschen(self):
+        self.assertIsNone(k.buchen("u1", "1.1.1.1", *GRENZEN, t="2026-11-20"))
+        k.konto_loeschen("u1")
+        self.assertEqual(k.stand("u1", None, *GRENZEN, t="2026-11-20")["heute"], 0)
+
     def test_cache_je_tag(self):
         k.cache_schreiben("beispiel|de|x", "Antwort", t="2026-11-20")
         self.assertEqual(k.cache_lesen("beispiel|de|x", t="2026-11-20"), "Antwort")
         self.assertIsNone(k.cache_lesen("beispiel|de|x", t="2026-11-21"))
 
-    def test_ip_nur_als_hash(self):
+    def test_ip_nie_auf_der_platte(self):
         k.buchen("u1", "203.0.113.7", *GRENZEN, t="2026-11-20")
         roh = Path(os.environ["IT_KI_DB"]).read_bytes()
         self.assertNotIn(b"203.0.113.7", roh)
-
+        self.assertEqual(k._ip_anzahl("2026-11-20", "203.0.113.7"), 1)
 
 if __name__ == "__main__":
     unittest.main()

@@ -153,6 +153,7 @@ async def it_konto_loeschen(request: Request):
         return _it_aus()
     _alarme.konto_loeschen(uid)
     _konto.konto_loeschen(uid)
+    _kilim.konto_loeschen(uid)
     for tok in [t for t, c in _it_auth_cache.items() if c[0] == uid]:
         del _it_auth_cache[tok]
     rc = _it_geheim("revenuecat")

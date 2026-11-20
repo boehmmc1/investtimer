@@ -109,7 +109,7 @@ def main():
         time.sleep(31)  # API liest die Schalter alle 30 s neu
     open(envdatei, "w").write("".join(echte) + "IT_PAYWALL=1\nIT_ABO_MAILS=1\n")
     env = dict(os.environ, IT_ENV_DATEI=envdatei, IT_GEHEIM_DIR=geheim, IT_RESEND_API=FAKE + "/resend",
-               INVESTTIMER_KONTO_DB=os.path.join(TMP, "konto.db"), INVESTTIMER_ALARME_DB=os.path.join(TMP, "alarme.db"))
+               INVESTTIMER_KONTO_DB=os.path.join(TMP, "konto.db"), INVESTTIMER_ALARME_DB=os.path.join(TMP, "alarme.db"), IT_KI_DB=os.path.join(TMP, "ki.db"))
     api = subprocess.Popen(["/usr/local/bin/uvicorn", "volafly_chat:app", "--host", "127.0.0.1", "--port", "8199"], cwd="/root/volafly-chat",
                            env=env, stdout=open(os.path.join(TMP, "api.log"), "w"), stderr=subprocess.STDOUT)
     _, keys, _ = st.http("GET", "%s/projects/%s/api-keys" % (st.API, st.REF), kopf={"Authorization": "Bearer " + st.token()})
@@ -235,7 +235,7 @@ def main():
         c2, _ = rufe("GET", "/v1/investtimer/aktuell", tok=tok)
         check("23 Ohne Premium: Verlauf und aktueller Wert gesperrt (403 premium)", c1 == 403 and d1.get("error") == "premium" and c2 == 403, (c1, c2))
         c, k = rufe("GET", "/v1/investtimer/konto", tok=tok)
-        check("24 KI-Kontingent ohne Premium 0", k.get("ki", {}).get("tag") == 0, k.get("ki"))
+        check("24 KI-Kontingent ohne Premium 0", k.get("ki", {}).get("frei") == 0 and k.get("ki", {}).get("verbraucht") is True, k.get("ki"))
         # 25 Kontoloeschung: Supabase, RevenueCat, lokale Daten
         c, d = rufe("POST", "/v1/investtimer/konto/loeschen", {"bestaetigung": "löschen"}, tok)
         code, _, _ = st.http("GET", st.AUTH["url"] + "/auth/v1/admin/users/" + uid, kopf=admin)
