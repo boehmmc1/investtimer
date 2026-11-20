@@ -16,7 +16,7 @@ EMAIL = 'test@investtimer.net'
 _p = base64.urlsafe_b64encode(json.dumps({'sub': 'test-uid-1', 'email': EMAIL, 'exp': int(time.time()) + 86400}).encode()).decode().rstrip('=')
 TOKEN = 'eyJhbGciOiJIUzI1NiJ9.' + _p + '.sig'
 LOGIN_HASH = '#access_token=%s&refresh_token=r1&expires_in=3600&type=magiclink' % TOKEN
-ZUSTAND = {'wert': None, 'chat_status': 200, 'chat_ok': True, 'rest': 2, 'chat_verzoegerung': 0.4, 'alarme': None,
+ZUSTAND = {'wert': None, 'chat_status': 200, 'chat_ok': True, 'frei': {'verbraucht': False, 'ausgelastet': False}, 'chat_fehler': 'limit', 'chat_verzoegerung': 0.4, 'alarme': None,
            'antwort': None, 'aufrufe': [], 'aktuell_verzoegerung': 0, 'feedback_status': 200, 'feedback': [], 'alter_min': 3, 'fehler': [], 'ansichten': []}
 
 
@@ -48,7 +48,7 @@ def aktuell():
 
 def antwort_standard(frage):
     return {'antwort': '51 heißt: angespannt, aber weit weg von Panik. Am stärksten ziehen gerade die Kursschwankungen, ihr Teilwert liegt bei 68 und damit so hoch wie zuletzt im Sommer. Die Breite des Marktes hält dagegen noch ganz gut.\n\nMan kann es sich wie Wellengang vorstellen, nicht wie Sturm. Im April 2025 stand derselbe Wert bei 95, da kam alles zusammen. Davon ist der Markt heute ein gutes Stück entfernt.',
-            'rest': ZUSTAND['rest'],
+            'katalog': False, 'frei': dict(ZUSTAND['frei']),
             'belege': {'reihe': [[p[0], p[1]] for p in HIST()['taeglich'][-30:]], 'markiert': HIST()['taeglich'][-1][0],
                        'bis': HIST()['taeglich'][-1][0], 'teilwerte': {'volatility': 52, 'price': 38, 'positioning': 44}}}
 
@@ -99,7 +99,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             if not self._auth():
                 return self._json({'error': 'login'}, 401)
             return self._json({'premium': False, 'pflicht': False, 'paywall': False, 'status': 'frei',
-                               'ki': {'tag': 2, 'heute': 2 - ZUSTAND['rest'], 'monat': 200}, 'tarife': {}})
+                               'ki': dict(ZUSTAND['frei'], heute=int(ZUSTAND['frei']['verbraucht']), frei=1), 'tarife': {}})
         if pfad == '/api/konto/export':
             return self._json({'email': EMAIL, 'alarme': []}) if self._auth() else self._json({'error': 'login'}, 401)
         if pfad == '/api/alarme':
@@ -126,7 +126,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if pfad == '/api/chat':
             time.sleep(ZUSTAND['chat_verzoegerung'])
             if ZUSTAND['chat_status'] != 200:
-                return self._json({'error': 'x'}, ZUSTAND['chat_status'])
+                return self._json({'error': ZUSTAND['chat_fehler'] if ZUSTAND['chat_status'] == 429 else 'x'}, ZUSTAND['chat_status'])
             frage = json.loads(roh or b'{}').get('frage', '')
             return self._json(ZUSTAND['antwort'] or antwort_standard(frage))
         return self._json({'ok': True})

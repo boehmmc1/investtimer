@@ -2,18 +2,84 @@
 # Repo: volafly-api/investtimer_api_chat.py, eingebaut mit deploy/api_einbauen.py (ab dieser Markierung).
 # Konstanten hier (ueberschreiben die gleichnamigen Werte oben in volafly_chat.py).
 IT_LIMIT_IP = 10            # Fragen pro Tag und IP (ohne Anmeldung)
-IT_LIMIT_IP_AUTH = 30       # Fragen pro Tag und IP, wenn die Anmeldung aktiv ist (mehrere Konten hinter einer IP)
-IT_LIMIT_GESAMT = 300       # Fragen mit Modellaufruf pro Tag insgesamt
+IT_LIMIT_IP_AUTH = 300      # Anfragen pro Tag und IP insgesamt (Flutschutz; freie Fragen begrenzt investtimer_ki_limit)
+# Freie Fragen (20.11.2026): IT_KI_TAG je Konto (1), IT_KI_IP_TAG je IP (3), INVESTTIMER_CHAT_TAGESLIMIT gesamt (150),
+# Kostenschwellen IT_KI_KOSTEN_TAG_EUR (5) / IT_KI_KOSTEN_MONAT_EUR (50), Mail an IT_KI_KOSTEN_AN, alles in .env.
 IT_MAX_FRAGE = 300          # Zeichen pro Frage
 IT_MAX_VERLAUF = 6          # mitgeschickte Nachrichten
 IT_PROMPT = "/var/www/investtimer/volafly-api/investtimer_prompt.md"
 IT_FRAGEN = "/var/www/investtimer/volafly-api/investtimer_fragen.json"
 IT_ANTWORTEN = "/var/www/investtimer/volafly-api/investtimer_antworten.json"
+IT_EREIGNISSE = "/var/www/investtimer/historie/ereignisse.json"
 IT_THEMEN = ["volatilitaetsprodukte", "marktmechanik", "lehren"]
 # Gleiche Pipeline wie /chat (Modell, Werkzeuge, Prompt-Caching, Vorlagen-Sparpfad),
 # aber eigenes Profil: nur die 14 Marktstress-Bestandteile, drei Wissensthemen.
 import hashlib as _hl
+import threading as _th
 import vorlagen as _vl
+import investtimer_ki_limit as _kilim
+
+
+def _it_kosten_schwellen():
+    def zahl(k, std):
+        try:
+            return float(_it_env(k) or std)
+        except ValueError:
+            return float(std)
+    return zahl("IT_KI_KOSTEN_TAG_EUR", 5), zahl("IT_KI_KOSTEN_MONAT_EUR", 50)
+
+
+def _it_eur(x):
+    return ("%.2f" % x).replace(".", ",") + " €"
+
+
+def _it_kosten_mail(art, periode, betrag, schwelle):
+    texte = {"tag": ("Tageskosten der InvestTimer-KI über " + _it_eur(schwelle),
+                     "Die InvestTimer-KI hat am %s bisher %s gekostet (Schwelle %s)." % (periode, _it_eur(betrag), _it_eur(schwelle))),
+             "pause": ("Freie KI-Fragen pausiert (Kosten heute " + _it_eur(betrag) + ")",
+                       "Die Tageskosten am %s liegen bei %s und damit über dem Doppelten der Tagesschwelle. Freie Fragen sind "
+                       "bis Mitternacht (Europe/Berlin) pausiert, Beispielfragen laufen weiter." % (periode, _it_eur(betrag))),
+             "monat": ("Monatskosten der InvestTimer-KI über " + _it_eur(schwelle),
+                       "Die InvestTimer-KI hat im Monat %s bisher %s gekostet (Schwelle %s)." % (periode, _it_eur(betrag), _it_eur(schwelle)))}
+    betreff, text = texte[art]
+    ue = _kilim.uebersicht()
+    text += "\n\nHeute: %s · Monat: %s · freie Fragen heute: %d\n" % (_it_eur(ue["tagEur"]), _it_eur(ue["monatEur"]), ue["freiGesamt"])
+    text += "".join("  %s (%s): %d Aufrufe, %.4f €\n" % (a["art"], a["modell"], a["aufrufe"], a["eur"]) for a in ue["arten"])
+    text += "\nSchwellen und Grenzen in /root/volafly-chat/.env (IT_KI_KOSTEN_TAG_EUR, IT_KI_KOSTEN_MONAT_EUR, INVESTTIMER_CHAT_TAGESLIMIT).\n"
+    key = _it_resend()
+    if not key:
+        raise RuntimeError("kein Resend-Schluessel")
+    r = _rq.post(os.environ.get("IT_RESEND_API", "https://api.resend.com") + "/emails", timeout=15,
+                 headers={"Authorization": "Bearer " + key},
+                 json={"from": "InvestTimer Betrieb <alarm@investtimer.net>", "to": [_it_env("IT_KI_KOSTEN_AN") or "info@investtimer.net"],
+                       "subject": ("TEST " if _it_env("IT_KI_KOSTEN_TEST") == "1" else "") + betreff, "text": text})
+    if r.status_code >= 300:
+        raise RuntimeError("Resend %d" % r.status_code)
+
+
+def _it_kosten_pruefen():
+    tag_eur, monat_eur = _it_kosten_schwellen()
+    for art, periode, betrag, schwelle in _kilim.faellige_warnungen(tag_eur, monat_eur):
+        try:
+            _it_kosten_mail(art, periode, betrag, schwelle)
+            print(f"[investtimer] Kostenmail {art} {periode}: {betrag:.2f} EUR", flush=True)
+        except Exception as e:
+            _kilim.warnung_zuruecknehmen(art, periode)
+            print(f"[investtimer] Kostenmail {art}: {type(e).__name__}: {e}", flush=True)
+
+
+def _it_usage(art, u, extra=""):
+    """[usage]-Zeile ausgeben und den Aufruf mit Kosten buchen (Grundlage fuer Tages-/Monatskosten und Kostenmail).
+    u: usage-Objekt oder dict mit input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens."""
+    g = (lambda k: (u.get(k) if isinstance(u, dict) else getattr(u, k, 0)) or 0)
+    tin, tout, cr, cw = g("input_tokens"), g("output_tokens"), g("cache_read_input_tokens"), g("cache_creation_input_tokens")
+    try:
+        eur, _, _ = _kilim.kosten_buchen(art.split()[0], MODEL, tin, tout, cr, cw)
+    except Exception as e:
+        eur = 0.0
+        print(f"[investtimer] Kosten buchen: {type(e).__name__}", flush=True)
+    print(f"[usage] investtimer {art} in={tin} out={tout} cache_read={cr} cache_write={cw} eur={eur:.5f}{extra}", flush=True)
+    _th.Thread(target=_it_kosten_pruefen, daemon=True).start()
 
 _IT_KEYS = {k for _, _, m, r in marktstress.COMPONENTS for k in ([m] if m else r[:2])}
 # Beschriftungen fuer die KI in Alltagssprache: aus diesen Namen uebernimmt das Modell seine Begriffe (keine Kuerzel)
@@ -166,7 +232,27 @@ def _it_profil():
     nach_id = {x["id"]: x for x in index.values()}
     if "it02" in nach_id:
         index[_vl._norm("Wie setzt sich der Wert zusammen?")] = nach_id["it02"]
-    _it.update(index=index, tools=tools, it01=nach_id.get("it01"),
+    # Beispielfragen der KI-Ansicht (Karten, Folgefragen) und Ereignisfragen: feste Liste, zaehlen nicht gegen das Limit
+    beispiele = set()
+    muster = []
+    for g in fragen.get("ki_ansicht", []):
+        for f in g.get("fragen", []):
+            for sp in ("de", "en"):
+                q = _vl._norm(f.get(sp) or f.get("de") or "")
+                if "{wert}" in q:
+                    muster.append(_re.compile(_re.escape(q).replace(_re.escape("{wert}"), r"\d{1,3}") + "$"))
+                elif q:
+                    beispiele.add(q)
+    try:
+        ereignisse = json.load(open(IT_EREIGNISSE, encoding="utf-8")).get("ereignisse", [])
+    except (OSError, ValueError):
+        ereignisse = []
+    for e in ereignisse:
+        if e.get("aus"):
+            continue
+        beispiele.add(_vl._norm("Wie verlief „%s“?" % e.get("name", "")))
+        beispiele.add(_vl._norm("How did “%s” unfold?" % (e.get("name_en") or e.get("name", ""))))
+    _it.update(index=index, tools=tools, it01=nach_id.get("it01"), beispiele=beispiele, beispiel_muster=muster,
                sys_blocks=[{"type": "text", "text": sys_text, "cache_control": {"type": "ephemeral"}}])
     print(f"[investtimer] Profil geladen: {len(index)} Fragen/Aliase auf dem Sparpfad", flush=True)
     return _it
@@ -255,19 +341,18 @@ def _it_wissen(thema):
     return _neutral("".join(behalten))
 
 
-_it_vcache = {}
-
-
 def _it_vorlage(e, vor_modell):
     werte = _it_daten()
     if any(k not in werte for k in e["pflicht"]):
         print(f"[usage] investtimer katalog {e['id']} fehlende_daten in=0 out=0", flush=True)
         return e["fehlende_daten"]
     benutzt = _it_beschriftet(werte, e["pflicht"] + e.get("optional", []))
-    schluessel = (e["id"], _hl.sha1(json.dumps(benutzt, sort_keys=True, ensure_ascii=False).encode()).hexdigest())
-    if schluessel in _it_vcache:
+    # Gleiche Frage am gleichen Tag (Europe/Berlin) = gleiche Antwort, kein neuer Modellaufruf
+    schluessel = "vorlage|de|" + e["id"]
+    alt = _kilim.cache_lesen(schluessel)
+    if alt:
         print(f"[usage] investtimer katalog {e['id']} cache in=0 out=0", flush=True)
-        return _it_vcache[schluessel]
+        return alt
     vor_modell()
     auftrag = json.dumps({
         "frage": e["frage"], "vorlage": e["vorlage"],
@@ -275,17 +360,15 @@ def _it_vorlage(e, vor_modell):
         "muss_abdecken": e.get("muss_abdecken", []), "darf_nicht": e.get("darf_nicht", []),
         "hinweise": e.get("hinweise", []), "werte": benutzt}, ensure_ascii=False)
     resp = client.messages.create(model=MODEL, max_tokens=1500, system=IT_SYSTEM_LIVE,
-                                  thinking={"type": "disabled"},  # Vorlage fuellen: ohne Denken, sonst frisst es das Budget
+                                  thinking={"type": "disabled"},  # Vorlage fuellen: ohne Denken, niedrigster Aufwand
+                                  output_config={"effort": "low"},
                                   messages=[{"role": "user", "content": auftrag}])
     text = "".join(b.text for b in resp.content if b.type == "text").strip()
-    print(f"[usage] investtimer katalog {e['id']} live in={resp.usage.input_tokens} "
-          f"out={resp.usage.output_tokens}", flush=True)
+    _it_usage(f"katalog {e['id']} live", resp.usage)
     if not text or "{{" in text:
         return e["fehlende_daten"]
-    text = _it_stil(text, e["frage"])
-    if len(_it_vcache) > 200:
-        _it_vcache.clear()
-    _it_vcache[schluessel] = text
+    text = _it_stil(text, e["frage"], art="katalog")
+    _kilim.cache_schreiben(schluessel, text)
     return text
 
 
@@ -348,7 +431,7 @@ def _it_fueller_weg(text):
     return _IT_FUELLER.sub(lambda m: m.group(1) + "Damit " + m.group(2), text)
 
 
-def _it_stil(text, frage="", versuche=2):
+def _it_stil(text, frage="", versuche=2, art="frei"):
     text = _it_fueller_weg(text or "")
     maengel = _it_stil_maengel(text, frage)
     if not text or not maengel or versuche <= 0:
@@ -367,11 +450,10 @@ def _it_stil(text, frage="", versuche=2):
                    "Gib nur den überarbeiteten Text aus.",
             messages=[{"role": "user", "content": json.dumps({"frage": frage, "antwort": text, "maengel": maengel}, ensure_ascii=False)}])
         neu = "".join(b.text for b in resp.content if b.type == "text").strip()
-        print(f"[usage] investtimer stil in={resp.usage.input_tokens} out={resp.usage.output_tokens} "
-              f"maengel={len(maengel)}->{len(_it_stil_maengel(neu, frage))}", flush=True)
+        _it_usage(f"{art} stil", resp.usage, f" maengel={len(maengel)}->{len(_it_stil_maengel(neu, frage))}")
         rest = _it_stil_maengel(neu, frage) if neu else maengel
         if neu and "{{" not in neu and len(rest) <= len(maengel):
-            return _it_fueller_weg(neu) if not rest else _it_stil(neu, frage, versuche - 1)
+            return _it_fueller_weg(neu) if not rest else _it_stil(neu, frage, versuche - 1, art)
     except Exception as e:
         print(f"[investtimer] Stilpruefung: {type(e).__name__}", flush=True)
     return text
@@ -425,7 +507,7 @@ def _it_belege_verlauf(von, bis):
         return None
 
 
-def _it_agent(frage, verlauf, sprache="de"):
+def _it_agent(frage, verlauf, sprache="de", katalog=False):
     """Freie Antwort mit Werkzeugen. Rueckgabe: (Text, Belege oder None)."""
     p = _it_profil()
     benutzt = {"aktuell": False, "verlauf": None}
@@ -433,18 +515,17 @@ def _it_agent(frage, verlauf, sprache="de"):
     while vorher and vorher[0]["role"] != "user":
         vorher.pop(0)
     messages = vorher + [{"role": "user", "content": frage}]
-    tin = tout = tcache = 0
+    tsum = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
     for runde in range(6):
         system = p["sys_blocks"] + ([{"type": "text", "text": IT_EN_HINWEIS}] if sprache == "en" else [])
         resp = client.messages.create(model=MODEL, max_tokens=4000, system=system,
                                       output_config={"effort": "low"},  # Denken begrenzen, Antwort muss passen
+                                      **({"thinking": {"type": "disabled"}} if katalog else {}),  # Beispielfragen: ohne Denken
                                       tools=p["tools"], messages=messages)
-        tin += resp.usage.input_tokens
-        tout += resp.usage.output_tokens
-        tcache += getattr(resp.usage, "cache_read_input_tokens", 0) or 0
+        for k in tsum:
+            tsum[k] += getattr(resp.usage, k, 0) or 0
         if resp.stop_reason != "tool_use":
-            print(f"[usage] investtimer frei runden={runde + 1} in={tin} out={tout} "
-                  f"cache_read={tcache}", flush=True)
+            _it_usage(("katalog" if katalog else "frei") + f" runden={runde + 1}", tsum)
             text = "".join(b.text for b in resp.content if b.type == "text")
             return text, None  # keine Belege mehr (Nachtrag 2)
         messages.append({"role": "assistant", "content": resp.content})
@@ -469,17 +550,12 @@ def _it_agent(frage, verlauf, sprache="de"):
         if gross:
             gross[-1]["cache_control"] = {"type": "ephemeral"}
         messages.append({"role": "user", "content": results})
-    print(f"[usage] investtimer frei runden=6 in={tin} out={tout} cache_read={tcache} abbruch", flush=True)
+    _it_usage(("katalog" if katalog else "frei") + " runden=6", tsum, " abbruch")
     return ("I can’t answer that right now. Try rephrasing the question." if sprache == "en" else
             "Dazu kann ich gerade keine Antwort erstellen. Formuliere die Frage am besten etwas anders."), None
 
 
 _it_ip = {}              # ip -> [datum, anzahl]
-_it_gesamt = ["", 0]     # [datum, Fragen mit Modellaufruf]
-
-
-class _ITLimit(Exception):
-    pass
 
 
 def _it_client_ip(request):
@@ -743,6 +819,8 @@ def it_chat(req: ITChatReq, request: Request):
         return _JSONResp({"error": f"Frage zu lang (max. {IT_MAX_FRAGE} Zeichen)"}, status_code=413)
     heute = time.strftime("%Y-%m-%d")
     auth = _it_auth_aktiv()
+    uid = None
+    limit_konto = 1
     if auth:
         uid = _it_check_user(request.headers.get("authorization"))
         if not uid:
@@ -750,60 +828,72 @@ def it_chat(req: ITChatReq, request: Request):
         sperre = _it_premium_noetig(uid)
         if sperre:
             return sperre
-        ki_tag, ki_monat = _it_ki_limits(uid)
-        ki = _konto.ki_stand(uid)
-        if ki["heute"] >= ki_tag or ki["monat"] >= ki_monat:
-            print("[investtimer] KI-Kontingent je Konto erreicht", flush=True)
-            return _JSONResp({"error": "limit"}, status_code=429)
+        limit_konto = _it_ki_limits(uid)[0]
     ip = _it_client_ip(request)
+    # Flutschutz je IP (alle Anfragen, auch Beispielfragen)
     stand = _it_ip.get(ip)
     if not stand or stand[0] != heute:
         stand = [heute, 0]
     if stand[1] >= (IT_LIMIT_IP_AUTH if auth else IT_LIMIT_IP):
         print("[investtimer] Tageslimit je IP erreicht", flush=True)
-        return _JSONResp({"error": "limit"}, status_code=429)
+        return _JSONResp({"error": "limit", "grund": "ip"}, status_code=429)
     stand[1] += 1
     if len(_it_ip) > 20000:
         for k in [k for k, v in _it_ip.items() if v[0] != heute]:
             del _it_ip[k]
     _it_ip[ip] = stand
-    rest = None
-    if auth:
-        _konto.ki_buchen(uid, ki_tag, ki_monat)
-        rest = max(0, ki_tag - _konto.ki_stand(uid)["heute"])
     sprache = "en" if (req.sprache or "").lower().startswith("en") else "de"
+    grenzen = (limit_konto, _it_zahl("IT_KI_IP_TAG", 3), _it_zahl("INVESTTIMER_CHAT_TAGESLIMIT", 150), _it_kosten_schwellen()[0])
 
-    def fertig(text, belege=None):
-        aus = {"antwort": text}  # Belege (Verlaufsausschnitt, Teilwerte) werden nicht mehr ausgeliefert (Nachtrag 2)
-        if rest is not None:
-            aus["rest"] = rest
-        return aus
+    def fertig(text, katalog):
+        st_ = _kilim.stand(uid, ip, *grenzen)
+        return {"antwort": text, "katalog": katalog,
+                "frei": {"verbraucht": st_["verbraucht"], "ausgelastet": st_["ausgelastet"]}}
 
     def vor_modell():
-        if _it_gesamt[0] != heute:
-            _it_gesamt[:] = [heute, 0]
-        if _it_gesamt[1] >= IT_LIMIT_GESAMT:
-            raise _ITLimit()
-        _it_gesamt[1] += 1
+        pass
 
+    norm = _vl._norm(frage)
+    # Vorbereitete Antworten (deutsch): statisch oder Vorlage mit Live-Werten (Tages-Cache)
+    e = p["index"].get(norm) if sprache == "de" else None
+    # Einstiegsfrage der v1.2-Seite mit dem jeweils angezeigten Wert -> Vorlage it01 (nennt immer den aktuellen Wert)
+    if e is None and sprache == "de" and _re.fullmatch(r"warum steht der marktstress (?:aktuell )?bei \d{1,3}", norm):
+        e = p.get("it01")
+    beispiel = e is not None or norm in p["beispiele"] or any(m.match(norm) for m in p["beispiel_muster"])
     try:
-        # Vorbereitete Antworten gibt es nur auf Deutsch; englische Fragen gehen an die freie KI
-        e = p["index"].get(_vl._norm(frage)) if sprache == "de" else None
-        # Einstiegsfrage der v1.2-Seite mit dem jeweils angezeigten Wert -> Vorlage it01 (nennt immer den aktuellen Wert)
-        if e is None and sprache == "de" and _re.fullmatch(r"warum steht der marktstress (?:aktuell )?bei \d{1,3}", _vl._norm(frage)):
-            e = p.get("it01")
         if e and e["art"] == "wissen":
             print(f"[usage] investtimer katalog {e['id']} statisch in=0 out=0", flush=True)
-            return fertig(e["antwort"])
+            return fertig(e["antwort"], True)
         if e:
-            # Belege nur fuer Vorlagen, die den Marktstress selbst erklaeren
-            return fertig(_it_vorlage(e, vor_modell))
-        vor_modell()
-        text, belege = _it_agent(frage, req.verlauf, sprache)
-        return fertig(_it_stil(text, frage) if sprache == "de" else text, belege)
-    except _ITLimit:
-        print("[investtimer] Gesamt-Tageslimit erreicht", flush=True)
-        return _JSONResp({"error": "limit"}, status_code=429)
+            return fertig(_it_vorlage(e, vor_modell), True)
+        if beispiel:
+            # Beispiel-, Folge- oder Ereignisfrage ohne vorbereitete Antwort (oder englisch): einmal je Tag mit Werkzeugen,
+            # ohne Denken und ohne Gespraechsverlauf beantworten, dann aus dem Tages-Cache
+            schluessel = "beispiel|" + sprache + "|" + norm
+            alt = _kilim.cache_lesen(schluessel)
+            if alt:
+                print("[usage] investtimer katalog beispiel cache in=0 out=0", flush=True)
+                return fertig(alt, True)
+            text, _ = _it_agent(frage, [], sprache, katalog=True)
+            text = _it_stil(text, frage, art="katalog") if sprache == "de" else text
+            if text:
+                _kilim.cache_schreiben(schluessel, text)
+            return fertig(text, True)
+        # Freie Frage: Konto-, IP- und Gesamtgrenze, Kostenpause
+        grund = _kilim.buchen(uid, ip, *grenzen)
+        if grund:
+            print(f"[investtimer] freie Frage abgelehnt: {grund}", flush=True)
+            if grund in ("gesamt", "pause"):
+                return _JSONResp({"error": "ausgelastet", "grund": grund}, status_code=429)
+            return _JSONResp({"error": "limit", "grund": grund}, status_code=429)
+        tag_ = _kilim.tag()
+        try:
+            text, _ = _it_agent(frage, req.verlauf, sprache)
+            text = _it_stil(text, frage) if sprache == "de" else text
+        except Exception:
+            _kilim.zurueckbuchen(uid, ip, tag_)
+            raise
+        return fertig(text, False)
     except Exception as e:
         print(f"[investtimer] Fehler: {type(e).__name__}: {e}", flush=True)
         return _it_aus()

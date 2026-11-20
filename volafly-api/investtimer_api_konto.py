@@ -80,9 +80,15 @@ def _it_konto_antwort(uid):
     pflicht = _it_schalter("IT_PREMIUM_PFLICHT")
     s.update(pflicht=pflicht, paywall=_it_schalter("IT_PAYWALL") and _it_stripe() is not None,
              appKauf=bool(_it_geheim("revenuecat").get("apple_public")),
-             ki=dict(_konto.ki_stand(uid), tag=_it_ki_limits(uid)[0], monat=_it_ki_limits(uid)[1]),
+             ki=_it_ki_stand(uid),
              tarife=_konto.TARIFE)
     return _JSONResp(s, headers={"Cache-Control": "no-store"})
+
+
+def _it_ki_stand(uid):
+    """Freie KI-Frage heute (ohne Zahlen in der Oberflaeche): verbraucht bzw. KI fuer heute ausgelastet."""
+    return _kilim.stand(uid, None, _it_ki_limits(uid)[0], _it_zahl("IT_KI_IP_TAG", 3),
+                        _it_zahl("INVESTTIMER_CHAT_TAGESLIMIT", 150), _it_kosten_schwellen()[0])
 
 
 def _it_ki_limits(uid):
@@ -455,7 +461,7 @@ def it_konto_export(request: Request):
     except Exception:
         alarme, geraete = [], None
     aus = {"erstellt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "dienst": "InvestTimer (investtimer.net)",
-           "konto": nutzer, "abo": _konto.status(uid), "kiNutzung": _konto.ki_stand(uid),
+           "konto": nutzer, "abo": _konto.status(uid), "kiNutzung": {"freieFragenHeute": _it_ki_stand(uid)["heute"]},
            "alarme": alarme, "pushGeraete": geraete}
     return _JSONResp(aus, headers={"Cache-Control": "no-store",
                                    "Content-Disposition": 'attachment; filename="investtimer-daten.json"'})

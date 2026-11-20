@@ -72,7 +72,7 @@ function renderKonto(){
  const inhalt=kontoAnsicht==='paywall'?paywall()
   :'<p class="konto-mail">'+esc(t('kontoAngemeldet')).replace('{email}','<b>'+esc((IT.emailVonSitzung&&IT.emailVonSitzung())||'')+'</b>')+'</p>'
   +'<h3 class="konto-abschnitt">'+t('kontoAboTitel')+'</h3><div class="push-box">'+aboBox()+'</div>'
-  +(ki&&ki.tag?'<p class="konto-ki">'+t('kontoKi').replace('{n}',ki.heute).replace('{max}',ki.tag)+'</p>':'')
+  +(ki&&ki.frei?'<p class="konto-ki">'+t('kontoKi').replace('{s}',t(ki.verbraucht?'kontoKiLeer':'kontoKiFrei'))+'</p>':'')
   +pwBox()
   +'<details class="konto-loeschen"><summary>'+t('loeschenTitel')+'</summary><p>'+t('loeschenText')+'</p>'
   +'<label for="loeschen-wort">'+t('loeschenEingabe')+'</label><input id="loeschen-wort" autocomplete="off" autocapitalize="off" spellcheck="false">'

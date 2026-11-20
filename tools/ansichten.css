@@ -244,3 +244,14 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 .aktualitaet-punkt.ok{background:#3f8f5a}.aktualitaet-punkt.alt{background:#b8862f}
 .snapshot-label.mit-aktualitaet{white-space:normal}
 .rechtliches a{min-width:44px;text-align:center;box-sizing:border-box}
+/* KI-Limit (20.11.2026): Hinweiszeile unter der Eingabe; nach Verbrauch Eingabe gesperrt, Beispielfragen hervorgehoben */
+.ki-limit{margin:8px 2px 0;font-size:12px;line-height:1.5;color:var(--text);text-align:center}
+.ki-unten-leer .ki-limit{color:#7a5a1e}
+.ki-unten-leer .ki-hinweis{margin-top:2px}
+.ki-unten-leer #ki-eingabe:disabled{opacity:1;background:transparent;color:var(--sub);cursor:not-allowed}
+.ki-unten-leer #ki-eingabe:disabled::placeholder{color:var(--sub)}
+.ki-frei-leer .ki-gruppe{border-color:var(--accent)}
+.ki-frei-leer .ki-frage{color:var(--accent)}
+.ki-frei-leer .ki-frage:hover{text-decoration:underline;text-underline-offset:3px}
+.ki-frei-leer .ki-chip{border-color:var(--accent);background:var(--surface,#fff)}
+@media(max-width:759px){.ki-limit{font-size:11px;margin-top:6px}}

@@ -24,7 +24,7 @@ async def main():
         br = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
         for w, h in ((320, 568), (390, 844), (430, 932), (1280, 860)):
             for ein in (False, True):
-                harness.ZUSTAND.update(chat_status=200, rest=2)
+                harness.ZUSTAND.update(chat_status=200, frei={'verbraucht': False, 'ausgelastet': False})
                 ctx = await br.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 900, has_touch=w < 900, device_scale_factor=2)
                 await harness.supabase_route(ctx)
                 pg = await ctx.new_page(); js = []
@@ -36,7 +36,7 @@ async def main():
                 pruefe(g == [3, 3, 3], f'{tag}: drei Gruppen mit je drei Fragen {g}')
                 txt = await pg.evaluate("document.querySelector('#ki-ansicht').innerText")
                 pruefe('Was bewegt dich am Markt?' in txt and ('Anmelden & KI fragen' in txt) == (not ein), f'{tag}: Ueberschrift, Anmelde-Knopf nur ausgeloggt')
-                if ein: pruefe('STAND HEUTE' in txt.upper() and 'Noch 2 Fragen heute' in txt and 'Keine Anlageberatung' in txt, f'{tag}: Eyebrow mit Wert, Hinweiszeile mit Restfragen')
+                if ein: pruefe('STAND HEUTE' in txt.upper() and '1 freie Frage pro Tag · Beispielfragen unbegrenzt' in txt and 'Noch' not in txt and 'Keine Anlageberatung' in txt, f'{tag}: Eyebrow mit Wert, Hinweiszeile mit Restfragen')
                 for k in ('VIX', 'S&P', 'MOVE', 'Put/Call', '{wert}', '…', 'Frag die KI dazu'):
                     pruefe(k not in txt, f'{tag}: kein "{k}" in der KI-Ansicht')
                 if w < 760:
@@ -77,14 +77,14 @@ async def main():
                 if SHOT: await pg.screenshot(path=str(SHOT / f'ki_gespraech_{w}.png'))
                 await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(500); await pg.evaluate("location.hash='ki'"); await pg.wait_for_timeout(600)
                 pruefe(await pg.evaluate("document.querySelectorAll('.ki-antwort').length") == 1, f'{tag}: Gespraech bleibt beim Tab-Wechsel')
-                for status, schl in ((429, 'aufgebraucht'), (401, 'abgelaufen'), (503, 'ausgeschaltet'), (0, 'Keine Verbindung')):
+                for status, schl in ((429, 'verbraucht'), (401, 'abgelaufen'), (503, 'ausgeschaltet'), (0, 'Keine Verbindung')):
                     harness.ZUSTAND['chat_status'] = status if status else 200
                     if status == 0: await pg.route('**/api/chat', lambda route: route.abort() if route.request.method == 'POST' else route.continue_())
                     await pg.fill('#ki-eingabe', 'Testfrage'); await pg.press('#ki-eingabe', 'Enter'); await pg.wait_for_timeout(900)
                     t = await pg.evaluate("[...document.querySelectorAll('.ki-fehler')].pop()?.innerText||''")
                     pruefe(schl in t, f'{tag}: Meldung bei {status or "Netzfehler"}: {t[:60]}')
                     if status == 401: await pg.goto('about:blank'); await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(900); await pg.evaluate("location.hash='ki'"); await pg.wait_for_timeout(600)
-                    if status == 429: harness.ZUSTAND['rest'] = 2; await pg.goto('about:blank'); await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(900); await pg.evaluate("location.hash='ki'"); await pg.wait_for_timeout(600)
+                    if status == 429: await pg.goto('about:blank'); await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(900); await pg.evaluate("location.hash='ki'"); await pg.wait_for_timeout(600)
                 await pg.unroute('**/api/chat'); harness.ZUSTAND['chat_status'] = 200
                 await pg.click('[data-ki=neu]'); await pg.wait_for_timeout(400)
                 pruefe(await pg.evaluate("!!document.querySelector('.ki-start')&&!document.querySelector('.ki-antwort')"), f'{tag}: Neues Gespraech')

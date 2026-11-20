@@ -12,12 +12,13 @@ const KT={de:{
  eyebrow:'INVESTTIMER KI',eyebrowWert:'INVESTTIMER KI · STAND HEUTE {w}',titel:'Was bewegt dich am Markt?',
  unter:'Frag nach dem heutigen Wert, seinen Treibern oder einer früheren Phase.',karte:'Fragen {n} von {m}',
  platzhalter:'Deine Frage an die KI',senden:'Frage senden',hinweis:'Antworten erzeugt eine KI und können Fehler enthalten · Keine Anlageberatung',
- rest:'Noch {n} Fragen heute',rest1:'Noch eine Frage heute',rest0:'Für heute keine Fragen mehr',
+ limitHinweis:'1 freie Frage pro Tag · Beispielfragen unbegrenzt',limitLeer:'Deine freie Frage für heute ist verbraucht. Morgen geht’s weiter – die Beispielfragen funktionieren weiterhin.',
+ limitAus:'Die KI ist für heute ausgelastet. Die Beispielfragen funktionieren weiter.',platzhalterLeer:'Freie Frage für heute verbraucht',platzhalterAus:'KI für heute ausgelastet',
  anmelden:'Anmelden & KI fragen',ausgeloggt:'Nach der Anmeldung beantwortet die KI deine Fragen. Zum Beispiel:',
  kopf:'InvestTimer KI · Stand heute {w}',kopfOhne:'InvestTimer KI',neu:'Neues Gespräch',denkt:'InvestTimer liest die Daten …',
  du:'Deine Frage',ki:'Antwort der KI',weiter:'Passende Folgefragen',belegTitel:'{a} bis {b}',belegTag:'{w} am {d}',
  teilwerte:'Teilwerte am {d}',vol:'Kursschwankungen',preis:'Breite und Trend',stimmung:'Stimmung und Absicherung',
- fLimit:'Für heute sind deine Fragen aufgebraucht. Morgen kannst du wieder fragen.',
+ fLimit:'Deine freie Frage für heute ist verbraucht. Morgen geht’s weiter – die Beispielfragen funktionieren weiterhin.',fAusgelastet:'Die KI ist für heute ausgelastet. Die Beispielfragen funktionieren weiter.',
  fLogin:'Deine Anmeldung ist abgelaufen. Melde dich neu an, dann kannst du weiterfragen.',fLoginKnopf:'Neu anmelden',
  fAus:'Die KI ist gerade ausgeschaltet. Versuch es später noch einmal.',
  fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',
@@ -30,12 +31,13 @@ const KT={de:{
  eyebrow:'INVESTTIMER AI',eyebrowWert:'INVESTTIMER AI · TODAY {w}',titel:'What’s on your mind about the market?',
  unter:'Ask about today’s reading, what drives it or an earlier phase.',karte:'Questions {n} of {m}',
  platzhalter:'Ask the AI',senden:'Send question',hinweis:'AI-generated answers may contain errors · Not investment advice',
- rest:'{n} questions left today',rest1:'1 question left today',rest0:'No questions left today',
+ limitHinweis:'1 free question per day · Example questions unlimited',limitLeer:'You’ve used today’s free question. More tomorrow – the example questions still work.',
+ limitAus:'The AI is at capacity for today. The example questions still work.',platzhalterLeer:'Today’s free question is used',platzhalterAus:'AI at capacity for today',
  anmelden:'Sign in to ask the AI',ausgeloggt:'After you sign in, the AI answers your questions. For example:',
  kopf:'InvestTimer AI · Today {w}',kopfOhne:'InvestTimer AI',neu:'New conversation',denkt:'InvestTimer is reading the data …',
  du:'Your question',ki:'AI answer',weiter:'Follow-up questions',belegTitel:'{a} to {b}',belegTag:'{w} on {d}',
  teilwerte:'Sub-scores on {d}',vol:'Volatility',preis:'Breadth and trend',stimmung:'Sentiment and hedging',
- fLimit:'You’ve used today’s questions. You can ask again tomorrow.',
+ fLimit:'You’ve used today’s free question. More tomorrow – the example questions still work.',fAusgelastet:'The AI is at capacity for today. The example questions still work.',
  fLogin:'Your session has expired. Sign in again to keep asking.',fLoginKnopf:'Sign in again',
  fAus:'The AI is switched off right now. Try again later.',
  fNetz:'Can’t reach the AI. Check your connection and try again.',
@@ -87,7 +89,7 @@ function kugel(canvas,opt){
 }
 
 /* ---------- Zustand ---------- */
-const st={gespraech:[],busy:false,rest:null,notiz:'',restGeladen:false};
+const st={gespraech:[],busy:false,frei:null,notiz:'',restGeladen:false};
 let ansicht=null,grosseKugel=null,kleineKugel=null,haftUnten=true;
 
 /* ---------- Navigation ---------- */
@@ -114,14 +116,18 @@ function ansichtAnlegen(){
  ansicht.addEventListener('click',klick);ansicht.addEventListener('submit',e=>{e.preventDefault();const i=$('#ki-eingabe');if(i&&i.value.trim()){fragen(i.value);}});
  ansicht.addEventListener('input',e=>{if(e.target.id==='ki-eingabe')st.notiz=e.target.value});
 }
-function restText(){if(st.rest==null)return '';return st.rest<=0?kt('rest0'):st.rest===1?kt('rest1'):kt('rest').replace('{n}',st.rest)}
+/* Freie Frage (1 je Tag) gegen Beispielfragen (unbegrenzt): keine Zaehler in der Oberflaeche, nur zwei Zustaende */
+const freiLeer=()=>!!(st.frei&&(st.frei.verbraucht||st.frei.ausgelastet));
+function limitText(){if(!st.frei)return kt('limitHinweis');return st.frei.ausgelastet?kt('limitAus'):st.frei.verbraucht?kt('limitLeer'):kt('limitHinweis')}
+function freiSetzen(f){st.frei=f?{verbraucht:!!f.verbraucht,ausgelastet:!!f.ausgelastet}:null;if(ansicht)ansicht.classList.toggle('ki-frei-leer',freiLeer())}
 function eingabeHtml(){
  if(!angemeldet())return '<div class="ki-unten ki-unten-aus"><button type="button" class="primary ki-anmelden" data-ki="anmelden">'+esc(kt('anmelden'))+'</button><p class="ki-hinweis">'+esc(kt('hinweis'))+'</p></div>';
- const leer=st.rest!=null&&st.rest<=0;
- return '<div class="ki-unten"><form class="ki-form" id="ki-form"><label class="sr-only" for="ki-eingabe">'+esc(kt('platzhalter'))+'</label>'
-  +'<input id="ki-eingabe" type="text" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="'+esc(kt('platzhalter'))+'" value="'+esc(st.notiz)+'"'+(leer||st.busy?' disabled':'')+'>'
+ const leer=freiLeer(),ph=leer?kt(st.frei.ausgelastet?'platzhalterAus':'platzhalterLeer'):kt('platzhalter');
+ return '<div class="ki-unten'+(leer?' ki-unten-leer':'')+'"><form class="ki-form" id="ki-form"><label class="sr-only" for="ki-eingabe">'+esc(kt('platzhalter'))+'</label>'
+  +'<input id="ki-eingabe" type="text" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="'+esc(ph)+'" value="'+esc(leer?'':st.notiz)+'"'+(leer||st.busy?' disabled':'')+(leer?' aria-describedby="ki-limit"':'')+'>'
   +'<button type="submit" class="ki-senden" aria-label="'+esc(kt('senden'))+'"'+(leer||st.busy?' disabled':'')+'>'+SVG.pfeil+'</button></form>'
-  +'<p class="ki-hinweis">'+esc(kt('hinweis'))+(restText()?' · <span class="ki-rest">'+esc(restText())+'</span>':'')+'</p></div>';
+  +'<p class="ki-limit" id="ki-limit" role="status">'+esc(limitText())+'</p>'
+  +'<p class="ki-hinweis">'+esc(kt('hinweis'))+'</p></div>';
 }
 function frageText(f){const w=wert()??(IT.view&&IT.view.rounded);return (f[sp()]||f.de).replace('{wert}',w==null?'…':w)}
 function gruppenMitKontext(){
@@ -233,7 +239,7 @@ function schrumpfen(){
 }
 async function restLaden(){
  if(st.restGeladen||!angemeldet())return;st.restGeladen=true;
- try{const k=await api('konto');if(k&&k.ki&&k.ki.tag){st.rest=Math.max(0,k.ki.tag-k.ki.heute);if(aktiv()==='ki'){const r=ansicht.querySelector('.ki-hinweis');if(r)zeichnenUnten()}}}catch{st.restGeladen=false}
+ try{const k=await api('konto');if(k&&k.ki&&'verbraucht' in k.ki){freiSetzen(k.ki);if(aktiv()==='ki')zeichnenUnten()}}catch{st.restGeladen=false}
 }
 function zeichnenUnten(){const u=ansicht.querySelector('.ki-unten');if(!u)return;const fokus=document.activeElement&&document.activeElement.id==='ki-eingabe';u.outerHTML=eingabeHtml();platzUnten();if(fokus)$('#ki-eingabe')?.focus({preventScroll:true})}
 async function fragen(text){
@@ -248,10 +254,11 @@ async function fragen(text){
   const tok=IT.token?await IT.token():null;
   const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{})},body:JSON.stringify({frage:text,verlauf:verlaufMsgs,sprache:sp()})});
   if(r.status===401){antwort={rolle:'fehler',text:'fLogin'}}
-  else if(r.status===429){antwort={rolle:'fehler',text:'fLimit'};st.rest=0}
+  else if(r.status===429){const d=await r.json().catch(()=>({}));const aus=d.error==='ausgelastet';
+   antwort={rolle:'fehler',text:aus?'fAusgelastet':'fLimit'};freiSetzen(Object.assign({},st.frei,aus?{ausgelastet:true}:{verbraucht:true}))}
   else if(r.status===503){antwort={rolle:'fehler',text:'fAus'}}
   else if(!r.ok){antwort={rolle:'fehler',text:'fNetz'}}
-  else{const d=await r.json();if(d.rest!=null)st.rest=d.rest;
+  else{const d=await r.json();if(d.frei)freiSetzen(d.frei);
    antwort={rolle:'ki',text:String(d.antwort||''),folge:folgefragen(text)}}
  }catch{antwort={rolle:'fehler',text:'fNetz'}}
  st.busy=false;st.gespraech.push(antwort);
@@ -259,6 +266,8 @@ async function fragen(text){
 }
 function klick(e){
  const f=e.target.closest('[data-frage]');
+ /* Beispielfrage/Folgefrage: normal ins Eingabefeld; ist die freie Frage verbraucht (Feld gesperrt), direkt senden */
+ if(f&&angemeldet()&&freiLeer()){fragen(f.dataset.frage);return}
  if(f){if(!angemeldet()){$('#account-login')?.click();return}st.notiz=f.dataset.frage;const i=$('#ki-eingabe');if(i){i.value=st.notiz;i.focus();i.setSelectionRange(i.value.length,i.value.length)}return}
  const b=e.target.closest('[data-ki]');if(!b)return;
  if(b.dataset.ki==='anmelden'){$('#account-login')?.click();return}
@@ -292,7 +301,7 @@ function route(){
  IT.faqAnsicht&&IT.faqAnsicht[a==='faq'?'zeigen':'verbergen']();
  titelSetzen(a);if(letzte!==a)zaehlen(a);
  if(a==='ki'&&letzte!=='ki'){if(!kontextNeu)st.kontext=null;kontextNeu=false}
- if(a==='ki'){zeichnen(st.gespraech.length?null:'titel');restLaden();window.scrollTo({top:st.gespraech.length?document.documentElement.scrollHeight:0});haftUnten=true}
+ if(a==='ki'){st.restGeladen=false;zeichnen(st.gespraech.length?null:'titel');restLaden();window.scrollTo({top:st.gespraech.length?document.documentElement.scrollHeight:0});haftUnten=true}
  else{document.body.classList.remove('ki-tastatur');
   if(letzte!==a){window.scrollTo({top:a==='stress'?(scrollMerk.stress||0):0});
    if(letzte){const h=a==='verlauf'?$('#verlauf-ansicht-titel'):a==='konto'?$('#konto-ansicht-titel'):a==='feedback'?$('#feedback-titel'):a==='faq'?$('#faq-titel'):null;h&&h.focus({preventScroll:true})}}}

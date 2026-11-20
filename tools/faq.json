@@ -54,11 +54,11 @@
   {
    "de": {
     "f": "Was kann die KI und was nicht?",
-    "a": "Die KI erklärt dir den Wert: warum er gerade so steht, was ihn bewegt und wie frühere Stressphasen verliefen. Sie stützt sich dabei auf die Daten von InvestTimer. Sie gibt keine Kauf- oder Verkaufsempfehlungen, sagt keine Kurse voraus und äußert sich nicht zu einzelnen Aktien. Ihre Antworten können Fehler enthalten."
+    "a": "Die KI erklärt dir den Wert: warum er gerade so steht, was ihn bewegt und wie frühere Stressphasen verliefen. Sie stützt sich dabei auf die Daten von InvestTimer. Sie gibt keine Kauf- oder Verkaufsempfehlungen, sagt keine Kurse voraus und äußert sich nicht zu einzelnen Aktien. Ihre Antworten können Fehler enthalten. Pro Tag hast du eine freie Frage, die die KI neu beantwortet. Die Beispielfragen und die vorgeschlagenen Folgefragen kannst du unbegrenzt stellen. Neue freie Fragen gibt es ab Mitternacht."
    },
    "en": {
     "f": "What can the AI do, and what can’t it?",
-    "a": "The AI explains the score: why it is where it is, what is moving it and how earlier stress phases played out. It relies on InvestTimer’s data. It doesn’t give buy or sell recommendations, doesn’t predict prices and doesn’t comment on individual stocks. Its answers may contain errors."
+    "a": "The AI explains the score: why it is where it is, what is moving it and how earlier stress phases played out. It relies on InvestTimer’s data. It doesn’t give buy or sell recommendations, doesn’t predict prices and doesn’t comment on individual stocks. Its answers may contain errors. You get one free question per day that the AI answers from scratch. You can ask the example questions and the suggested follow-ups as often as you like. Your free question resets at midnight (Berlin time)."
    }
   },
   {

@@ -1,0 +1,10 @@
+{
+ "_hinweis": "Preise je Modell in US-Dollar pro 1 Mio. Token (Anthropic-Listenpreis, Stand 11/2026). cache_write = 5-Minuten-Cache (1,25 x Eingabe), cache_read = 0,1 x Eingabe. usd_eur: Umrechnung fuer die Kostenschwellen in Euro.",
+ "usd_eur": 0.92,
+ "modelle": {
+  "claude-sonnet-5": {"in": 2.0, "out": 10.0, "cache_read": 0.2, "cache_write": 2.5},
+  "claude-sonnet-5-5": {"in": 2.0, "out": 10.0, "cache_read": 0.1, "cache_write": 2.5},
+  "claude-haiku-5-5": {"in": 0.1, "out": 0.5, "cache_read": 0.01, "cache_write": 0.125},
+  "standard": {"in": 4.0, "out": 20.0, "cache_read": 0.4, "cache_write": 5.0}
+ }
+}

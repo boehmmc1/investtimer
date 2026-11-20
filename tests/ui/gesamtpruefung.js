@@ -44,7 +44,7 @@
   }
   // Begriffe in sichtbaren Texten
   const text = (offen || document.body).innerText;
-  const regeln = [[/\bfolgt\b/i, 'folgt'], [/demnächst/i, 'demnächst'], [/Entwurf/i, 'Entwurf'], [/Beispiel(?!:)/, 'Beispiel'], [/TODO/, 'TODO'], [/von 14\b|of 14\b/, 'von 14'],
+  const regeln = [[/\bfolgt\b/i, 'folgt'], [/demnächst/i, 'demnächst'], [/Entwurf/i, 'Entwurf'], [/Beispiel(?!:|fragen)/, 'Beispiel'], [/TODO/, 'TODO'], [/von 14\b|of 14\b/, 'von 14'],
     [/Anteil an der Berechnung|Share of the calculation/, 'Anteil an der Berechnung'], [/\d+\s?%/, 'Prozentzahl'], [/\bVIX\b|VVIX|\bMOVE\b|Put\/Call/, 'Fachkuerzel'], [/S&P/, 'S&P'],
     [/undefined|NaN|\[object|\{[a-z]+\}/, 'Platzhalter'], [/Lorem|ipsum/i, 'Blindtext']];
   for (const [re, name] of regeln) { const m = text.match(re); if (m && !(opts.erlaubt || []).includes(name)) out.push('Begriff „' + name + '“: …' + text.slice(Math.max(0, m.index - 30), m.index + 30).replace(/\s+/g, ' ') + '…'); }

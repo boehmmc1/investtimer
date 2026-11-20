@@ -22,6 +22,6 @@ neu = s[:start] + block + s[ende:]
 compile(neu, str(ziel), "exec")
 shutil.copy2(ziel, ziel.with_name(ziel.name + ".bak-" + time.strftime("%Y%m%d-%H%M%S")))
 ziel.write_text(neu, encoding="utf-8")
-for m in ("investtimer_konto.py", "investtimer_alarme.py", "investtimer_vertrag.py"):
+for m in ("investtimer_konto.py", "investtimer_alarme.py", "investtimer_vertrag.py", "investtimer_ki_limit.py", "investtimer_ki_preise.json"):
     shutil.copy2(ROOT / "volafly-api" / m, API / m)
 print("eingebaut:", len(block), "Zeichen")
