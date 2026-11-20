@@ -125,3 +125,8 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   keine Textauswahl/Callout. Teilen: Timer `investtimer-teilen-live` (POST /v1/investtimer/teilen/vorab, nur lokal) erzeugt nach jeder Berechnung
   24 Bilder; PNG-Optimierung ueber /opt/investtimer-bild (Pillow, getrennt vom System-Python); Vorladen in tools/teilen.js (`IT.teilenVorladen`).
   Messung: `tests/last/teilen_zeit.py [--drossel]`.
+- Alarme Startseite (20.11.2026): tools/alarmblatt.js (Karte #alarm-karte, Blatt/Liste als <dialog class="alarm-blatt">, Marken am Bogen,
+  IT.alarmNeu/alarmListe/alarmBearbeiten, Event investtimer:alarme). Zustaende bereit/ausgeloest/pausiert (API-Feld `zustand`).
+  Grenze 3 je Richtung (JE_RICHTUNG, Fehler `richtung_voll`), Bestand mit mehr bleibt. Alter Dialog in alarme.js nur noch fuer
+  „Mitteilungen auf diesem Geraet“ (IT.oeffneMitteilungen). Harness nutzt die echte investtimer_alarme.py (harness.alarme_setzen).
+  Grautext klein: var(--sub), nicht #6e7b74 (Kontrast < 4,5).
