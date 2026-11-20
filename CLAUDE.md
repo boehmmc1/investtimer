@@ -107,3 +107,8 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   `/api/teilen/bild` (302 auf Datei; mit `IT_TEILEN_AKTUELL=1` + Login aktueller Stand, privat, je Tag), `/s/wert|verlauf|phase/...` (og/twitter-Tags,
   Weiterleitung mit ?z= / ?phase= / lang=en und utm). Frontend `tools/teilen.js` (Knoepfe, navigator.share, Dialog), Startparameter in `tools/verlauf.js`.
   nginx-Bloecke in `deploy/nginx.live.conf` (= /etc/nginx/sites-available/investtimer). Tests: `tests/ui/test_teilen.py`, Teilen-Teil in `tests/test_ki_limit_api.py`.
+- QA seit 20.11.2026: `tools/qa_gesamt.sh` [--mail] [--mails] [--schnell] fuehrt `tests/qa/{funktion,daten,sicherheit,datenschutz,qualitaet,betrieb}.py` nacheinander aus
+  (Werkzeuge /opt/investtimer-qa: venv mit Playwright, node_modules mit lighthouse/axe-core), Ergebnisse /var/lib/investtimer/qa/<datum>/, Kurzbericht `tests/qa/bericht.py`.
+  Timer `investtimer-qa` sonntags 06:00 Europe/Berlin (nur Kurzbericht per Mail). Nur Testkonten (qa-*@investtimer.net, werden geloescht). QA-Laeufe nie parallel
+  zu anderen Browser-Tests (1 CPU-Kern, sonst falsche Befunde). Sicherheits-Header: Snippet `deploy/nginx-snippets/investtimer-sicherheit.conf`
+  (/etc/nginx/snippets/), in server und JEDER location mit eigenem add_header einbinden (nginx 1.18 vererbt sonst nicht).
