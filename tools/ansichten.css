@@ -240,6 +240,7 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 @media(max-width:759px){.faq-kopf h2{font-size:24px}}
 @media(prefers-reduced-motion:reduce){.faq-pfeil{transition:none}}
 /* Aktualitaet ueber dem Wert */
-.aktualitaet-spaet{color:#93692B}
+.aktualitaet-punkt{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.aktualitaet-punkt.ok{background:#3f8f5a}.aktualitaet-punkt.alt{background:#b8862f}
 .snapshot-label.mit-aktualitaet{white-space:normal}
 .rechtliches a{min-width:44px;text-align:center;box-sizing:border-box}

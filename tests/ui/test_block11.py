@@ -1,4 +1,4 @@
-"""Block 11: FAQ (#faq) mit Akkordeon/Tastatur/Strukturdaten, Aktualitaetszeile (Handelszeit, geschlossen, verzoegert, ausgeloggt),
+"""Block 11: FAQ (#faq) mit Akkordeon/Tastatur/Strukturdaten, Aktualitaetszeile (Aktualisiert / Nicht aktualisiert · Stand, Abruf fehlgeschlagen, ausgeloggt),
 Fehlererfassung im Browser, Zaehlaufruf je Ansicht ohne Kennung. Screenshots nach <ordner>."""
 import asyncio, sys, json, datetime
 from pathlib import Path
@@ -41,23 +41,32 @@ async def main():
                     pruefe(k not in t, f'FAQ {w} {sp}: kein "{k}"')
                 pruefe(not js, f'FAQ {w} {sp}: keine JS-Fehler {js}')
                 await ctx.close()
-        # Aktualitaet: Uhr simulieren (NY-Zeit), Alter des Werts ueber den Testserver
-        faelle = [('handelszeit', '2026-11-18T16:00:00Z', 4, 'Aktualisiert vor 4 Min.', False, False),
-                  ('geschlossen', '2026-11-22T12:00:00Z', 4, 'US-Börse geschlossen', True, False),
-                  ('verzoegert', '2026-11-18T17:00:00Z', 75, 'Aktualisierung verzögert', False, True),
-                  ('gerade', '2026-11-18T15:00:00Z', 0, 'Aktualisiert gerade eben', False, False)]
-        for name, uhr, alter, erwartet, zu, spaet in faelle:
+        # Aktualitaet: zwei Zustaende (Aktualisiert / Nicht aktualisiert · Stand), Grenze 45 Min., auch am Wochenende
+        faelle = [('frisch', '2026-11-18T16:00:00Z', 4, 'de', 'Aktualisiert', 'ok'),
+                  ('wochenende', '2026-11-22T12:00:00Z', 20, 'de', 'Aktualisiert', 'ok'),
+                  ('grenze', '2026-11-18T16:00:00Z', 44, 'de', 'Aktualisiert', 'ok'),
+                  ('alt', '2026-11-18T17:00:00Z', 75, 'de', 'Nicht aktualisiert · Stand 18. Nov. 2026, 16:45', 'alt'),
+                  ('alt_en', '2026-11-18T17:00:00Z', 75, 'en', 'Not updated · as of Nov 18, 2026, 16:45', 'alt'),
+                  ('frisch_en', '2026-11-18T16:00:00Z', 4, 'en', 'Up to date', 'ok'),
+                  ('abruf_fehlgeschlagen', '2026-11-18T16:00:00Z', 4, 'de', 'Nicht aktualisiert · Stand 18. Nov. 2026, 16:56', 'alt')]
+        for name, uhr, alter, sp, erwartet, punkt in faelle:
             harness.ZUSTAND['alter_min'] = alter
             ctx = await br.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2 if SHOT else 1); await harness.supabase_route(ctx)
-            pg = await ctx.new_page()
+            pg = await ctx.new_page(); js = []
+            pg.on('pageerror', lambda e: js.append(str(e)))
             await pg.clock.install(time=datetime.datetime.fromisoformat(uhr.replace('Z', '+00:00')))
             await pg.clock.resume()
             await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(2500)
+            if sp == 'en': await pg.evaluate("()=>{const h=document.querySelector('#header-language');h.value='en';h.dispatchEvent(new Event('change',{bubbles:true}))}"); await pg.wait_for_timeout(300)
             # berechnetUm relativ zur simulierten Uhr setzen
-            await pg.evaluate("a=>{const v=window.InvestTimer.live;v.berechnetUm=new Date(Date.now()-a*60000).toISOString();window.InvestTimer.aktualitaet()}", alter)
+            await pg.evaluate("a=>{const v=window.InvestTimer.live;v.berechnetUm=new Date(Date.now()-a*60000).toISOString();window.InvestTimer.gespeichert=v;window.InvestTimer.aktualitaet()}", alter)
+            if name == 'abruf_fehlgeschlagen':
+                await pg.route('**/api/aktuell', lambda r: r.fulfill(status=503, body='{}'))
+                await pg.evaluate("window.InvestTimer.loadLive(true)"); await pg.wait_for_timeout(1200)
             t = await pg.evaluate("document.querySelector('.snapshot-label').textContent")
-            farbe = await pg.evaluate("(()=>{const s=document.querySelector('.aktualitaet-spaet');return s?getComputedStyle(s).color:''})()")
-            pruefe(erwartet in t and ('geschlossen' in t) == zu and bool(farbe) == spaet, f'Aktualitaet {name}: "{t}" {farbe}')
+            pk = await pg.evaluate("(()=>{const s=document.querySelector('.aktualitaet-punkt');return s?[s.classList.contains('ok')?'ok':'alt',getComputedStyle(s).backgroundColor]:null})()")
+            pruefe(t.strip() == erwartet and pk and pk[0] == punkt and not any(k in t for k in ('Min.', 'min', 'Börse', 'market')), f'Aktualitaet {name}: "{t}" {pk}')
+            pruefe(not js, f'Aktualitaet {name}: keine JS-Fehler {js}')
             if SHOT: await pg.locator('.score-column').screenshot(path=str(SHOT / f'aktualitaet_{name}.png'))
             await ctx.close()
         harness.ZUSTAND['alter_min'] = 3

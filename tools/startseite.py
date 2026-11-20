@@ -71,8 +71,9 @@ def anwenden(html, narrativ=False):
             html = re.sub(r"componentCount:\(n,total\)=>`[^`]*`,", "", html)
             continue
         html = _loeschen(html, k)
-    # Verlauf-Tooltip ohne Bestandteile
-    html = _once(html, "+(art==='taeglich'?'<span>'+t('tipBestandteile').replace('{n}',q[2]==null?'–':q[2])+'</span>':'')", "", "Tooltip Bestandteile")
+    # Verlauf-Tooltip ohne Bestandteile (seit 20.11.2026 schon in tools/verlauf.js: nur Zeitpunkt und Wert)
+    if "tipBestandteile')" in html:
+        raise SystemExit("startseite: Tooltip zeigt noch Bestandteile")
     # Filmhinweis ohne Bestandteil-Zahlen
     html = html.replace("; bis Mitte 2020 standen 13 der 14 Bestandteile zur Verfügung.", ".")
     html = html.replace("; until mid-2020, 13 of the 14 components were available.", ".")

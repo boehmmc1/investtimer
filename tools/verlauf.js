@@ -54,14 +54,18 @@ function stressSvg(p,x,e,art){
  const a0=vMs(p[0][0]),a1=vMs(p[p.length-1][0]),xs=d=>vL+(a1===a0?0:(d-a0)/(a1-a0)*(vW-vL-vR));let frei=-1e9;
  vMarken(p).forEach(([d,txt])=>{const xx=xs(d),br=txt.length*6.2;if(xx-br/2<frei+8||xx+br/2>vW)return;frei=xx+br/2;
   s+='<line class="verlauf-marke" x1="'+xx.toFixed(1)+'" x2="'+xx.toFixed(1)+'" y1="'+(vH-vB)+'" y2="'+(vH-vB+4)+'"/><text class="chart-text" text-anchor="middle" x="'+xx.toFixed(1)+'" y="'+(vH-5)+'">'+esc(txt)+'</text>'});
- /* Stressphasen als Baender (Mindestbreite); Kurzname nur auf dem Desktop, ohne Ueberlappung (bis drei Zeilen) */
- const reihen=[[],[],[]],aktiv=vAktivId(e);
+ /* Stressphasen als Baender (Mindestbreite). Kurzname nur auf dem Desktop: hoechste Phasen zuerst, bis zwei Zeilen,
+    nie ueberlappend und nie ueber den Rand der Zeichenflaeche; passt er nicht, bleibt nur das Band (Name in Karte/Tooltip).
+    Am rechten Rand rechtsbuendig an der Bandkante. */
+ const aktiv=vAktivId(e),reihen=[[],[]],texte=[],rechts=vW-vR-2;
  (e||[]).forEach(m=>{const [x0,bx]=vBand(m,x);
-  s+='<rect class="verlauf-band'+(m.id===aktiv?' aktiv':'')+'" data-band="'+m.id+'" x="'+x0.toFixed(1)+'" y="'+vT+'" width="'+bx.toFixed(1)+'" height="'+(vH-vT-vB)+'" rx="1.5"/>';
-  if(!vMobil()){const name=vEn()?m.kurz_en:m.kurz,breite=name.length*5.4+6,a=x0+2,b=a+breite;
-   if(b<=vW-2){const r=reihen.findIndex(z=>z.every(([u,v])=>b<u-2||a>v+2));
-    if(r>=0){reihen[r].push([a,b]);s+='<text class="verlauf-band-text" x="'+(x0+3).toFixed(1)+'" y="'+(vT+10+r*12)+'">'+esc(name)+'</text>'}}}
- });
+  s+='<rect class="verlauf-band'+(m.id===aktiv?' aktiv':'')+'" data-band="'+m.id+'" x="'+x0.toFixed(1)+'" y="'+vT+'" width="'+bx.toFixed(1)+'" height="'+(vH-vT-vB)+'" rx="1.5"/>'});
+ if(!vMobil())(e||[]).slice().sort((u,v)=>v.spitze.w-u.spitze.w).forEach(m=>{const [x0,bx]=vBand(m,x),name=vEn()?m.kurz_en:m.kurz,br=vTextBreite(name);
+  let a=x0+3,anker='start';if(a+br>rechts){a=x0+bx-3-br;anker='end'}
+  if(a<vL+2||a+br>rechts)return;
+  const r=reihen.findIndex(z=>z.every(([u,v])=>a+br<u-6||a>v+6));if(r<0)return;
+  reihen[r].push([a,a+br]);texte.push('<text class="verlauf-band-text" data-label="'+m.id+'" text-anchor="'+anker+'" x="'+(anker==='end'?a+br:a).toFixed(1)+'" y="'+(vT+10+r*12)+'">'+esc(name)+'</text>')});
+ s+=texte.join('');
  /* Spanne Tief bis Hoch je Periode */
  /* Spanne Tief bis Hoch entfernt (Nachtrag 2): nur die Linie */
  s+='<polyline class="chart-line verlauf-linie'+(lang?' verlauf-lang':'')+'" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/>';
@@ -71,6 +75,8 @@ function stressSvg(p,x,e,art){
  s+='<line class="verlauf-cursor" y1="'+vT+'" y2="'+(vH-vB)+'" x1="0" x2="0" visibility="hidden"/><circle class="verlauf-cursor-punkt" r="4" cx="0" cy="0" visibility="hidden"/></svg>';
  return s;
 }
+let vMessung=null;
+function vTextBreite(txt){try{if(!vMessung){vMessung=document.createElement('canvas').getContext('2d');const f=getComputedStyle(document.body).getPropertyValue('--sans')||'sans-serif';vMessung.font='10px '+f}return Math.ceil(vMessung.measureText(txt).width*1.08)+1}catch{return txt.length*6}}
 /* Band mit Mindestbreite, mittig ueber dem echten Zeitraum, innerhalb der Zeichenflaeche */
 function vBand(m,x){let x0=Math.max(vL,x(m.start)),x1=Math.min(vW-vR,x(m.ende));if(x1-x0<V_BAND_BREITE){const c=(x0+x1)/2;x0=Math.max(vL,Math.min(vW-vR-V_BAND_BREITE,c-V_BAND_BREITE/2));x1=x0+V_BAND_BREITE}return [x0,x1-x0]}
 function verlaufHtml(){
@@ -136,9 +142,10 @@ function vZeige(i){
  dia.querySelectorAll('.verlauf-cursor').forEach(l=>{l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('visibility','visible')});
  const c=dia.querySelector('.verlauf-cursor-punkt');c.setAttribute('cx',x);c.setAttribute('cy',yy);c.setAttribute('visibility','visible');
  const tip=dia.querySelector('.verlauf-tip');
- const kopf=art==='monatlich'?new Date(vMs(q[0])).toLocaleDateString(vLang(),{month:'long',year:'numeric',timeZone:'UTC'}):art==='woechentlich'?t('tipWoche').replace('{d}',vDatum(q[0])):vDatum(q[0]);
- const spanne='';
- tip.innerHTML='<b>'+esc(kopf)+'</b><span>'+t(art==='taeglich'?'tipWert':'tipSchluss').replace('{w}',q[1])+'</span>'+spanne+(art==='taeglich'?'<span>'+t('tipBestandteile').replace('{n}',q[2]==null?'–':q[2])+'</span>':'')+'<span class="'+(q[3]==='a'?'':'tip-rueck')+'">'+t(q[3]==='a'?'legendeAuf':'legendeRueck')+'</span>';
+ /* Zwei Zeilen: Zeitpunkt (Monat bzw. Tag, bei Wochenwerten mit "Woche bis") und Wert */
+ const tag=new Date(vMs(q[0])).toLocaleDateString(vLang(),{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+ const kopf=art==='monatlich'?new Date(vMs(q[0])).toLocaleDateString(vLang(),{month:'long',year:'numeric',timeZone:'UTC'}):art==='woechentlich'?t('tipWoche').replace('{d}',tag):tag;
+ tip.innerHTML='<b>'+esc(kopf)+'</b><span>'+esc(t('tipWert').replace('{w}',q[1]))+'</span>';
  tip.hidden=false;
  const r=svg.getBoundingClientRect(),d=dia.getBoundingClientRect(),px=r.left-d.left+x/vW*r.width;
  tip.style.left=Math.max(0,Math.min(d.width-tip.offsetWidth,px-tip.offsetWidth/2))+'px';

@@ -1,31 +1,26 @@
-/* Aktualitaet des Werts (angemeldet): Zeile ueber dem Wert "Aktualisiert vor {n} Min." (gerade eben / vor {n} Std.),
-   laeuft jede Minute mit; "· US-Boerse geschlossen" ausserhalb der Handelszeit (Wochenende, US-Feiertage, vor 9:30 / nach 16:00 New York);
-   waehrend der Handelszeit und aelter als 60 Min. dezent "Aktualisierung verzoegert". Ausgeloggt bleibt die Zeile wie bisher.
-   Zeitpunkt: berechnetUm aus /api/aktuell (letzte erfolgreiche Berechnung). */
+/* Aktualitaet des Werts (angemeldet): Zeile ueber dem Wert mit zwei Zustaenden.
+   a) "Aktualisiert" (gruener Punkt): letzte erfolgreiche Berechnung (berechnetUm aus /api/aktuell) hoechstens AKT_MAX alt.
+   b) "Nicht aktualisiert · Stand {Datum, Uhrzeit Europe/Berlin}" (Ocker): aelter oder letzter Abruf fehlgeschlagen.
+   Die Pipeline rechnet alle 30 Minuten (Lauf dauert einige Minuten), daher 45 Minuten Grenze; gilt auch am Wochenende.
+   Neu geprueft bei jeder Rueckkehr in die App und alle 10 Minuten (update.js), dazu jede Minute fuer den Zeitablauf.
+   Ausgeloggt bleibt die Zeile wie bisher. */
 (()=>{
-const AT={de:{jetzt:'Aktualisiert gerade eben',min:'Aktualisiert vor {n} Min.',std:'Aktualisiert vor {n} Std.',zu:'US-Börse geschlossen',spaet:'Aktualisierung verzögert'},
- en:{jetzt:'Updated just now',min:'Updated {n} min ago',std:'Updated {n} hr ago',zu:'US market closed',spaet:'Update delayed'}};
-const at=k=>AT[document.documentElement.lang==='en'?'en':'de'][k];
-/* NYSE-Feiertage (ganztaegig geschlossen) 2026/2027 */
-const FEIERTAGE=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
- '2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24']);
-function boerseOffen(jetzt){
- const t=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(jetzt);
- const g=k=>(t.find(x=>x.type===k)||{}).value,tag=g('year')+'-'+g('month')+'-'+g('day'),min=Number(g('hour'))%24*60+Number(g('minute'));
- if(g('weekday')==='Sat'||g('weekday')==='Sun'||FEIERTAGE.has(tag))return false;
- return min>=570&&min<960;
+const AKT_MAX=45*60000;
+const AT={de:{ok:'Aktualisiert',alt:'Nicht aktualisiert',stand:'Stand {d}'},en:{ok:'Up to date',alt:'Not updated',stand:'as of {d}'}};
+const en=()=>document.documentElement.lang==='en',at=k=>AT[en()?'en':'de'][k];
+function stand(ms){
+ const t=new Intl.DateTimeFormat(en()?'en-US':'de-DE',{timeZone:'Europe/Berlin',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(ms));
+ const g=k=>(t.find(x=>x.type===k)||{}).value||'',uhr=g('hour').replace(/^24$/,'00')+':'+g('minute');
+ return en()?g('month')+' '+g('day')+', '+g('year')+', '+uhr:g('day')+'. '+g('month')+' '+g('year')+', '+uhr;
 }
-IT.boerseOffen=boerseOffen;
+IT.aktualitaetStand=stand;
 function zeile(){
  const stamp=$('.snapshot-label');if(!stamp)return;
- const v=IT.member&&IT.live;const zeit=v&&Date.parse(v.berechnetUm||'');
- if(!v||!zeit){stamp.classList.remove('mit-aktualitaet');return}
- const jetzt=new Date(),alter=Math.max(0,Math.round((jetzt-zeit)/60000)),offen=boerseOffen(jetzt);
- const text=alter<1?at('jetzt'):alter<60?at('min').replace('{n}',alter):at('std').replace('{n}',Math.floor(alter/60));
- stamp.classList.add('mit-aktualitaet');
- stamp.innerHTML='<span>'+esc(text)+'</span>'+(!offen?'<span class="aktualitaet-zu"> · '+esc(at('zu'))+'</span>':'')
-  +(offen&&alter>60?'<span class="aktualitaet-spaet"> · '+esc(at('spaet'))+'</span>':'');
- stamp.title=new Date(zeit).toLocaleString(document.documentElement.lang==='en'?'en-US':'de-DE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+ const v=IT.live||IT.gespeichert,zeit=v&&Date.parse(v.berechnetUm||'');
+ if(!IT.member||!IT.live&&!IT.liveFehler){stamp.classList.remove('mit-aktualitaet');return}
+ const frisch=!!IT.live&&!IT.liveFehler&&zeit&&Date.now()-zeit<=AKT_MAX;
+ stamp.classList.add('mit-aktualitaet');stamp.removeAttribute('title');
+ stamp.innerHTML='<span class="aktualitaet-punkt '+(frisch?'ok':'alt')+'" aria-hidden="true"></span><span>'+esc(at(frisch?'ok':'alt')+(!frisch&&zeit?' · '+at('stand').replace('{d}',stand(zeit)):''))+'</span>';
 }
 IT.aktualitaet=zeile;
 document.addEventListener('investtimer:update',zeile);

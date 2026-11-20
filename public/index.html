@@ -604,7 +604,8 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 @media(max-width:759px){.faq-kopf h2{font-size:24px}}
 @media(prefers-reduced-motion:reduce){.faq-pfeil{transition:none}}
 /* Aktualitaet ueber dem Wert */
-.aktualitaet-spaet{color:#93692B}
+.aktualitaet-punkt{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.aktualitaet-punkt.ok{background:#3f8f5a}.aktualitaet-punkt.alt{background:#b8862f}
 .snapshot-label.mit-aktualitaet{white-space:normal}
 .rechtliches a{min-width:44px;text-align:center;box-sizing:border-box}
 </style>
@@ -668,8 +669,8 @@ body:not(.members-layout) .first-look .details-toggle{margin-top:16px}
 <script type="application/json" id="investtimer-result">
 {
  "model": "investtimer-us-market-stress",
- "asOf": "2026-11-12",
- "rounded": 33,
+ "asOf": "2026-11-13",
+ "rounded": 34,
  "count": 14,
  "total": 14,
  "rows": [
@@ -1127,6 +1128,7 @@ function loadLive(force){
   .then(r=>{if(r.status===401){IT.abmelden();return null}if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
  Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
   document.body.dataset.live='fertig';
+  IT.liveFehler=!!(liveFehler&&IT.session);IT.aktualitaet&&IT.aktualitaet();
   if(!pub&&!live){lastLoad=0;return}
   const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
@@ -1875,14 +1877,18 @@ function stressSvg(p,x,e,art){
  const a0=vMs(p[0][0]),a1=vMs(p[p.length-1][0]),xs=d=>vL+(a1===a0?0:(d-a0)/(a1-a0)*(vW-vL-vR));let frei=-1e9;
  vMarken(p).forEach(([d,txt])=>{const xx=xs(d),br=txt.length*6.2;if(xx-br/2<frei+8||xx+br/2>vW)return;frei=xx+br/2;
   s+='<line class="verlauf-marke" x1="'+xx.toFixed(1)+'" x2="'+xx.toFixed(1)+'" y1="'+(vH-vB)+'" y2="'+(vH-vB+4)+'"/><text class="chart-text" text-anchor="middle" x="'+xx.toFixed(1)+'" y="'+(vH-5)+'">'+esc(txt)+'</text>'});
- /* Stressphasen als Baender (Mindestbreite); Kurzname nur auf dem Desktop, ohne Ueberlappung (bis drei Zeilen) */
- const reihen=[[],[],[]],aktiv=vAktivId(e);
+ /* Stressphasen als Baender (Mindestbreite). Kurzname nur auf dem Desktop: hoechste Phasen zuerst, bis zwei Zeilen,
+    nie ueberlappend und nie ueber den Rand der Zeichenflaeche; passt er nicht, bleibt nur das Band (Name in Karte/Tooltip).
+    Am rechten Rand rechtsbuendig an der Bandkante. */
+ const aktiv=vAktivId(e),reihen=[[],[]],texte=[],rechts=vW-vR-2;
  (e||[]).forEach(m=>{const [x0,bx]=vBand(m,x);
-  s+='<rect class="verlauf-band'+(m.id===aktiv?' aktiv':'')+'" data-band="'+m.id+'" x="'+x0.toFixed(1)+'" y="'+vT+'" width="'+bx.toFixed(1)+'" height="'+(vH-vT-vB)+'" rx="1.5"/>';
-  if(!vMobil()){const name=vEn()?m.kurz_en:m.kurz,breite=name.length*5.4+6,a=x0+2,b=a+breite;
-   if(b<=vW-2){const r=reihen.findIndex(z=>z.every(([u,v])=>b<u-2||a>v+2));
-    if(r>=0){reihen[r].push([a,b]);s+='<text class="verlauf-band-text" x="'+(x0+3).toFixed(1)+'" y="'+(vT+10+r*12)+'">'+esc(name)+'</text>'}}}
- });
+  s+='<rect class="verlauf-band'+(m.id===aktiv?' aktiv':'')+'" data-band="'+m.id+'" x="'+x0.toFixed(1)+'" y="'+vT+'" width="'+bx.toFixed(1)+'" height="'+(vH-vT-vB)+'" rx="1.5"/>'});
+ if(!vMobil())(e||[]).slice().sort((u,v)=>v.spitze.w-u.spitze.w).forEach(m=>{const [x0,bx]=vBand(m,x),name=vEn()?m.kurz_en:m.kurz,br=vTextBreite(name);
+  let a=x0+3,anker='start';if(a+br>rechts){a=x0+bx-3-br;anker='end'}
+  if(a<vL+2||a+br>rechts)return;
+  const r=reihen.findIndex(z=>z.every(([u,v])=>a+br<u-6||a>v+6));if(r<0)return;
+  reihen[r].push([a,a+br]);texte.push('<text class="verlauf-band-text" data-label="'+m.id+'" text-anchor="'+anker+'" x="'+(anker==='end'?a+br:a).toFixed(1)+'" y="'+(vT+10+r*12)+'">'+esc(name)+'</text>')});
+ s+=texte.join('');
  /* Spanne Tief bis Hoch je Periode */
  /* Spanne Tief bis Hoch entfernt (Nachtrag 2): nur die Linie */
  s+='<polyline class="chart-line verlauf-linie'+(lang?' verlauf-lang':'')+'" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/>';
@@ -1892,6 +1898,8 @@ function stressSvg(p,x,e,art){
  s+='<line class="verlauf-cursor" y1="'+vT+'" y2="'+(vH-vB)+'" x1="0" x2="0" visibility="hidden"/><circle class="verlauf-cursor-punkt" r="4" cx="0" cy="0" visibility="hidden"/></svg>';
  return s;
 }
+let vMessung=null;
+function vTextBreite(txt){try{if(!vMessung){vMessung=document.createElement('canvas').getContext('2d');const f=getComputedStyle(document.body).getPropertyValue('--sans')||'sans-serif';vMessung.font='10px '+f}return Math.ceil(vMessung.measureText(txt).width*1.08)+1}catch{return txt.length*6}}
 /* Band mit Mindestbreite, mittig ueber dem echten Zeitraum, innerhalb der Zeichenflaeche */
 function vBand(m,x){let x0=Math.max(vL,x(m.start)),x1=Math.min(vW-vR,x(m.ende));if(x1-x0<V_BAND_BREITE){const c=(x0+x1)/2;x0=Math.max(vL,Math.min(vW-vR-V_BAND_BREITE,c-V_BAND_BREITE/2));x1=x0+V_BAND_BREITE}return [x0,x1-x0]}
 function verlaufHtml(){
@@ -1957,9 +1965,10 @@ function vZeige(i){
  dia.querySelectorAll('.verlauf-cursor').forEach(l=>{l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('visibility','visible')});
  const c=dia.querySelector('.verlauf-cursor-punkt');c.setAttribute('cx',x);c.setAttribute('cy',yy);c.setAttribute('visibility','visible');
  const tip=dia.querySelector('.verlauf-tip');
- const kopf=art==='monatlich'?new Date(vMs(q[0])).toLocaleDateString(vLang(),{month:'long',year:'numeric',timeZone:'UTC'}):art==='woechentlich'?t('tipWoche').replace('{d}',vDatum(q[0])):vDatum(q[0]);
- const spanne='';
- tip.innerHTML='<b>'+esc(kopf)+'</b><span>'+t(art==='taeglich'?'tipWert':'tipSchluss').replace('{w}',q[1])+'</span>'+spanne+'<span class="'+(q[3]==='a'?'':'tip-rueck')+'">'+t(q[3]==='a'?'legendeAuf':'legendeRueck')+'</span>';
+ /* Zwei Zeilen: Zeitpunkt (Monat bzw. Tag, bei Wochenwerten mit "Woche bis") und Wert */
+ const tag=new Date(vMs(q[0])).toLocaleDateString(vLang(),{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+ const kopf=art==='monatlich'?new Date(vMs(q[0])).toLocaleDateString(vLang(),{month:'long',year:'numeric',timeZone:'UTC'}):art==='woechentlich'?t('tipWoche').replace('{d}',tag):tag;
+ tip.innerHTML='<b>'+esc(kopf)+'</b><span>'+esc(t('tipWert').replace('{w}',q[1]))+'</span>';
  tip.hidden=false;
  const r=svg.getBoundingClientRect(),d=dia.getBoundingClientRect(),px=r.left-d.left+x/vW*r.width;
  tip.style.left=Math.max(0,Math.min(d.width-tip.offsetWidth,px-tip.offsetWidth/2))+'px';
@@ -2214,7 +2223,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.19-2229", "d": "19.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
+const VERSION={"v": "2026.11.20-0838", "d": "20.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -2846,34 +2855,29 @@ addEventListener('online',rueckkehr);
 setInterval(()=>{if(document.visibilityState==='visible'){letzteRueckkehr=0;rueckkehr()}},600000);
 })();
 
-/* Aktualitaet des Werts (angemeldet): Zeile ueber dem Wert "Aktualisiert vor {n} Min." (gerade eben / vor {n} Std.),
-   laeuft jede Minute mit; "· US-Boerse geschlossen" ausserhalb der Handelszeit (Wochenende, US-Feiertage, vor 9:30 / nach 16:00 New York);
-   waehrend der Handelszeit und aelter als 60 Min. dezent "Aktualisierung verzoegert". Ausgeloggt bleibt die Zeile wie bisher.
-   Zeitpunkt: berechnetUm aus /api/aktuell (letzte erfolgreiche Berechnung). */
+/* Aktualitaet des Werts (angemeldet): Zeile ueber dem Wert mit zwei Zustaenden.
+   a) "Aktualisiert" (gruener Punkt): letzte erfolgreiche Berechnung (berechnetUm aus /api/aktuell) hoechstens AKT_MAX alt.
+   b) "Nicht aktualisiert · Stand {Datum, Uhrzeit Europe/Berlin}" (Ocker): aelter oder letzter Abruf fehlgeschlagen.
+   Die Pipeline rechnet alle 30 Minuten (Lauf dauert einige Minuten), daher 45 Minuten Grenze; gilt auch am Wochenende.
+   Neu geprueft bei jeder Rueckkehr in die App und alle 10 Minuten (update.js), dazu jede Minute fuer den Zeitablauf.
+   Ausgeloggt bleibt die Zeile wie bisher. */
 (()=>{
-const AT={de:{jetzt:'Aktualisiert gerade eben',min:'Aktualisiert vor {n} Min.',std:'Aktualisiert vor {n} Std.',zu:'US-Börse geschlossen',spaet:'Aktualisierung verzögert'},
- en:{jetzt:'Updated just now',min:'Updated {n} min ago',std:'Updated {n} hr ago',zu:'US market closed',spaet:'Update delayed'}};
-const at=k=>AT[document.documentElement.lang==='en'?'en':'de'][k];
-/* NYSE-Feiertage (ganztaegig geschlossen) 2026/2027 */
-const FEIERTAGE=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
- '2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24']);
-function boerseOffen(jetzt){
- const t=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(jetzt);
- const g=k=>(t.find(x=>x.type===k)||{}).value,tag=g('year')+'-'+g('month')+'-'+g('day'),min=Number(g('hour'))%24*60+Number(g('minute'));
- if(g('weekday')==='Sat'||g('weekday')==='Sun'||FEIERTAGE.has(tag))return false;
- return min>=570&&min<960;
+const AKT_MAX=45*60000;
+const AT={de:{ok:'Aktualisiert',alt:'Nicht aktualisiert',stand:'Stand {d}'},en:{ok:'Up to date',alt:'Not updated',stand:'as of {d}'}};
+const en=()=>document.documentElement.lang==='en',at=k=>AT[en()?'en':'de'][k];
+function stand(ms){
+ const t=new Intl.DateTimeFormat(en()?'en-US':'de-DE',{timeZone:'Europe/Berlin',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(ms));
+ const g=k=>(t.find(x=>x.type===k)||{}).value||'',uhr=g('hour').replace(/^24$/,'00')+':'+g('minute');
+ return en()?g('month')+' '+g('day')+', '+g('year')+', '+uhr:g('day')+'. '+g('month')+' '+g('year')+', '+uhr;
 }
-IT.boerseOffen=boerseOffen;
+IT.aktualitaetStand=stand;
 function zeile(){
  const stamp=$('.snapshot-label');if(!stamp)return;
- const v=IT.member&&IT.live;const zeit=v&&Date.parse(v.berechnetUm||'');
- if(!v||!zeit){stamp.classList.remove('mit-aktualitaet');return}
- const jetzt=new Date(),alter=Math.max(0,Math.round((jetzt-zeit)/60000)),offen=boerseOffen(jetzt);
- const text=alter<1?at('jetzt'):alter<60?at('min').replace('{n}',alter):at('std').replace('{n}',Math.floor(alter/60));
- stamp.classList.add('mit-aktualitaet');
- stamp.innerHTML='<span>'+esc(text)+'</span>'+(!offen?'<span class="aktualitaet-zu"> · '+esc(at('zu'))+'</span>':'')
-  +(offen&&alter>60?'<span class="aktualitaet-spaet"> · '+esc(at('spaet'))+'</span>':'');
- stamp.title=new Date(zeit).toLocaleString(document.documentElement.lang==='en'?'en-US':'de-DE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+ const v=IT.live||IT.gespeichert,zeit=v&&Date.parse(v.berechnetUm||'');
+ if(!IT.member||!IT.live&&!IT.liveFehler){stamp.classList.remove('mit-aktualitaet');return}
+ const frisch=!!IT.live&&!IT.liveFehler&&zeit&&Date.now()-zeit<=AKT_MAX;
+ stamp.classList.add('mit-aktualitaet');stamp.removeAttribute('title');
+ stamp.innerHTML='<span class="aktualitaet-punkt '+(frisch?'ok':'alt')+'" aria-hidden="true"></span><span>'+esc(at(frisch?'ok':'alt')+(!frisch&&zeit?' · '+at('stand').replace('{d}',stand(zeit)):''))+'</span>';
 }
 IT.aktualitaet=zeile;
 document.addEventListener('investtimer:update',zeile);

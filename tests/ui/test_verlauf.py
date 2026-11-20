@@ -64,6 +64,57 @@ async def main():
                 pruefe('Höchster Marktstress' in k and 'Wieder unter 40' in k and 'mit der KI einordnen' in k and 'Frag die KI' not in k and 'folgt' not in k, f'{tag}: Ereigniskarte vollstaendig ohne Beschreibung')
                 pruefe(not js, f'{tag}: keine JS-Fehler {js}')
                 await ctx.close()
+        # Tooltip (zwei Zeilen) und Ereignis-Beschriftungen bei Alle/5J: Regel >= 70 bei Alle, keine Ueberlappung, nichts abgeschnitten
+        for w, h in ((390, 844), (768, 1024), (1280, 860), (1440, 900)):
+            for sprache in ('de', 'en'):
+                ctx = await b.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 900, has_touch=w < 900, device_scale_factor=2 if SHOT else 1)
+                await harness.supabase_route(ctx)
+                pg = await ctx.new_page(); js = []; kons = []
+                pg.on('pageerror', lambda e: js.append(str(e)))
+                pg.on('console', lambda m: kons.append(m.text) if m.type == 'error' else None)
+                await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(1500)
+                if sprache == 'en': await pg.evaluate("()=>{const h=document.querySelector('#header-language');h.value='en';h.dispatchEvent(new Event('change',{bubbles:true}))}"); await pg.wait_for_timeout(300)
+                await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1500)
+                tag = f'{w} {sprache}'
+                for sp in ('1M', '1J', '5J', 'A'):
+                    await pg.click('[data-spanne="%s"]' % sp); await pg.wait_for_timeout(500)
+                    box = await pg.locator('#verlauf-ansicht .verlauf-svg').bounding_box()
+                    await pg.mouse.move(box['x'] + box['width'] * 0.45, box['y'] + box['height'] * 0.5); await pg.wait_for_timeout(200)
+                    tip = await pg.evaluate("(()=>{const t=document.querySelector('.verlauf-tip');return t.hidden?null:[...t.children].map(x=>x.textContent)})()")
+                    if w < 760 and not tip:
+                        await pg.locator('#verlauf-ansicht .verlauf-diagramm').focus(); await pg.keyboard.press('ArrowLeft'); await pg.wait_for_timeout(150)
+                        tip = await pg.evaluate("(()=>{const t=document.querySelector('.verlauf-tip');return t.hidden?null:[...t.children].map(x=>x.textContent)})()")
+                    wert = 'Market stress ' if sprache == 'en' else 'Marktstress '
+                    verboten = ('zurück', 'zum Schluss', 'aufgezeichnet', 'Bestandteile', 'back-calculated', 'recorded', 'at close', 'components')
+                    pruefe(tip and len(tip) == 2 and tip[1].startswith(wert) and tip[1][len(wert):].isdigit() and not any(v in ' '.join(tip) for v in verboten), f'{tag} {sp}: Tooltip zwei Zeilen {tip}')
+                    if sp == 'A' and tip: pruefe(len(tip[0].split()) == 2 and tip[0].split()[1].isdigit(), f'{tag} Alle: Tooltip Monat Jahr "{tip[0]}"')
+                    if sp == '1M' and tip: pruefe(sum(x.strip('.,').isdigit() for x in tip[0].split()) == 2 and tip[0].split()[-1].isdigit(), f'{tag} 1M: Tooltip Tagesdatum "{tip[0]}"')
+                    if sp in ('5J', 'A'):
+                        r = await pg.evaluate("""()=>{const svg=document.querySelector('#verlauf-ansicht .verlauf-svg'),vb=svg.viewBox.baseVal;
+                          const l=[...svg.querySelectorAll('.verlauf-band-text')].map(t=>{const b=t.getBBox();return {id:t.dataset.label,x:b.x,y:b.y,r:b.x+b.width,u:b.y+b.height}});
+                          return {l,vbW:vb.width,baender:[...svg.querySelectorAll('.verlauf-band')].map(x=>x.dataset.band)}}""")
+                        l = r['l']
+                        ueber = [(a['id'], c['id']) for i, a in enumerate(l) for c in l[i+1:] if a['x'] < c['r'] and c['x'] < a['r'] and a['y'] < c['u'] - 2 and c['y'] < a['u'] - 2]
+                        rand = [a['id'] for a in l if a['x'] < 30 or a['r'] > r['vbW'] - 34 + 0.5]
+                        pruefe(not ueber and not rand, f'{tag} {sp}: Beschriftungen ohne Ueberlappung/Abschneiden ({len(l)} von {len(r["baender"])}) {ueber} {rand}')
+                        pruefe((w < 760) == (len(l) == 0), f'{tag} {sp}: Beschriftungen nur Desktop ({len(l)})')
+                    if SHOT and sprache == 'de' and sp == 'A': await pg.screenshot(path=str(SHOT / f'verlauf_alle_{w}.png'))
+                    if SHOT and sprache == 'de' and sp == '5J' and w in (390, 1280): await pg.screenshot(path=str(SHOT / f'verlauf_5j_{w}.png'))
+                    if SHOT and sp == 'A' and w in (390, 1280):
+                        await pg.mouse.move(box['x'] + box['width'] * 0.30, box['y'] + box['height'] * 0.5); await pg.wait_for_timeout(200)
+                        await pg.locator('#verlauf-ansicht .verlauf-diagramm').screenshot(path=str(SHOT / f'tooltip_{w}_{sprache}.png'))
+                pruefe(not js and not kons, f'{tag}: keine JS-/Konsolenfehler {js} {kons}')
+                await ctx.close()
+        # Regel >= 70 bei Alle direkt an den Daten
+        hd = harness.HIST()
+        klein = [e['id'] for e in hd['ereignisse'] if e['spitze']['w'] < 70]
+        ctx = await b.new_context(viewport={'width': 1440, 'height': 900}); await harness.supabase_route(ctx); pg = await ctx.new_page()
+        await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(1500)
+        await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1500)
+        await pg.click('[data-spanne="A"]'); await pg.wait_for_timeout(500)
+        ids = await pg.evaluate("[...document.querySelectorAll('#verlauf-ansicht .verlauf-band')].map(x=>x.dataset.band)")
+        pruefe(klein and not set(ids) & set(klein) and len(ids) == len(hd['ereignisse']) - len(klein), f'Alle: ohne Phasen unter 70 {klein}, gezeigt {len(ids)}')
+        await ctx.close()
         await b.close()
     print('FEHLER:', len(fehler)); return 1 if fehler else 0
 sys.exit(asyncio.run(main()))

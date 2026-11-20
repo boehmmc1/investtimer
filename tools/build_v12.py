@@ -600,6 +600,7 @@ function loadLive(force){
   .then(r=>{if(r.status===401){IT.abmelden();return null}if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
  Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
   document.body.dataset.live='fertig';
+  IT.liveFehler=!!(liveFehler&&IT.session);IT.aktualitaet&&IT.aktualitaet();
   if(!pub&&!live){lastLoad=0;return}
   const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
