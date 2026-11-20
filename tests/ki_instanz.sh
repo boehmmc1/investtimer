@@ -13,7 +13,7 @@ python3 "$QUELLE/deploy/api_einbauen.py" $DIR >/dev/null   # Arbeitsstand der In
 rm -f $DIR/volafly_chat.py.bak-*
 sed -i "s#/var/www/investtimer/volafly-api/#$QUELLE/volafly-api/#g" $DIR/volafly_chat.py
 grep '^IT_\|^INVESTTIMER' /root/volafly-chat/.env | grep -v '^IT_SUPABASE' > $DIR/it.env; chmod 600 $DIR/it.env
-cd $DIR && IT_KI_DB=$DIR/ki.db IT_ENV_DATEI=$DIR/it.env nohup /usr/local/bin/uvicorn volafly_chat:app --host 127.0.0.1 --port 8198 > $DIR/log 2>&1 &
+(cd $DIR && IT_FEHLER_DB=$DIR/fehler.db IT_KI_DB=$DIR/ki.db IT_ENV_DATEI=$DIR/it.env nohup /usr/local/bin/uvicorn volafly_chat:app --host 127.0.0.1 --port 8198 > $DIR/log 2>&1) < /dev/null > /dev/null 2>&1 &
 echo $! > $DIR/pid
 for i in $(seq 40); do curl -fs http://127.0.0.1:8198/v1/investtimer/chat >/dev/null 2>&1 && { echo "bereit"; exit 0; }; sleep 1; done
 echo "startet nicht"; tail -20 $DIR/log; exit 1
