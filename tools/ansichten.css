@@ -255,3 +255,25 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 .ki-frei-leer .ki-frage:hover{text-decoration:underline;text-underline-offset:3px}
 .ki-frei-leer .ki-chip{border-color:var(--accent);background:var(--surface,#fff)}
 @media(max-width:759px){.ki-limit{font-size:11px;margin-top:6px}}
+/* Teilen (20.11.2026): dezenter Knopf mit Symbol, mind. 44 px; Dialog mit Bild, Download, Link, Netzwerke */
+.teilen-knopf{display:inline-flex;align-items:center;gap:7px;min-height:44px;min-width:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--sub);font-size:13px;cursor:pointer;white-space:nowrap}
+.teilen-knopf svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.teilen-knopf:hover{color:var(--accent);border-color:var(--accent)}
+.teilen-knopf:focus-visible{outline:2px solid #698dbc;outline-offset:2px}
+.teilen-start{display:flex;justify-content:center;margin:14px 0 0}
+.teilen-karte{margin:12px 0 0}
+.verlauf-kopf .teilen-knopf{margin-left:auto}
+.teilen-dialog{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:20px 22px 22px;border:1px solid var(--line);border-radius:16px;background:var(--bg,#f8f8f3);color:var(--text);box-shadow:0 20px 60px rgba(27,51,48,.22)}
+.teilen-dialog::backdrop{background:rgba(27,51,48,.35)}
+.teilen-kopf{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+.teilen-kopf h2{margin:0;font:500 20px/1.3 var(--display)}
+.teilen-zu{min-width:44px;min-height:44px;border:0;background:none;font-size:26px;line-height:1;color:var(--sub);cursor:pointer;border-radius:8px}
+.teilen-bild{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.teilen-text{margin:12px 0 14px;font-size:13px;line-height:1.6;color:var(--sub)}
+.teilen-aktionen{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.teilen-aktion{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--surface,#fff);color:var(--text);font-size:14px;text-decoration:none;cursor:pointer}
+.teilen-aktion.primaer{background:var(--accent);border-color:var(--accent);color:#fff}
+.teilen-netze{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.teilen-netz{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:13px;text-decoration:none}
+.teilen-netz:hover,.teilen-aktion:hover{border-color:var(--accent)}
+@media(max-width:420px){.teilen-netze{grid-template-columns:repeat(2,minmax(0,1fr))}.teilen-aktion{flex:1 1 auto}}

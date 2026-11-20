@@ -18,6 +18,14 @@ async function ladeVerlauf(){
  verlaufFuer=an;verlaufZeit=Date.now();return verlauf;
 }
 IT.ladeVerlauf=ladeVerlauf;
+IT.verlaufZeitraum=()=>verlaufSpanne;
+/* Ankunft ueber einen geteilten Link (/s/verlauf, /s/phase): Zeitraum bzw. Phase einmalig setzen */
+function vStartAnwenden(){
+ const s=IT.teilenStart;if(!s||!verlauf||verlauf.fehler)return;IT.teilenStart=null;
+ if(s.z&&SPANNEN.some(x=>x[0]===s.z))verlaufSpanne=s.z;
+ const e=s.phase&&(verlauf.ereignisse||[]).find(x=>x.id===s.phase);if(!e)return;verlaufEreignis=e.id;
+ if(!s.z){const t=verlauf.taeglich||[],ende=t.length?vMs(t[t.length-1][0]):Date.now();verlaufSpanne=vMs(e.start)>=ende-1827*864e5||e.spitze.w<70?'5J':'A'}
+}
 const vLang=()=>document.documentElement.lang==='en'?'en-US':'de-DE';
 const vMs=d=>Date.parse(d+'T12:00:00Z');
 const vEn=()=>document.documentElement.lang==='en';
@@ -93,7 +101,7 @@ function verlaufHtml(){
   return '<button type="button" class="verlauf-band-knopf" data-ereignis="'+m.id+'" aria-pressed="'+(m.id===aktiv)+'" aria-label="'+esc(name(m)+', '+vZeitraum(m))+'" style="left:'+(x0/vW*100).toFixed(2)+'%;width:'+(bx/vW*100).toFixed(2)+'%;top:'+(vT/vH*100).toFixed(2)+'%;height:'+((vH-vT-vB)/vH*100).toFixed(2)+'%"></button>'}).join('')+'</div>';
  const chips=e.length?'<div class="verlauf-chips" role="group" aria-label="'+t('ereignisseLabel')+'">'+e.slice().reverse().map(m=>'<button type="button" class="verlauf-chip" data-ereignis="'+m.id+'" aria-pressed="'+(m.id===aktiv)+'">'+esc(vEn()?m.kurz_en:m.kurz)+'</button>').join('')+'</div>':'';
 const legende='';/* ohne Legende */ const _legendeAlt=art==='taeglich'?'':'<p class="verlauf-legende"><span><i class="legende-linie" aria-hidden="true"></i>'+t(art==='monatlich'?'schlussMonat':'schlussWoche')+'</span><span><i class="legende-flaeche" aria-hidden="true"></i>'+t(art==='monatlich'?'flaecheMonat':'flaecheWoche')+'</span></p>';
- return '<div class="verlauf-kopf"><div class="verlauf-knoepfe" role="group" aria-label="'+t('verlaufSpanne')+'">'+knoepfe+'</div></div>'
+ return '<div class="verlauf-kopf"><div class="verlauf-knoepfe" role="group" aria-label="'+t('verlaufSpanne')+'">'+knoepfe+'</div>'+(IT.teilenKnopf?IT.teilenKnopf('verlauf'):'')+'</div>'
   +'<div class="verlauf-diagramm" tabindex="0" role="group" aria-label="'+esc(t('verlaufAria').replace('{n}',p.length))+'">'
   +stressSvg(p,x,e,art)+baender
   +'<div class="verlauf-tip" role="status" aria-live="polite" hidden></div></div>'
@@ -112,7 +120,7 @@ function vKarte(m){
   +'<dl class="karte-zahlen"><div><dt>'+t('karteHoechst')+'</dt><dd>'+t('karteAm').replace('{w}',m.spitze.w).replace('{d}',vDatum(m.spitze.d))+'</dd></div>'
   +'<div><dt>'+t('karteUnter40')+'</dt><dd>'+(m.unter40?t('karteNachTagen').replace('{n}',m.unter40.tage):t('karteNochNicht'))+'</dd></div></dl>'
   +(m.bloecke?'<p class="karte-trieb-titel">'+t('karteTrieb').replace('{d}',vDatum(m.spitze.d))+'</p>'+zeile('volatility','triebVol')+zeile('price','triebPreis')+zeile('positioning','triebStimmung'):'')
-  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'');
+  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'')+(IT.teilenKnopf?'<div class="teilen-karte">'+IT.teilenKnopf('phase',m.id)+'</div>':'');
 }
 /* Chip-Leiste: Verlauf am Rand als Scroll-Hinweis, aktiven Chip in Sicht holen (nur die Leiste scrollt, nie die Seite) */
 function vChipsRand(c){if(!c)return;const max=c.scrollWidth-c.clientWidth;c.classList.toggle('rand-l',c.scrollLeft>2);c.classList.toggle('rand-r',max-c.scrollLeft>2)}
@@ -167,9 +175,10 @@ function zeigeVerlauf(){
  panel.innerHTML='<header class="verlauf-ansicht-kopf"></header><div class="verlauf"></div>';
  const box=panel.querySelector('.verlauf');vKopf();
  const frisch=verlauf&&!verlauf.fehler&&verlaufFuer===vAn();
+ if(frisch)vStartAnwenden();
  box.innerHTML=verlaufHtml();
  if(fokus)$('#verlauf-ansicht-titel')?.focus({preventScroll:true});
- if(!frisch){if(verlauf&&verlaufFuer!==vAn())verlauf=null;box.innerHTML=verlaufHtml();ladeVerlauf().then(()=>{if(!panel.hidden)vZeichnen()})}else vChipInSicht(box,false);
+ if(!frisch){if(verlauf&&verlaufFuer!==vAn())verlauf=null;box.innerHTML=verlaufHtml();ladeVerlauf().then(()=>{vStartAnwenden();if(!panel.hidden)vZeichnen()})}else vChipInSicht(box,false);
 }
 IT.verlaufAnsicht={zeigen(){const war=panel.hidden;panel.hidden=false;if(war||!panel.querySelector('.verlauf'))zeigeVerlauf()},verbergen(){panel.hidden=true}};
 if(panel){

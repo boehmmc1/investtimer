@@ -319,6 +319,7 @@ function titelSetzen(a){const l=sp(),t=TITEL[l][a]||TITEL[l].stress,b=BESCHR[l][
 function zaehlen(a){if(!location.protocol.startsWith('http')||window.InvestTimerApp)return;
  const inst=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true,g=(mobil()?'mobil':'desktop')+(inst?'-app':'');
  try{fetch('/api/v?a='+encodeURIComponent(a)+'&l='+sp()+'&g='+g,{cache:'no-store',credentials:'omit',keepalive:true}).catch(()=>{})}catch{}}
+IT.zaehlen=zaehlen;
 addEventListener('popstate',route);
 addEventListener('hashchange',route);
 document.addEventListener('click',e=>{

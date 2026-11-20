@@ -41,12 +41,17 @@ def auswerten(von, bis):
     """Kennzahlen fuer [von, bis] (date, einschliesslich)."""
     tage = collections.Counter(); besucher = collections.defaultdict(set); geraete = collections.Counter()
     sprachen = collections.Counter(); quellen = collections.Counter()
+    teilen_links = collections.Counter(); teilen_bots = collections.Counter()
     for z in lesen(LOG):
         m = ZEILE.match(z)
         if not m:
             continue
         ip, zeit, methode, pfad, status, ref, ua, al = m.groups()
         tag = zeit[:10]
+        if von.isoformat() <= tag <= bis.isoformat() and methode == "GET" and pfad.startswith("/s/"):
+            # Aufrufe geteilter Links (Vorschau-Abrufe der Netzwerke zaehlen getrennt)
+            (teilen_bots if BOT.search(ua) or status != "200" else teilen_links)[pfad.split("/")[2] if pfad.count("/") >= 2 else "?"] += 1
+            continue
         if not (von.isoformat() <= tag <= bis.isoformat()) or methode != "GET" or pfad not in ("/", "/index.html") or status != "200" or BOT.search(ua):
             continue
         tage[tag] += 1; besucher[tag].add(ip + ua); geraete[geraet(ua)] += 1
@@ -73,7 +78,17 @@ def auswerten(von, bis):
     return {"von": von.isoformat(), "bis": bis.isoformat(), "aufrufe": sum(tage.values()), "besucher": sum(len(v) for v in besucher.values()),
             "tage": {t: [tage[t], len(besucher[t])] for t in sorted(tage)}, "geraete": geraete.most_common(), "sprachen": sprachen.most_common(5),
             "quellen": quellen.most_common(8), "ansichten": ansichten.most_common(), "ansicht_sprache": ansicht_sprache.most_common(),
-            "ansicht_geraet": ansicht_geraet.most_common(), "konten": konten(von, bis), "fehler": fehler}
+            "ansicht_geraet": ansicht_geraet.most_common(), "konten": konten(von, bis), "fehler": fehler,
+            "teilen": teilen_zaehlen(ansichten, teilen_links, teilen_bots)}
+
+
+def teilen_zaehlen(ansichten, links, bots):
+    """Teilen-Klicks je Art und Kanal und Besuche ueber geteilte Links (Zaehlaufruf ohne Kennung) plus Aufrufe von /s/."""
+    klicks = {a: n for a, n in ansichten.items() if a.startswith("teilen-")}
+    besuche = {a[len("besuch-teilen-"):]: n for a, n in ansichten.items() if a.startswith("besuch-teilen-")}
+    return {"klicks": sum(n for a, n in klicks.items() if a.count("-") == 1), "kanaele": sorted(klicks.items(), key=lambda x: -x[1]),
+            "besuche": sum(besuche.values()), "besuche_kanal": sorted(besuche.items(), key=lambda x: -x[1]),
+            "links": links.most_common(), "vorschau_abrufe": sum(bots.values())}
 
 
 def konten(von, bis):
@@ -101,7 +116,7 @@ def konten(von, bis):
         return {"fehler": type(e).__name__}
 
 
-NAMEN = {"stress": "Marktstress", "ki": "KI", "verlauf": "Verlauf", "konto": "Konto", "feedback": "Feedback", "faq": "Häufige Fragen"}
+NAMEN = {"teilen-wert": "Teilen: Wert", "teilen-verlauf": "Teilen: Verlauf", "teilen-phase": "Teilen: Phase", "stress": "Marktstress", "ki": "KI", "verlauf": "Verlauf", "konto": "Konto", "feedback": "Feedback", "faq": "Häufige Fragen"}
 
 
 def mail_text(w, v):
@@ -114,6 +129,9 @@ def mail_text(w, v):
               "", "Top-Ansichten:"] + ["  %s: %d" % (NAMEN.get(a, a), n) for a, n in w["ansichten"][:6]] + [
               "", "Geräte: " + ", ".join("%s %d" % g for g in w["geraete"]), "Sprache (Ansichten): " + ", ".join("%s %d" % s for s in w["ansicht_sprache"]),
               "Verweisquellen: " + (", ".join("%s %d" % q for q in w["quellen"][:5]) or "keine"), "",
+              "Teilen: %d Klicks (Vorwoche %d), Besuche über geteilte Links %d (%s), Link-Abrufe %s" % (
+                  w["teilen"]["klicks"], v["teilen"]["klicks"], w["teilen"]["besuche"], ", ".join("%s %d" % k for k in w["teilen"]["besuche_kanal"]) or "–",
+                  ", ".join("%s %d" % k for k in w["teilen"]["links"]) or "–"), "",
               "Fehler aus dem Browser: %d Meldungen, %d Arten, davon %d neu (Vorwoche %d Meldungen)" % (w["fehler"].get("meldungen", 0), w["fehler"].get("arten", 0), w["fehler"].get("neu", 0), v["fehler"].get("meldungen", 0))]
     for m, n in w["fehler"].get("haeufigste", []) or []:
         zeilen.append("  %dx %s" % (n, m[:100]))
@@ -132,6 +150,8 @@ def bericht_html(e):
             + tab("Aufrufe je Tag (Seitenaufrufe / Besucher geschätzt)", [(t, "%d / %d" % tuple(v)) for t, v in e["tage"].items()])
             + tab("Ansichten", [(NAMEN.get(a, a), n) for a, n in e["ansichten"]]) + tab("Geräte", e["geraete"]) + tab("Ansichten nach Gerät", e["ansicht_geraet"])
             + tab("Sprache (Browser)", e["sprachen"]) + tab("Sprache (Seite)", e["ansicht_sprache"]) + tab("Verweisquellen", e["quellen"])
+            + tab("Teilen: Klicks je Art und Kanal", e["teilen"]["kanaele"]) + tab("Besuche über geteilte Links (Kanal)", e["teilen"]["besuche_kanal"])
+            + tab("Aufrufe geteilter Links (/s/…), Vorschau-Abrufe der Netzwerke: %d" % e["teilen"]["vorschau_abrufe"], e["teilen"]["links"])
             + tab("Konten (Zählung)", list(e["konten"].items())) + tab("Fehler aus dem Browser", [(k, v) for k, v in e["fehler"].items() if k != "haeufigste"]))
 
 

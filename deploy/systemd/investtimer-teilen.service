@@ -1,0 +1,10 @@
+[Unit]
+Description=InvestTimer: Teilen-Bilder fuer den zeitversetzten Stand rendern (nur neue Dateien)
+After=volafly-chat.service
+
+[Service]
+Type=oneshot
+Nice=15
+IOSchedulingClass=idle
+CPUWeight=20
+ExecStart=/usr/bin/python3 /var/www/investtimer/server/teilen_bilder.py

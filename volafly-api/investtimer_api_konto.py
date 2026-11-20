@@ -80,7 +80,7 @@ def _it_konto_antwort(uid):
     pflicht = _it_schalter("IT_PREMIUM_PFLICHT")
     s.update(pflicht=pflicht, paywall=_it_schalter("IT_PAYWALL") and _it_stripe() is not None,
              appKauf=bool(_it_geheim("revenuecat").get("apple_public")),
-             ki=_it_ki_stand(uid),
+             ki=_it_ki_stand(uid), teilenAktuell=_it_env("IT_TEILEN_AKTUELL") == "1",
              tarife=_konto.TARIFE)
     return _JSONResp(s, headers={"Cache-Control": "no-store"})
 

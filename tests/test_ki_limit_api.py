@@ -100,7 +100,8 @@ def main():
             "IT_KI_KOSTEN_TAG_EUR=0.5", "IT_KI_KOSTEN_MONAT_EUR=0.8", "IT_KI_KOSTEN_TEST=1", "IT_KI_KOSTEN_AN=test@investtimer.net"]) + "\n")
         umgebung = dict(os.environ, IT_ENV_DATEI=str(tmp / "it.env"), IT_KI_DB=str(tmp / "ki.db"),
                         INVESTTIMER_KONTO_DB=str(tmp / "konto.db"), IT_GEHEIM_DIR=str(geheim),
-                        ANTHROPIC_BASE_URL=dienst, ANTHROPIC_API_KEY="test", IT_RESEND_API=dienst)
+                        ANTHROPIC_BASE_URL=dienst, ANTHROPIC_API_KEY="test", IT_RESEND_API=dienst,
+                        IT_TEILEN_AKTUELL_DIR=str(tmp / "teilen-aktuell"))
         log = open(tmp / "log", "w")
         api = subprocess.Popen(["/usr/local/bin/uvicorn", "volafly_chat:app", "--host", "127.0.0.1", "--port", str(PORT)],
                                cwd=tmp, env=umgebung, stdout=log, stderr=subprocess.STDOUT)
@@ -124,7 +125,42 @@ def main():
     return 1 if fehler else 0
 
 
+def teilen_pruefen(tmp):
+    """Teilen: Bild-Weiterleitung auf den zeitversetzten Stand, Schalter IT_TEILEN_AKTUELL (aus: auch eingeloggt zeitversetzt;
+    an: aktueller Wert nur mit Login, einmal je Tag gerendert)."""
+    def hole(pfad, tok=None):
+        req = urllib.request.Request("http://127.0.0.1:%d%s" % (PORT, pfad), headers={"Authorization": "Bearer " + tok} if tok else {})
+        class Kein(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *a, **k):
+                return None
+        try:
+            r = urllib.request.build_opener(Kein).open(req, timeout=120)
+            return r.status, r.headers, r.read()
+        except urllib.error.HTTPError as e:
+            return e.code, e.headers, e.read()
+    s, h, _ = hole("/v1/investtimer/teilen/bild?art=wert&format=hoch&l=de&aktuell=1", "nutzerT")
+    pruefe(s == 302 and "/teilen/20" in (h.get("Location") or ""), f"Teilen: Schalter aus -> zeitversetztes Bild ({s} {h.get('Location')})")
+    s, _, _ = hole("/v1/investtimer/teilen/bild?art=phase&phase=../../etc&format=quer")
+    pruefe(s == 400, f"Teilen: ungueltige Phase abgelehnt ({s})")
+    s, _, b = hole("/v1/investtimer/teilen/s/wert?utm_medium=%3Cscript%3E")
+    pruefe(s == 200 and b"<script>location" in b and b"%3Cscript" not in b and b"<script%3E" not in b and b"utm_medium=script" in b, "Teilen-Seite: utm_medium bereinigt")
+    env = (tmp / "it.env").read_text()
+    (tmp / "it.env").write_text(env + "IT_TEILEN_AKTUELL=1\n")
+    time.sleep(31)   # .env wird alle 30 s neu gelesen
+    s, _, _ = hole("/v1/investtimer/teilen/bild?art=wert&format=quer&l=de&aktuell=1")
+    pruefe(s == 401, f"Teilen aktuell: ohne Login 401 ({s})")
+    t0 = time.time()
+    s, h, b = hole("/v1/investtimer/teilen/bild?art=wert&format=quer&l=de&aktuell=1", "nutzerT")
+    t1 = time.time()
+    s2, _, b2 = hole("/v1/investtimer/teilen/bild?art=wert&format=quer&l=de&aktuell=1", "nutzerT")
+    t2 = time.time()
+    pruefe(s == 200 and b[:4] == b"\x89PNG" and "private" in (h.get("Cache-Control") or "") and s2 == 200 and b2 == b and t2 - t1 < (t1 - t0) / 2,
+           f"Teilen aktuell: mit Login PNG, privat, zweiter Abruf aus dem Tages-Cache ({t1 - t0:.1f} s / {t2 - t1:.2f} s)")
+    (tmp / "it.env").write_text(env)
+
+
 def pruefe_alles(tmp):
+    teilen_pruefen(tmp)
     # 1. Beispielfragen: statisch ohne Modell, beliebig oft, zaehlen nicht
     n0 = ZUSTAND["aufrufe"]
     for _ in range(4):

@@ -619,6 +619,28 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 .ki-frei-leer .ki-frage:hover{text-decoration:underline;text-underline-offset:3px}
 .ki-frei-leer .ki-chip{border-color:var(--accent);background:var(--surface,#fff)}
 @media(max-width:759px){.ki-limit{font-size:11px;margin-top:6px}}
+/* Teilen (20.11.2026): dezenter Knopf mit Symbol, mind. 44 px; Dialog mit Bild, Download, Link, Netzwerke */
+.teilen-knopf{display:inline-flex;align-items:center;gap:7px;min-height:44px;min-width:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--sub);font-size:13px;cursor:pointer;white-space:nowrap}
+.teilen-knopf svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.teilen-knopf:hover{color:var(--accent);border-color:var(--accent)}
+.teilen-knopf:focus-visible{outline:2px solid #698dbc;outline-offset:2px}
+.teilen-start{display:flex;justify-content:center;margin:14px 0 0}
+.teilen-karte{margin:12px 0 0}
+.verlauf-kopf .teilen-knopf{margin-left:auto}
+.teilen-dialog{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px - var(--sa-top));padding:20px 22px 22px;border:1px solid var(--line);border-radius:16px;background:var(--bg,#f8f8f3);color:var(--text);box-shadow:0 20px 60px rgba(27,51,48,.22)}
+.teilen-dialog::backdrop{background:rgba(27,51,48,.35)}
+.teilen-kopf{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+.teilen-kopf h2{margin:0;font:500 20px/1.3 var(--display)}
+.teilen-zu{min-width:44px;min-height:44px;border:0;background:none;font-size:26px;line-height:1;color:var(--sub);cursor:pointer;border-radius:8px}
+.teilen-bild{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.teilen-text{margin:12px 0 14px;font-size:13px;line-height:1.6;color:var(--sub)}
+.teilen-aktionen{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.teilen-aktion{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--surface,#fff);color:var(--text);font-size:14px;text-decoration:none;cursor:pointer}
+.teilen-aktion.primaer{background:var(--accent);border-color:var(--accent);color:#fff}
+.teilen-netze{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.teilen-netz{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:13px;text-decoration:none}
+.teilen-netz:hover,.teilen-aktion:hover{border-color:var(--accent)}
+@media(max-width:420px){.teilen-netze{grid-template-columns:repeat(2,minmax(0,1fr))}.teilen-aktion{flex:1 1 auto}}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -1852,6 +1874,14 @@ async function ladeVerlauf(){
  verlaufFuer=an;verlaufZeit=Date.now();return verlauf;
 }
 IT.ladeVerlauf=ladeVerlauf;
+IT.verlaufZeitraum=()=>verlaufSpanne;
+/* Ankunft ueber einen geteilten Link (/s/verlauf, /s/phase): Zeitraum bzw. Phase einmalig setzen */
+function vStartAnwenden(){
+ const s=IT.teilenStart;if(!s||!verlauf||verlauf.fehler)return;IT.teilenStart=null;
+ if(s.z&&SPANNEN.some(x=>x[0]===s.z))verlaufSpanne=s.z;
+ const e=s.phase&&(verlauf.ereignisse||[]).find(x=>x.id===s.phase);if(!e)return;verlaufEreignis=e.id;
+ if(!s.z){const t=verlauf.taeglich||[],ende=t.length?vMs(t[t.length-1][0]):Date.now();verlaufSpanne=vMs(e.start)>=ende-1827*864e5||e.spitze.w<70?'5J':'A'}
+}
 const vLang=()=>document.documentElement.lang==='en'?'en-US':'de-DE';
 const vMs=d=>Date.parse(d+'T12:00:00Z');
 const vEn=()=>document.documentElement.lang==='en';
@@ -1927,7 +1957,7 @@ function verlaufHtml(){
   return '<button type="button" class="verlauf-band-knopf" data-ereignis="'+m.id+'" aria-pressed="'+(m.id===aktiv)+'" aria-label="'+esc(name(m)+', '+vZeitraum(m))+'" style="left:'+(x0/vW*100).toFixed(2)+'%;width:'+(bx/vW*100).toFixed(2)+'%;top:'+(vT/vH*100).toFixed(2)+'%;height:'+((vH-vT-vB)/vH*100).toFixed(2)+'%"></button>'}).join('')+'</div>';
  const chips=e.length?'<div class="verlauf-chips" role="group" aria-label="'+t('ereignisseLabel')+'">'+e.slice().reverse().map(m=>'<button type="button" class="verlauf-chip" data-ereignis="'+m.id+'" aria-pressed="'+(m.id===aktiv)+'">'+esc(vEn()?m.kurz_en:m.kurz)+'</button>').join('')+'</div>':'';
 const legende='';/* ohne Legende */ const _legendeAlt=art==='taeglich'?'':'<p class="verlauf-legende"><span><i class="legende-linie" aria-hidden="true"></i>'+t(art==='monatlich'?'schlussMonat':'schlussWoche')+'</span><span><i class="legende-flaeche" aria-hidden="true"></i>'+t(art==='monatlich'?'flaecheMonat':'flaecheWoche')+'</span></p>';
- return '<div class="verlauf-kopf"><div class="verlauf-knoepfe" role="group" aria-label="'+t('verlaufSpanne')+'">'+knoepfe+'</div></div>'
+ return '<div class="verlauf-kopf"><div class="verlauf-knoepfe" role="group" aria-label="'+t('verlaufSpanne')+'">'+knoepfe+'</div>'+(IT.teilenKnopf?IT.teilenKnopf('verlauf'):'')+'</div>'
   +'<div class="verlauf-diagramm" tabindex="0" role="group" aria-label="'+esc(t('verlaufAria').replace('{n}',p.length))+'">'
   +stressSvg(p,x,e,art)+baender
   +'<div class="verlauf-tip" role="status" aria-live="polite" hidden></div></div>'
@@ -1946,7 +1976,7 @@ function vKarte(m){
   +'<dl class="karte-zahlen"><div><dt>'+t('karteHoechst')+'</dt><dd>'+t('karteAm').replace('{w}',m.spitze.w).replace('{d}',vDatum(m.spitze.d))+'</dd></div>'
   +'<div><dt>'+t('karteUnter40')+'</dt><dd>'+(m.unter40?t('karteNachTagen').replace('{n}',m.unter40.tage):t('karteNochNicht'))+'</dd></div></dl>'
   +(m.bloecke?'<p class="karte-trieb-titel">'+t('karteTrieb').replace('{d}',vDatum(m.spitze.d))+'</p>'+zeile('volatility','triebVol')+zeile('price','triebPreis')+zeile('positioning','triebStimmung'):'')
-  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'');
+  +(IT.kiBruecke?IT.kiBruecke.phaseHtml(m):'')+(IT.teilenKnopf?'<div class="teilen-karte">'+IT.teilenKnopf('phase',m.id)+'</div>':'');
 }
 /* Chip-Leiste: Verlauf am Rand als Scroll-Hinweis, aktiven Chip in Sicht holen (nur die Leiste scrollt, nie die Seite) */
 function vChipsRand(c){if(!c)return;const max=c.scrollWidth-c.clientWidth;c.classList.toggle('rand-l',c.scrollLeft>2);c.classList.toggle('rand-r',max-c.scrollLeft>2)}
@@ -2001,9 +2031,10 @@ function zeigeVerlauf(){
  panel.innerHTML='<header class="verlauf-ansicht-kopf"></header><div class="verlauf"></div>';
  const box=panel.querySelector('.verlauf');vKopf();
  const frisch=verlauf&&!verlauf.fehler&&verlaufFuer===vAn();
+ if(frisch)vStartAnwenden();
  box.innerHTML=verlaufHtml();
  if(fokus)$('#verlauf-ansicht-titel')?.focus({preventScroll:true});
- if(!frisch){if(verlauf&&verlaufFuer!==vAn())verlauf=null;box.innerHTML=verlaufHtml();ladeVerlauf().then(()=>{if(!panel.hidden)vZeichnen()})}else vChipInSicht(box,false);
+ if(!frisch){if(verlauf&&verlaufFuer!==vAn())verlauf=null;box.innerHTML=verlaufHtml();ladeVerlauf().then(()=>{vStartAnwenden();if(!panel.hidden)vZeichnen()})}else vChipInSicht(box,false);
 }
 IT.verlaufAnsicht={zeigen(){const war=panel.hidden;panel.hidden=false;if(war||!panel.querySelector('.verlauf'))zeigeVerlauf()},verbergen(){panel.hidden=true}};
 if(panel){
@@ -2234,7 +2265,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.20-1019", "d": "20.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
+const VERSION={"v": "2026.11.20-1141", "d": "20.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -2774,6 +2805,7 @@ function titelSetzen(a){const l=sp(),t=TITEL[l][a]||TITEL[l].stress,b=BESCHR[l][
 function zaehlen(a){if(!location.protocol.startsWith('http')||window.InvestTimerApp)return;
  const inst=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true,g=(mobil()?'mobil':'desktop')+(inst?'-app':'');
  try{fetch('/api/v?a='+encodeURIComponent(a)+'&l='+sp()+'&g='+g,{cache:'no-store',credentials:'omit',keepalive:true}).catch(()=>{})}catch{}}
+IT.zaehlen=zaehlen;
 addEventListener('popstate',route);
 addEventListener('hashchange',route);
 document.addEventListener('click',e=>{
@@ -2924,6 +2956,115 @@ function melden(meldung,datei,zeile,stack){
 addEventListener('error',e=>{if(!e.message)return;melden(e.message,e.filename,e.lineno,e.error&&e.error.stack)});
 addEventListener('unhandledrejection',e=>{const r=e.reason;melden(r&&r.message?r.message:String(r),'',0,r&&r.stack)});
 IT.fehlerMelden=melden;
+})();
+
+/* Teilen (Auftrag C, 20.11.2026): Knopf auf der Startseite (Wert), im Verlauf (gewaehlter Zeitraum) und in jeder Ereigniskarte (Phase).
+   Bilder vorab gerendert (server/teilen_bilder.py), standardmaessig zeitversetzter Stand (7-Tage-Regel), auch eingeloggt.
+   Mobil mit navigator.share + Datei: natives Teilen-Menue mit Bild 1080x1350, Text und Link.
+   Sonst eigener Dialog: Bild, Bild herunterladen, Link kopieren, WhatsApp, LinkedIn, X, Threads (nur einfache Teilen-Adressen,
+   keine Skripte der Netzwerke). Links /s/... tragen utm_source=teilen&utm_medium=<kanal>; gezaehlt wird cookiefrei ueber /api/v. */
+(()=>{
+const TT={de:{teilen:'Teilen',verlauf:'Verlauf teilen',phase:'Phase teilen',titel:'Teilen',bildAlt:'Bild zum Teilen',laden:'Bild herunterladen',hoch:'Hochformat',
+  kopieren:'Link kopieren',kopiert:'Link kopiert',schliessen:'Schließen',stand:'Stand {d}',fehlt:'Das Bild ist gerade nicht verfügbar.',
+  wert:'Marktstress am US-Aktienmarkt: {w} von 100 ({s}), Stand {d}.',vl:'Marktstress {z}, Stand {d}.',ph:'{n}: höchster Marktstress {w} am {d}.',
+  stufen:['Ruhig','Moderat','Erhöht','Hoch','Panik'],spannen:{'1M':'im letzten Monat','3M':'in den letzten 3 Monaten','1J':'in den letzten 12 Monaten','5J':'in den letzten 5 Jahren','A':'seit 2006'}},
+ en:{teilen:'Share',verlauf:'Share history',phase:'Share phase',titel:'Share',bildAlt:'Image to share',laden:'Download image',hoch:'Portrait',
+  kopieren:'Copy link',kopiert:'Link copied',schliessen:'Close',stand:'As of {d}',fehlt:'The image isn’t available right now.',
+  wert:'Market stress in the US stock market: {w} out of 100 ({s}), as of {d}.',vl:'Market stress {z}, as of {d}.',ph:'{n}: highest market stress {w} on {d}.',
+  stufen:['Calm','Moderate','Elevated','High','Panic'],spannen:{'1M':'over the past month','3M':'over the past 3 months','1J':'over the past 12 months','5J':'over the past 5 years','A':'since 2006'}}};
+const en=()=>document.documentElement.lang==='en',sp=()=>en()?'en':'de',tt=k=>TT[sp()][k];
+const SYM='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 11H5v9h14v-9h-1"/></svg>';
+const datum=d=>new Date(Date.parse(d+'T12:00:00Z')).toLocaleDateString(en()?'en-US':'de-DE',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+const stufe=w=>[20,40,60,80].filter(g=>w>=g).length;
+let manifest=null,laedt=null;
+function ladeManifest(){if(manifest)return Promise.resolve(manifest);if(laedt)return laedt;
+ laedt=fetch('/teilen/aktuell/manifest.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{manifest=m;laedt=null;return m}).catch(()=>{laedt=null;return null});return laedt}
+function zaehlen(a){try{IT.zaehlen&&IT.zaehlen(a)}catch{}}
+
+/* Knopf als HTML (Verlauf und Ereigniskarte bauen ihn in ihr Markup ein) */
+function knopf(art,phase){const txt=art==='verlauf'?tt('verlauf'):art==='phase'?tt('phase'):tt('teilen');
+ return '<button type="button" class="teilen-knopf" data-teilen="'+art+'"'+(phase?' data-phase="'+esc(phase)+'"':'')+'>'+SYM+'<span>'+esc(txt)+'</span></button>'}
+IT.teilenKnopf=knopf;
+
+/* Startseite: unter der Einordnung des Werts */
+function startKnopf(){const a=$('.score-column .assessment');if(!a)return;let k=$('.teilen-start');
+ if(!k){k=document.createElement('div');k.className='teilen-start';a.after(k)}k.innerHTML=knopf('wert')}
+
+/* Was wird geteilt: Bildname, Link, Text */
+function ziel(art,phase){
+ const m=manifest;if(!m)return null;const z=IT.verlaufZeitraum?IT.verlaufZeitraum():'1J';
+ if(art==='verlauf')return {name:'verlauf-'+z,pfad:'/s/verlauf/'+z+'/'+m.asOf,text:tt('vl').replace('{z}',tt('spannen')[z]).replace('{d}',datum((m.spannen||{})[z]||m.asOf)),zusatz:'-'+z};
+ if(art==='phase'){const p=(m.phasen||{})[phase];if(!p)return null;
+  return {name:'phase-'+phase,pfad:'/s/phase/'+phase,text:tt('ph').replace('{n}',en()?p.name_en:p.name).replace('{w}',p.spitze.w).replace('{d}',datum(p.spitze.d))}}
+ return {name:'wert',pfad:'/s/wert/'+m.asOf,text:tt('wert').replace('{w}',m.wert).replace('{s}',tt('stufen')[stufe(m.wert)]).replace('{d}',datum(m.asOf))};
+}
+const bildUrl=(z,fmt)=>'/teilen/'+manifest.asOf+'/'+z.name+'-'+fmt+'-'+sp()+'.png';
+
+let aktuellErlaubt=null;
+async function aktuellModus(){if(!IT.member||!IT.session)return false;if(aktuellErlaubt===null){try{const k=await api('konto');aktuellErlaubt=!!(k&&k.teilenAktuell)}catch{aktuellErlaubt=false}}return aktuellErlaubt}
+async function aktuellBild(z,fmt){const q=z.name.split('-'),art=q[0],tok=IT.token?await IT.token():null;
+ const u='/api/teilen/bild?aktuell=1&art='+art+(art==='verlauf'?'&zeitraum='+q[1]:'')+(art==='phase'?'&phase='+q[1]:'')+'&format='+fmt+'&l='+sp();
+ const r=await fetch(u,{headers:tok?{Authorization:'Bearer '+tok}:{}});if(!r.ok)throw 0;return URL.createObjectURL(await r.blob())}
+const link=(z,kanal)=>location.origin+z.pfad+'?'+(en()?'l=en&':'')+'utm_source=teilen&utm_medium='+kanal;
+
+async function teilen(art,phase,quelle){
+ const m=await ladeManifest();const z=m&&ziel(art,phase);
+ if(!z){typeof toast==='function'&&toast(tt('fehlt'));return}
+ if(await aktuellModus()){try{z.quer=await aktuellBild(z,'quer');z.hoch=await aktuellBild(z,'hoch');
+  if(art==='wert'&&IT.live&&IT.live.rounded!=null)z.text=tt('wert').replace('{w}',IT.live.rounded).replace('{s}',tt('stufen')[stufe(IT.live.rounded)]).replace('{d}',datum(new Date().toISOString().slice(0,10)))}catch{}}
+ zaehlen('teilen-'+art);
+ const nativ=navigator.share&&navigator.canShare&&matchMedia('(pointer:coarse)').matches;
+ if(nativ){
+  try{const r=await fetch(z.hoch||bildUrl(z,'hoch'));if(!r.ok)throw 0;const b=await r.blob();
+   const f=new File([b],'investtimer-'+z.name+'.png',{type:'image/png'}),url=link(z,'nativ');
+   if(navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'InvestTimer',text:z.text+' '+url});zaehlen('teilen-'+art+'-nativ');return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+ }
+ dialog(art,z,quelle);
+}
+
+let dlg=null,zurueck=null;
+function dialog(art,z,quelle){
+ zurueck=quelle||document.activeElement;
+ if(!dlg){dlg=document.createElement('dialog');dlg.className='teilen-dialog';dlg.setAttribute('aria-labelledby','teilen-titel');document.body.append(dlg);
+  dlg.addEventListener('close',()=>{zurueck&&zurueck.focus&&zurueck.focus({preventScroll:true})});
+  dlg.addEventListener('click',e=>{if(e.target===dlg){dlg.close();return}
+   const b=e.target.closest('[data-kanal]');if(b)zaehlen('teilen-'+dlg.dataset.art+'-'+b.dataset.kanal);
+   if(e.target.closest('[data-teilen-zu]'))dlg.close();
+   const k=e.target.closest('[data-kopieren]');if(k){const u=k.dataset.kopieren;
+    (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).catch(()=>{const i=document.createElement('textarea');i.value=u;document.body.append(i);i.select();try{document.execCommand('copy')}catch{}i.remove()})
+     .finally(()=>{const s=k.querySelector('span');s.textContent=tt('kopiert');setTimeout(()=>{if(s.isConnected)s.textContent=tt('kopieren')},2200)})}})}
+ dlg.dataset.art=art;
+ const enc=encodeURIComponent,quer=z.quer||bildUrl(z,'quer'),hoch=z.hoch||bildUrl(z,'hoch');
+ const netz=[['whatsapp','WhatsApp','https://wa.me/?text='+enc(z.text+' '+link(z,'whatsapp'))],
+  ['linkedin','LinkedIn','https://www.linkedin.com/sharing/share-offsite/?url='+enc(link(z,'linkedin'))],
+  ['x','X','https://x.com/intent/post?text='+enc(z.text)+'&url='+enc(link(z,'x'))],
+  ['threads','Threads','https://www.threads.net/intent/post?text='+enc(z.text+' '+link(z,'threads'))]];
+ dlg.innerHTML='<div class="teilen-kopf"><h2 id="teilen-titel">'+esc(tt('titel'))+'</h2><button type="button" class="teilen-zu" data-teilen-zu aria-label="'+esc(tt('schliessen'))+'">×</button></div>'
+  +'<img class="teilen-bild" src="'+quer+'" width="1200" height="630" alt="'+esc(tt('bildAlt'))+': '+esc(z.text)+'">'
+  +'<p class="teilen-text">'+esc(z.text)+'</p>'
+  +'<div class="teilen-aktionen"><a class="teilen-aktion primaer" data-kanal="download" href="'+quer+'" download="investtimer-'+esc(z.name)+'.png">'+esc(tt('laden'))+'</a>'
+  +'<a class="teilen-aktion" data-kanal="download-hoch" href="'+hoch+'" download="investtimer-'+esc(z.name)+'-hoch.png">'+esc(tt('hoch'))+'</a>'
+  +'<button type="button" class="teilen-aktion" data-kanal="link" data-kopieren="'+esc(link(z,'link'))+'"><span>'+esc(tt('kopieren'))+'</span></button></div>'
+  +'<div class="teilen-netze">'+netz.map(([k,n,u])=>'<a class="teilen-netz" data-kanal="'+k+'" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+n+'</a>').join('')+'</div>';
+ const img=dlg.querySelector('.teilen-bild');img.addEventListener('error',()=>{img.replaceWith(Object.assign(document.createElement('p'),{className:'teilen-text',textContent:tt('fehlt')}))},{once:true});
+ if(!dlg.open)dlg.showModal();dlg.querySelector('.teilen-zu').focus({preventScroll:true});
+}
+
+document.addEventListener('click',e=>{const b=e.target.closest('[data-teilen]');if(!b)return;e.preventDefault();e.stopPropagation();teilen(b.dataset.teilen,b.dataset.phase,b)},true);
+
+/* Ankunft ueber einen geteilten Link: Sprache, Besuch zaehlen (ohne Kennung), Parameter aus der Adresse entfernen */
+(()=>{const q=new URLSearchParams(location.search);
+ if(q.get('lang')==='en'&&document.documentElement.lang!=='en'){const h=$('#header-language');if(h){h.value='en';h.dispatchEvent(new Event('change',{bubbles:true}))}}
+ if(q.get('utm_source')==='teilen'){const m=(q.get('utm_medium')||'link').replace(/[^a-z0-9-]/g,'').slice(0,20)||'link';setTimeout(()=>zaehlen('besuch-teilen-'+m),400)}
+ if(['utm_source','utm_medium','lang','z','phase'].some(k=>q.has(k))){IT.teilenStart={z:q.get('z'),phase:q.get('phase')};
+  ['utm_source','utm_medium','utm_campaign','lang','z','phase'].forEach(k=>q.delete(k));
+  try{history.replaceState(history.state,'',location.pathname+(q.toString()?'?'+q:'')+location.hash)}catch{}}})();
+
+startKnopf();
+document.addEventListener('investtimer:update',startKnopf);
+new MutationObserver(()=>{startKnopf()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+ladeManifest();
 })();
 
 })();

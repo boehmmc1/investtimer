@@ -75,6 +75,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         pfad = self.path.split('?')[0]
         ZUSTAND['aufrufe'].append(('GET', pfad))
+        if pfad.startswith('/teilen/'):
+            # Teilen-Bilder und Manifest aus dem gerenderten Stand (server/teilen_bilder.py)
+            basis = Path(os.environ.get('IT_TEILEN_DIR', '/var/lib/investtimer/teilen')).resolve()
+            datei = (basis / pfad[len('/teilen/'):]).resolve()
+            if not str(datei).startswith(str(basis)) or not datei.is_file():
+                self.send_response(404); self.end_headers(); return
+            roh = datei.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json' if datei.suffix == '.json' else 'image/png')
+            self.send_header('Content-Length', str(len(roh))); self.end_headers(); self.wfile.write(roh); return
         if pfad == '/data/stress.json':
             return self._json(stress_json())
         if pfad == '/api/chat':
