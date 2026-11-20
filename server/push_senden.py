@@ -53,13 +53,13 @@ TEXTE = {
            "ueber": "über", "unter": "unter",
            "einleitung": "Du hast für den Marktstress einen Alarm %s %d eingerichtet. Den aktuellen Stand und die Einordnung siehst du auf",
            "hinweis": "Der Hinweis beschreibt nur den Stand des Marktstress-Werts. Er ist keine Anlageberatung und keine Empfehlung zum Kauf oder Verkauf.",
-           "abmelden": "Keine E-Mails mehr zu diesem Alarm", "verwalten": "Alle Alarme verwaltest du auf investtimer.net unter „Marktstress abonnieren“."},
+           "abmelden": "Keine E-Mails mehr zu diesem Alarm", "verwalten": "Der Alarm ist jetzt ausgelöst. Er meldet sich wieder, wenn der Wert zurückkommt und die Schwelle erneut überquert. Deine Alarme findest du auf investtimer.net auf der Startseite unter der Einordnung."},
     "en": {"alarm_ueber": "Market stress at %d: above your threshold of %d.", "alarm_unter": "Market stress at %d: below your threshold of %d.",
            "test": "Push notifications are set up. This is what an alert looks like.",
            "ueber": "above", "unter": "below",
            "einleitung": "You set an alert for market stress %s %d. See the latest reading and context at",
            "hinweis": "This alert only reports the market stress score. It is not investment advice or a recommendation to buy or sell.",
-           "abmelden": "Stop emails for this alert", "verwalten": "Manage all alerts at investtimer.net under “Set up alerts”."},
+           "abmelden": "Stop emails for this alert", "verwalten": "The alert is now triggered. It will notify you again once the score comes back and crosses the threshold again. Your alerts are on the investtimer.net home page, below the reading."},
 }
 
 
@@ -237,7 +237,7 @@ def pruefen():
             continue
         s = a["schwelle"]
         # Ueberqueren mit Ruecklauf: scharf solange der Wert auf der Ausgangsseite liegt (<= X bzw. >= X).
-        # Ein scharfer Alarm loest aus, sobald der Wert > X (bzw. < X) ist, und wartet dann auf den Ruecklauf.
+        # Ein scharfer Alarm loest aus, sobald der Wert > X (bzw. < X) ist, ist dann ausgeloest bis zum Ruecklauf.
         if not a["scharf"]:
             if alarme.scharf_bei(a["richtung"], s, jetzt):
                 alarme.scharf_setzen(a["id"], True)

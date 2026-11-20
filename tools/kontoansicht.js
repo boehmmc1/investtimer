@@ -6,7 +6,7 @@
 const KA={de:{
  eyebrow:'DEIN KONTO',titel:'Konto',titelAus:'Konto',ausSatz:'Melde dich an, um den aktuellen Wert zu sehen, die KI zu fragen und Alarme einzurichten.',
  anmelden:'Anmelden',email:'E-Mail',seit:'Registriert seit',alarme:'Meine Alarme',alarmNeu:'Alarm einrichten',alarmKeine:'Noch kein Alarm angelegt.',
- alarmUeber:'Steigt über {x}',alarmUnter:'Fällt unter {x}',stAktiv:'aktiv',stWartet:'wartet',stPausiert:'pausiert',
+ alarmUeber:'Steigt über {x}',alarmUnter:'Fällt unter {x}',stBereit:'bereit',stAusgeloest:'ausgelöst',stPausiert:'pausiert',
  kanal_push:'Push',kanal_email:'E-Mail',kanal_beide:'Push und E-Mail',
  sprache:'Sprache',installTitel:'App',install:'App installieren',installText:'InvestTimer vom Home-Bildschirm starten, mit Push-Mitteilungen für deine Alarme.',
  mein:'Mein Konto',emailAendern:'E-Mail-Adresse ändern',emailNeu:'Neue E-Mail-Adresse',emailSpeichern:'Bestätigung senden',
@@ -19,7 +19,7 @@ const KA={de:{
 },en:{
  eyebrow:'YOUR ACCOUNT',titel:'Account',titelAus:'Account',ausSatz:'Sign in to see the latest reading, ask the AI and set up alerts.',
  anmelden:'Sign in',email:'Email',seit:'Member since',alarme:'My alerts',alarmNeu:'Set up an alert',alarmKeine:'No alerts yet.',
- alarmUeber:'Rises above {x}',alarmUnter:'Falls below {x}',stAktiv:'active',stWartet:'waiting',stPausiert:'paused',
+ alarmUeber:'Rises above {x}',alarmUnter:'Falls below {x}',stBereit:'armed',stAusgeloest:'triggered',stPausiert:'paused',
  kanal_push:'Push',kanal_email:'Email',kanal_beide:'Push and email',
  sprache:'Language',installTitel:'App',install:'Install app',installText:'Start InvestTimer from your home screen, with push notifications for your alerts.',
  mein:'Account settings',emailAendern:'Change email address',emailNeu:'New email address',emailSpeichern:'Send confirmation',
@@ -47,11 +47,11 @@ function fuss(){
  return '<p class="konto-fuss"><a href="/impressum.html">'+ka('impressum')+'</a><span aria-hidden="true"> · </span><a href="/datenschutz.html">'+ka('datenschutz')+'</a><span aria-hidden="true"> · </span><a href="#feedback">'+ka('feedbackLink')+'</a></p>'+(v?'<p class="konto-fuss konto-fuss-version">'+v+'</p>':'');
 }
 function alarmZeile(a){
- const st=!a.aktiv?'pausiert':a.scharf===false?'wartet':'aktiv';
+ const st=a.zustand||(!a.aktiv?'pausiert':a.scharf===false?'ausgeloest':'bereit');
  const titel=ka(a.richtung==='ueber'?'alarmUeber':'alarmUnter').replace('{x}',a.schwelle);
- const sub=(typeof alarmStatus==='function'&&st==='wartet'?alarmStatus(a):'')||ka('kanal_'+(a.kanal||'push'));
+ const sub=(st==='ausgeloest'&&IT.alarmErklaerung?IT.alarmErklaerung(a):'')||ka('kanal_'+(a.kanal||'push'));
  return '<li><button type="button" class="konto-zeile konto-alarm" data-konto="alarme"><span class="konto-zeile-text"><b>'+esc(titel)+'</b><small>'+esc(sub)+'</small></span>'
-  +'<span class="konto-st st-'+st+'">'+ka(st==='aktiv'?'stAktiv':st==='wartet'?'stWartet':'stPausiert')+'</span>'+pfeil+'</button></li>';
+  +'<span class="konto-st st-'+st+'">'+ka(st==='bereit'?'stBereit':st==='ausgeloest'?'stAusgeloest':'stPausiert')+'</span>'+pfeil+'</button></li>';
 }
 function alarmBlock(){
  const d=zustand.alarme;let inhalt;
@@ -104,6 +104,7 @@ async function laden(){
   api('alarme').catch(()=>({fehler:true})),api('konto').catch(()=>null)]);
  zustand.nutzer=n;zustand.alarme=a;zustand.konto=k;zustand.laedt=false;zeichne();
 }
+document.addEventListener('investtimer:alarme',e=>{if(e.detail&&!sicht.hidden&&zustand.alarme){zustand.alarme=e.detail;zeichne()}});
 IT.kontoNeuLaden=()=>{if(!sicht.hidden){zustand.alarme=null;laden()}};
 async function emailAendern(form){
  const i=form.querySelector('#konto-email-neu'),neu=i.value.trim(),knopf=form.querySelector('button[type=submit]');
@@ -134,7 +135,8 @@ async function ueberallAbmelden(b){
 sicht.addEventListener('click',e=>{
  const b=e.target.closest('[data-konto]');if(!b)return;const a=b.dataset.konto;
  if(a==='anmelden')$('#account-login')?.click();
- else if(a==='alarme'||a==='alarm-neu')IT.oeffneAlarme&&IT.oeffneAlarme(b);
+ else if(a==='alarme')IT.alarmListe&&IT.alarmListe(b);
+ else if(a==='alarm-neu')IT.alarmNeu&&IT.alarmNeu(b);
  else if(a==='install')IT.oeffneInstall&&IT.oeffneInstall(b);
  else if(a==='abo')IT.oeffneKonto&&IT.oeffneKonto(b,IT.aboAnsicht?IT.aboAnsicht():'konto');
  else if(a==='passwort'||a==='loeschen'){IT.oeffneKonto&&IT.oeffneKonto(b,'konto').then(()=>{const d=$(a==='passwort'?'.konto-pw':'.konto-loeschen');if(d){d.open=true;d.scrollIntoView({block:'nearest'});d.querySelector('input')?.focus({preventScroll:true})}})}

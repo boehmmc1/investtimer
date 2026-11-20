@@ -86,6 +86,13 @@ function stressSvg(p,x,e,art){
   const r=reihen.findIndex(z=>z.every(([u,v])=>a+br<u-6||a>v+6));if(r<0)return;
   reihen[r].push([a,a+br]);texte.push('<text class="verlauf-band-text" data-label="'+m.id+'" text-anchor="'+anker+'" x="'+(anker==='end'?a+br:a).toFixed(1)+'" y="'+(vT+10+r*12)+'">'+esc(name)+'</text>')});
  s+=texte.join('');
+ /* Eigene Schwellen (nur eingeloggt, nur bereite Alarme): fein gestrichelt hinter der Kurve, rechts klein beschriftet */
+ {const sw=vSchwellen().slice().sort((u,v)=>v.schwelle-u.schwelle),ty=[],abst=11;
+  /* Beschriftungen nie ueberlappend: von oben nach unten mit Mindestabstand, am unteren Rand zurueckschieben */
+  sw.forEach((a,i)=>{ty[i]=Math.max(y(a.schwelle)-3,i?ty[i-1]+abst:vT+8)});
+  for(let i=sw.length-1;i>=0;i--){const max=i===sw.length-1?vH-vB-2:ty[i+1]-abst;if(ty[i]>max)ty[i]=max}
+  sw.forEach((a,i)=>{const yy=y(a.schwelle).toFixed(1);s+='<line class="verlauf-schwelle" x1="'+vL+'" x2="'+(vW-vR)+'" y1="'+yy+'" y2="'+yy+'"/>'});
+  sw.forEach((a,i)=>{s+='<text class="verlauf-schwelle-text" text-anchor="end" x="'+(vW-vR-12)+'" y="'+ty[i].toFixed(1)+'">'+esc(vAlarmText(a))+'</text>'});}
  /* Spanne Tief bis Hoch je Periode */
  /* Spanne Tief bis Hoch entfernt (Nachtrag 2): nur die Linie */
  s+='<polyline class="chart-line verlauf-linie'+(lang?' verlauf-lang':'')+'" points="'+p.map(q=>x(q[0]).toFixed(1)+','+y(q[1]).toFixed(1)).join(' ')+'"/>';
@@ -99,6 +106,16 @@ let vMessung=null;
 function vTextBreite(txt){try{if(!vMessung){vMessung=document.createElement('canvas').getContext('2d');const f=getComputedStyle(document.body).getPropertyValue('--sans')||'sans-serif';vMessung.font='10px '+f}return Math.ceil(vMessung.measureText(txt).width*1.08)+1}catch{return txt.length*6}}
 /* Band mit Mindestbreite, mittig ueber dem echten Zeitraum, innerhalb der Zeichenflaeche */
 function vBand(m,x){let x0=Math.max(vL,x(m.start)),x1=Math.min(vW-vR,x(m.ende));if(x1-x0<V_BAND_BREITE){const c=(x0+x1)/2;x0=Math.max(vL,Math.min(vW-vR-V_BAND_BREITE,c-V_BAND_BREITE/2));x1=x0+V_BAND_BREITE}return [x0,x1-x0]}
+/* Alarme im Verlauf (Auftrag 20.11.2026) */
+const V_AL={de:{ueber:'Alarm über {x}',unter:'Alarm unter {x}',schalter:'Meine Alarme anzeigen',hier:'Hier hätte dein Alarm ausgelöst'},
+ en:{ueber:'Alert above {x}',unter:'Alert below {x}',schalter:'Show my alerts',hier:'Your alert would have triggered here'}};
+const vAl=k=>V_AL[vEn()?'en':'de'][k];
+const vAlarmText=a=>vAl(a.richtung==='ueber'?'ueber':'unter').replace('{x}',a.schwelle);
+function vAlarmeAn(){try{return localStorage.getItem('investtimer-verlauf-alarme')!=='aus'}catch{return true}}
+function vBereite(){return vAn()&&IT.alarmDaten&&IT.alarmDaten.alarme?IT.alarmDaten.alarme.filter(a=>a.zustand==='bereit'):[]}
+function vSchwellen(){return vAlarmeAn()?vBereite():[]}
+function vHierAusgeloest(i){if(!vPos||!i)return false;const a=vPos.p[i-1][1],b=vPos.p[i][1];
+ return vSchwellen().some(al=>al.richtung==='ueber'?a<=al.schwelle&&b>al.schwelle:a>=al.schwelle&&b<al.schwelle)}
 function verlaufHtml(){
  const v=verlauf;vBreite();
  if(!v)return '<p class="chart-note">'+t('alarmLaedt')+'</p>';
@@ -117,6 +134,7 @@ const legende='';/* ohne Legende */ const _legendeAlt=art==='taeglich'?'':'<p cl
   +'<div class="verlauf-wertzeile" role="status" aria-live="polite" aria-atomic="true">'+vWertzeileHtml(null)+'</div>'
   +'<div class="verlauf-diagramm" tabindex="0" role="group" aria-label="'+esc(t('verlaufAria').replace('{n}',p.length))+'">'
   +stressSvg(p,x,e,art)+baender+'</div>'
+  +(vBereite().length?'<label class="verlauf-alarme-schalter"><input type="checkbox" id="verlauf-alarme"'+(vAlarmeAn()?' checked':'')+'> '+esc(vAl('schalter'))+'</label>':'')
   +legende+chips+'<div class="ereignis-karte" aria-live="polite"'+(aktiv?'':' hidden')+'>'+vKarte(e.find(m=>m.id===aktiv))+'</div>'
   ;
 }
@@ -173,7 +191,8 @@ function vWertzeileHtml(i){
  const wann=ende?(vAn()?(vEn()?'Today':'Heute'):vZeitpunkt(q,'taeglich')):vZeitpunkt(q,art);
  const ph=ende?null:(e||[]).find(m=>q[0]>=m.start&&q[0]<m.ende);
  return '<span class="wz-punkt" style="background:'+ITStufe.farbe(q[1])+'" aria-hidden="true"></span><span class="wz-text">'+esc(wann)+' · '+esc(t('tipWert').replace('{w}',q[1]))+'</span>'
-  +(ph?'<button type="button" class="wz-phase" data-ereignis="'+ph.id+'">'+esc(vEn()?ph.kurz_en:ph.kurz)+'</button>':'');
+  +(ph?'<button type="button" class="wz-phase" data-ereignis="'+ph.id+'">'+esc(vEn()?ph.kurz_en:ph.kurz)+'</button>':'')
+  +(!ende&&vHierAusgeloest(i)?'<span class="wz-alarm">'+esc(vAl('hier'))+'</span>':'');
 }
 function vZeige(i){
  if(!vPos)vPositionen();if(!vPos)return;
@@ -251,6 +270,8 @@ if(panel){
 }
 let vGroesse=null;window.addEventListener('resize',()=>{clearTimeout(vGroesse);vGroesse=setTimeout(()=>{if(verlauf&&panel&&panel.querySelector('.verlauf-diagramm')){const alt=vW,altM=panel.querySelector('.verlauf-chips')!=null;vBreite();if(alt!==vW||altM!==vMobil())vZeichnen();else vChipsRand(panel.querySelector('.verlauf-chips'))}},150)});
 document.addEventListener('investtimer:update',()=>{if(verlaufFuer!==vAn()){verlauf=null}if(!panel.hidden)zeigeVerlauf()});
+document.addEventListener('investtimer:alarme',()=>{if(!panel.hidden&&verlauf&&!verlauf.fehler)vZeichnen()});
+document.addEventListener('change',e=>{if(e.target.id!=='verlauf-alarme')return;try{localStorage.setItem('investtimer-verlauf-alarme',e.target.checked?'an':'aus')}catch{}vZeichnen('#verlauf-alarme')});
 new MutationObserver(()=>{if(!panel.hidden&&verlauf&&panel.querySelector('.verlauf'))vZeichnen()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 /* Startseite (nur ausgeloggt): kleiner 1J-Ausschnitt ohne Bedienelemente, Daten erst wenn er ins Bild kommt */
 const vMini=document.createElement('section');vMini.className='verlauf-mini';vMini.hidden=true;vMini.setAttribute('aria-labelledby','verlauf-mini-titel');

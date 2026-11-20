@@ -102,8 +102,6 @@ ERSETZEN = [
  ("You will get a notification as soon as market stress falls below {x} (that is, from {x1}).", "You’ll get an alert as soon as market stress falls below {x} (at {x1} or lower)."),
  ("Market stress is already below {x} at {w}. You will get the first notification once it rises above {x} and then falls below it again.",
   "Market stress is already below {x} ({w}). Your first alert comes once it rises back above {x} and then falls below it again."),
- ("waiting until the score falls below {x} again", "waiting for the score to fall below {x} again"),
- ("waiting until the score rises above {x} again", "waiting for the score to rise above {x} again"),
  ("This alert already exists.", "You already have this alert."),
  ("Push is on for this device.", "Push notifications are on for this device."),
  ("Test notification is on its way", "Test notification sent"),

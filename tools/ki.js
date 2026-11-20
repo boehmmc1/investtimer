@@ -340,7 +340,7 @@ function brueckeKompakt(attr,satz){return '<a href="#ki" class="ki-bruecke" '+at
 const wertFertig=()=>{const v=IT.view;return IT.wertEndgueltig!==false&&v&&v.rounded!=null?v.rounded:null};
 const startKlein=document.createElement('div');startKlein.className='ki-bruecke-start';
 const startGross=document.createElement('aside');startGross.className='ki-bruecke-gross';startGross.setAttribute('aria-labelledby','ki-bruecke-titel');
-(()=>{const ziel=$('.assessment');if(ziel)ziel.after(startKlein);const erst=$('.first-look');if(erst)erst.append(startGross)})();
+(()=>{const ziel=$('#alarm-karte')||$('.assessment');if(ziel)ziel.after(startKlein);const erst=$('.first-look');if(erst)erst.append(startGross)})();
 function brueckenRender(){
  const w=wertFertig(),satz=w!=null?kt('brueckeWert').replace('{w}',w):kt('brueckeOhne'),attr='data-bruecke="wert" data-wert="'+(w??'')+'"';
  if(!startKlein.firstChild)startKlein.innerHTML=brueckeKompakt(attr,satz);

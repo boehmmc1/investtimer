@@ -127,9 +127,10 @@ async def main():
                     if sp == 'en': await pg.evaluate("()=>{const h=document.querySelector('#header-language');h.value='en';h.dispatchEvent(new Event('change',{bubbles:true}))}"); await pg.wait_for_timeout(300)
                     tag = f'{w} {sp} {"ein" if ein else "aus"}'
                     wort = 'Share' if sp == 'en' else 'Teilen'
-                    k = await pg.evaluate("(STIL)=>{const f=eval(STIL),b=document.querySelector('.status-zeile .teilen-knopf'),st=document.querySelector('#status');return b&&st?{k:f(b),st:f(st),sub:getComputedStyle(document.body).getPropertyValue('--sub')}:null}", STIL)
-                    pruefe(k and k['k']['text'] == wort and 13 <= k['k']['fs'] <= 14 and k['k']['rahmen'] == '0px' and k['k']['bg'] in ('rgba(0, 0, 0, 0)', 'transparent')
-                           and k['k']['h'] >= 44 and k['k']['w'] >= 44 and abs(k['k']['mitte'] - k['st']['mitte']) < 6, f'{tag}: Startseite kompakter Knopf in der Stufen-Zeile {k and (k["k"]["text"], k["k"]["fs"], round(k["k"]["mitte"] - k["st"]["mitte"]))}')
+                    # Auftrag 20.11.2026: nur Symbol rechts auf Hoehe der Pille, Stufen-Zeile ohne Teilen
+                    k = await pg.evaluate("(STIL)=>{const f=eval(STIL),b=document.querySelector('.teilen-start.am-stand .teilen-knopf'),st=document.querySelector('.snapshot-label');return b&&st?{k:f(b),st:f(st),inStufe:!!document.querySelector('.status-zeile .teilen-knopf'),aria:b.getAttribute('aria-label')}:null}", STIL)
+                    pruefe(k and k['k']['text'] == '' and not k['inStufe'] and k['aria'] == ('Share' if sp == 'en' else 'Teilen') and k['k']['rahmen'] == '0px' and k['k']['bg'] in ('rgba(0, 0, 0, 0)', 'transparent')
+                           and k['k']['h'] >= 44 and k['k']['w'] >= 44 and abs(k['k']['mitte'] - k['st']['mitte']) < 4 and k['k']['right'] <= w, f'{tag}: Startseite Teilen-Symbol neben der Pille {k and (k["k"]["text"], k["aria"], round(k["k"]["mitte"] - k["st"]["mitte"]))}')
                     await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1400)
                     v = await pg.evaluate("(STIL)=>{const f=eval(STIL),b=document.querySelector('.verlauf-kopf .teilen-knopf'),z=[...document.querySelectorAll('.verlauf-spanne')];return b?{k:f(b),z:z.map(f),vw:innerWidth,sw:document.documentElement.scrollWidth}:null}", STIL)
                     gleiche_zeile = v and all(abs(x['mitte'] - v['k']['mitte']) < 4 for x in v['z'])
@@ -152,7 +153,7 @@ async def main():
         pg.on('pageerror', lambda e: js.append(str(e)))
         await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(1500)
         harness.ZUSTAND['teilen_bild'] = []
-        await pg.click('.status-zeile .teilen-knopf'); await pg.wait_for_timeout(1200)
+        await pg.click('.teilen-start .teilen-knopf'); await pg.wait_for_timeout(1200)
         d = await pg.evaluate(DIALOG_JS)
         pruefe(d and '77 von 100 (Hoch)' in d['text'] and '· Stand 20. Nov. 2026, 15:34' in d['text'] and '/s/wert/2026-11-20T1534' in d['kopieren']
 , f'eingeloggt: aktueller Wert mit Uhrzeit und Zeitstempel-Link "{d and d["text"]}"')

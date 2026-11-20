@@ -9,12 +9,34 @@ Nur fuer Tests auf diesem Server (liest Daten aus /var/lib/investtimer, nichts d
 """
 import base64, functools, http.server, json, os, re, threading, time
 from pathlib import Path
+import tempfile, sys as _sys
+# Alarme: echte Server-Logik (volafly-api/investtimer_alarme.py) mit Wegwerf-Datenbank je Testlauf
+os.environ['INVESTTIMER_ALARME_DB'] = tempfile.mkdtemp(prefix='it-alarme-') + '/alarme.db'
+_sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'volafly-api'))
+import investtimer_alarme as ALARME
 
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC = ROOT / 'public'
 EMAIL = 'test@investtimer.net'
 _p = base64.urlsafe_b64encode(json.dumps({'sub': 'test-uid-1', 'email': EMAIL, 'exp': int(time.time()) + 86400}).encode()).decode().rstrip('=')
 TOKEN = 'eyJhbGciOiJIUzI1NiJ9.' + _p + '.sig'
+UID = 'test-uid-1'
+
+
+def alarme_setzen(liste, wert=None):
+    """Testkonto mit genau diesen Alarmen [(richtung, schwelle, scharf, ausgeloest_am)], direkt in die Datenbank (auch ueber der Grenze)."""
+    with ALARME.verbinden() as db:
+        db.execute('DELETE FROM alarme WHERE uid=?', (UID,))
+        for e in liste:
+            r, x, sch, am = e[:4]
+            aktiv = e[4] if len(e) > 4 else 1
+            db.execute('INSERT INTO alarme (uid, richtung, schwelle, erstellt, kanal, scharf, ausgeloest_am, aktiv) VALUES (?,?,?,?,?,?,?,?)', (UID, r, x, 0, 'push', 1 if sch else 0, am, aktiv))
+
+
+# Startzustand wie der fruehere Nachbau: bereit, ausgeloest, pausiert
+alarme_setzen([('ueber', 60, 1, None), ('unter', 50, 0, '2026-11-18'), ('unter', 30, 1, None, 0)])
+
+
 LOGIN_HASH = '#access_token=%s&refresh_token=r1&expires_in=3600&type=magiclink' % TOKEN
 ZUSTAND = {'wert': None, 'chat_status': 200, 'chat_ok': True, 'frei': {'verbraucht': False, 'ausgelastet': False}, 'chat_fehler': 'limit', 'chat_verzoegerung': 0.4, 'alarme': None,
            'antwort': None, 'aufrufe': [], 'aktuell_verzoegerung': 0, 'feedback_status': 200, 'feedback': [], 'alter_min': 3, 'fehler': [], 'ansichten': []}
@@ -133,6 +155,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if pfad == '/api/alarme':
             if not self._auth():
                 return self._json({'error': 'login'}, 401)
+            if ZUSTAND['alarme'] is None:
+                return self._alarm(ALARME.liste, UID)
             return self._json(ZUSTAND['alarme'] or {'alarme': [
                 {'id': 1, 'richtung': 'ueber', 'schwelle': 60, 'aktiv': True, 'scharf': True, 'kanal': 'push'},
                 {'id': 2, 'richtung': 'unter', 'schwelle': 50, 'aktiv': True, 'scharf': False, 'kanal': 'email'},
@@ -140,8 +164,32 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 'geraete': 0, 'max': 5, 'vapid': 'BNrcZE0FOPtHxiqv0ALj', 'email': EMAIL})
         return super().do_GET()
 
+    def _alarm(self, f, *a):
+        ALARME.stand('letzter_wert', aktuell()['rounded'])
+        try:
+            return self._json(dict(f(*a), vapid='BNrcZE0FOPtHxiqv0ALj'))
+        except ALARME.Fehler as e:
+            return self._json({'error': e.code}, e.status)
+
+    def _alarm_schreiben(self, methode):
+        pfad = self.path.split('?')[0]
+        roh = self.rfile.read(int(self.headers.get('Content-Length') or 0))
+        ZUSTAND['aufrufe'].append((methode, pfad, roh[:300]))
+        if not self._auth():
+            return self._json({'error': 'login'}, 401)
+        d = json.loads(roh or b'{}')
+        if methode == 'POST':
+            return self._alarm(ALARME.neu, UID, d.get('richtung'), d.get('schwelle'), d.get('kanal', 'push'), EMAIL, d.get('sprache', 'de'))
+        aid = int(pfad.rsplit('/', 1)[1])
+        if methode == 'DELETE':
+            return self._alarm(ALARME.loeschen, UID, aid)
+        return self._alarm(ALARME.aendern, UID, aid, d['aktiv'] if 'aktiv' in d else None, d.get('kanal'), EMAIL if d.get('kanal') not in (None, 'push') else None,
+                           d.get('sprache'), d.get('richtung'), d.get('schwelle'))
+
     def do_POST(self):
         pfad = self.path.split('?')[0]
+        if pfad == '/api/alarme' or pfad.startswith('/api/alarme/'):
+            return self._alarm_schreiben(self.command)
         roh = self.rfile.read(int(self.headers.get('Content-Length') or 0))
         ZUSTAND['aufrufe'].append(('POST', pfad, roh[:300]))
         if pfad == '/api/fehler':

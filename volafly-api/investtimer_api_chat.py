@@ -751,10 +751,10 @@ async def it_alarm_aendern(alarm_id: int, request: Request):
         return fehler
     d = await _it_json(request)
     sprache = d.get("sprache")
-    if "kanal" in d:
-        email = _it_email(request) if d.get("kanal") != "push" else None
-        return _it_alarm_antwort(_alarme.aendern, uid, alarm_id, None, d.get("kanal"), email, sprache)
-    return _it_alarm_antwort(_alarme.aendern, uid, alarm_id, bool(d.get("aktiv")), None, None, sprache)
+    kanal = d.get("kanal") if "kanal" in d else None
+    email = _it_email(request) if kanal not in (None, "push") else None
+    aktiv = bool(d.get("aktiv")) if "aktiv" in d else None
+    return _it_alarm_antwort(_alarme.aendern, uid, alarm_id, aktiv, kanal, email, sprache, d.get("richtung"), d.get("schwelle"))
 
 
 @app.delete("/v1/investtimer/alarme/{alarm_id}")

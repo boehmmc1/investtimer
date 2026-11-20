@@ -3,7 +3,7 @@ const istIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==
 const installiert=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const nativ=()=>window.InvestTimerApp&&window.InvestTimerApp.push;
 const pushMoeglich=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
-let alarmKanal=null,swReg=null,installPrompt=null,alarmDaten=null,alarmHinweis='',pushZustand='laedt',alarmOpener=null;
+let nurPush=false,alarmKanal=null,swReg=null,installPrompt=null,alarmDaten=null,alarmHinweis='',pushZustand='laedt',alarmOpener=null;
 if(!window.InvestTimerApp&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='127.0.0.1')){
  navigator.serviceWorker.register('/sw.js').then(r=>{swReg=r}).catch(()=>{});
  navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.typ==='investtimer-neu-laden')IT.loadLive(true)});
@@ -77,16 +77,16 @@ function renderAlarme(){
   +'<button class="primary full" type="submit">'+t('alarmSpeichern')+'</button></form>';
  alarmDlg.innerHTML='<div class="modal-top"><span class="eyebrow">'+t('alarmEyebrow')+'</span><button class="close-button" id="close-alarm" type="button" aria-label="'+t('close')+'">×</button></div>'
   +'<h2 id="alarm-title" tabindex="-1">'+t('alarmTitle')+'</h2><p>'+t('alarmIntro')+'</p>'
-  +'<div class="push-box">'+pushBox()+'</div>'+eintraege+form+(voll?'<p class="preview-notice">'+t('alarmMax')+'</p>':'')+'<p class="preview-notice">'+t('alarmRegel')+'</p>';;
+  +'<div class="push-box">'+pushBox()+'</div>'+(nurPush?'':eintraege+form+(voll?'<p class="preview-notice">'+t('alarmMax')+'</p>':'')+'<p class="preview-notice">'+t('alarmRegel')+'</p>');
  alarmErklaerung();
 }
-async function oeffneAlarme(opener){
- alarmOpener=opener;alarmHinweis='';pushZustand='laedt';renderAlarme();alarmDlg.showModal();document.body.classList.add('access-open');$('#alarm-title').focus({preventScroll:true});
+async function oeffneAlarme(opener,nurMitteilungen){
+ nurPush=!!nurMitteilungen;alarmOpener=opener;alarmHinweis='';pushZustand='laedt';renderAlarme();alarmDlg.showModal();document.body.classList.add('access-open');$('#alarm-title').focus({preventScroll:true});
  try{alarmDaten=await api('alarme')}catch(x){if(x==='login'||x===401){schliesseAlarme();IT.abmelden();return}alarmDaten={fehler:true}}
  pushZustand=await pushStatus().catch(()=>'nein');renderAlarme();
 }
 function schliesseAlarme(){if(alarmDlg.open)alarmDlg.close();document.body.classList.remove('access-open');alarmOpener?.focus({preventScroll:true})}
-document.addEventListener('click',e=>{const b=e.target.closest('#open-subscribe,#create-alert');if(!b||!IT.member)return;e.preventDefault();e.stopImmediatePropagation();oeffneAlarme(b)},true);
+document.addEventListener('click',e=>{const b=e.target.closest('#open-subscribe,#create-alert');if(!b||!IT.member)return;e.preventDefault();e.stopImmediatePropagation();IT.alarmListe?IT.alarmListe(b):oeffneAlarme(b)},true);
 alarmDlg.addEventListener('cancel',e=>{e.preventDefault();schliesseAlarme()});
 alarmDlg.addEventListener('click',async e=>{
  if(e.target===alarmDlg){const r=alarmDlg.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)schliesseAlarme();return}
@@ -145,7 +145,7 @@ const installDlg=document.createElement('dialog');installDlg.id='install-dialog'
 function installLink(){document.dispatchEvent(new Event('investtimer:kontomenue'))}
 IT.installierbar=()=>!installiert()&&!window.InvestTimerApp;
 IT.oeffneInstall=o=>oeffneInstall(o);
-IT.oeffneAlarme=o=>oeffneAlarme(o);
+IT.oeffneMitteilungen=o=>oeffneAlarme(o,true);
 function oeffneInstall(opener){
  alarmOpener=opener;
  const inhalt=istIOS?'<p>'+t('installIOS')+'</p>'+iosSchritte()

@@ -10,7 +10,7 @@ Die alte Pruefung (Chat-Dialog der v1.2-Seite) liegt in tools/check_v12.py.
 import json, subprocess, sys, tempfile
 from pathlib import Path
 UI = Path(__file__).resolve().parent.parent / 'tests' / 'ui'
-TESTS = ['test_navigation.py', 'test_safearea.py', 'test_verlauf.py', 'test_stufen.py', 'test_ki.py', 'test_start.py', 'test_zustaende.py', 'test_update.py', 'test_feedback.py', 'test_rueckkehr.py', 'test_block11.py', 'test_ki_limit.py', 'test_teilen.py', 'test_verlauf_finger.py']
+TESTS = ['test_navigation.py', 'test_safearea.py', 'test_verlauf.py', 'test_stufen.py', 'test_ki.py', 'test_start.py', 'test_zustaende.py', 'test_update.py', 'test_feedback.py', 'test_rueckkehr.py', 'test_block11.py', 'test_ki_limit.py', 'test_teilen.py', 'test_verlauf_finger.py', 'test_alarme_start.py']
 fehler = 0
 for t in TESTS:
     r = subprocess.run([sys.executable, str(UI / t)], capture_output=True, text=True)

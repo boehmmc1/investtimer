@@ -38,11 +38,11 @@ async def main():
             await pg.goto(url + '#konto'); await pg.wait_for_timeout(1200)
             txt = await pg.evaluate("document.querySelector('#konto-ansicht').innerText")
             if ein:
-                for w in ('test@investtimer.net', 'Registriert seit', '16. November 2026', 'Meine Alarme', 'Steigt über 60', 'wartet', 'pausiert', 'Sprache', 'E-Mail-Adresse ändern', 'Meine Daten herunterladen', 'Überall abmelden', 'Konto löschen', 'Abmelden', 'Impressum', 'Datenschutz', 'Version'):
+                for w in ('test@investtimer.net', 'Registriert seit', '16. November 2026', 'Meine Alarme', 'Steigt über 60', 'bereit', 'ausgelöst', 'pausiert', 'Sprache', 'E-Mail-Adresse ändern', 'Meine Daten herunterladen', 'Überall abmelden', 'Konto löschen', 'Abmelden', 'Impressum', 'Datenschutz', 'Version'):
                     pruefe(w.lower() in txt.lower(), f'ein Konto enthaelt "{w}"')
                 pruefe('Abo' not in txt.split('Mein Konto')[0], 'ein Konto: kein Abo-Block ohne Paywall')
                 await pg.tap('.konto-alarm'); await pg.wait_for_timeout(500)
-                pruefe(await pg.evaluate("!!document.querySelector('#alarm-dialog[open]')"), 'ein Konto: Tippen auf Alarm oeffnet Dialog')
+                pruefe(await pg.evaluate("!!document.querySelector('.alarm-blatt[open]')"), 'ein Konto: Tippen auf Alarm oeffnet die Alarm-Liste')
                 await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
                 await pg.select_option('#konto-sprache', 'en'); await pg.wait_for_timeout(400)
                 pruefe(await pg.evaluate("document.documentElement.lang") == 'en' and 'Member since' in await pg.evaluate("document.querySelector('#konto-ansicht').innerText"), 'ein Sprache in der Konto-Ansicht wechselt auf EN')

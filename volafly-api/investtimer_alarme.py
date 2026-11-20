@@ -13,7 +13,8 @@ import sqlite3
 import time
 
 DB = os.environ.get("INVESTTIMER_ALARME_DB", "/var/lib/investtimer/alarme.db")
-MAX_ALARME = 5
+MAX_ALARME = 6          # hoechstens 3 je Richtung (Auftrag 20.11.2026); Bestand mit mehr bleibt gueltig
+JE_RICHTUNG = 3
 MAX_GERAETE = 5
 KANAELE = ("push", "email", "beide")
 ABMELDE_SCHLUESSEL = os.environ.get("INVESTTIMER_ABMELDE_KEY", "/root/.investtimer/alarm-abmelde-key")
@@ -88,8 +89,10 @@ class Fehler(Exception):
 
 
 def _alarm(r):
+    # Zustaende fuer die Oberflaeche: bereit (aktiv und scharf), ausgeloest (Schwelle ueberquert, wartet auf Ruecklauf), pausiert
+    zustand = "pausiert" if not r["aktiv"] else "bereit" if r["scharf"] else "ausgeloest"
     return {"id": r["id"], "richtung": r["richtung"], "schwelle": r["schwelle"], "aktiv": bool(r["aktiv"]), "kanal": r["kanal"],
-            "scharf": bool(r["scharf"])}
+            "scharf": bool(r["scharf"]), "zustand": zustand, "ausgeloest_am": r["ausgeloest_am"] if "ausgeloest_am" in r.keys() else None}
 
 
 def _kanal(kanal, email):
@@ -106,17 +109,14 @@ def liste(uid):
         alarme = [_alarm(r) for r in db.execute("SELECT * FROM alarme WHERE uid=? ORDER BY id", (uid,))]
         geraete = db.execute("SELECT COUNT(*) FROM geraete WHERE uid=?", (uid,)).fetchone()[0]
         wert = _letzter_wert(db)
-    return {"alarme": alarme, "geraete": geraete, "max": MAX_ALARME, "wert": wert}
+    return {"alarme": alarme, "geraete": geraete, "max": MAX_ALARME, "jeRichtung": JE_RICHTUNG, "wert": wert}
 
 
 def _sprache(s):
     return "en" if s == "en" else "de"
 
 
-def neu(uid, richtung, schwelle, kanal="push", email=None, sprache="de"):
-    kanal = _kanal(kanal, email)
-    if richtung not in ("ueber", "unter"):
-        raise Fehler("richtung")
+def _schwelle(schwelle):
     # nur ganze Zahlen (auch als Text "50"); 50.5, True, "5e1" werden abgelehnt (QA 20.11.2026)
     if isinstance(schwelle, bool) or (isinstance(schwelle, float) and not schwelle.is_integer()):
         raise Fehler("schwelle")
@@ -126,9 +126,18 @@ def neu(uid, richtung, schwelle, kanal="push", email=None, sprache="de"):
         raise Fehler("schwelle")
     if not 1 <= schwelle <= 99:
         raise Fehler("schwelle")
+    return schwelle
+
+
+def neu(uid, richtung, schwelle, kanal="push", email=None, sprache="de"):
+    kanal = _kanal(kanal, email)
+    if richtung not in ("ueber", "unter"):
+        raise Fehler("richtung")
+    schwelle = _schwelle(schwelle)
     with verbinden() as db:
-        if db.execute("SELECT COUNT(*) FROM alarme WHERE uid=?", (uid,)).fetchone()[0] >= MAX_ALARME:
-            raise Fehler("max", 409)
+        # hoechstens 3 je Richtung; ausgeloeste zaehlen mit. Bestandskonten mit mehr: nichts geloescht, neue erst unterhalb der Grenze
+        if db.execute("SELECT COUNT(*) FROM alarme WHERE uid=? AND richtung=?", (uid, richtung)).fetchone()[0] >= JE_RICHTUNG:
+            raise Fehler("richtung_voll", 409)
         if db.execute("SELECT 1 FROM alarme WHERE uid=? AND richtung=? AND schwelle=?", (uid, richtung, schwelle)).fetchone():
             raise Fehler("doppelt", 409)
         # Liegt der Wert schon jenseits der Schwelle: keine sofortige Nachricht, Alarm wartet auf Ruecklauf
@@ -138,9 +147,25 @@ def neu(uid, richtung, schwelle, kanal="push", email=None, sprache="de"):
     return liste(uid)
 
 
-def aendern(uid, alarm_id, aktiv=None, kanal=None, email=None, sprache=None):
+def aendern(uid, alarm_id, aktiv=None, kanal=None, email=None, sprache=None, richtung=None, schwelle=None):
     with verbinden() as db:
         n = 0
+        if richtung is not None or schwelle is not None:
+            alt = db.execute("SELECT richtung, schwelle FROM alarme WHERE id=? AND uid=?", (int(alarm_id), uid)).fetchone()
+            if not alt:
+                raise Fehler("unbekannt", 404)
+            r_neu = richtung or alt[0]
+            if r_neu not in ("ueber", "unter"):
+                raise Fehler("richtung")
+            s_neu = _schwelle(schwelle) if schwelle is not None else alt[1]
+            if r_neu != alt[0] and db.execute("SELECT COUNT(*) FROM alarme WHERE uid=? AND richtung=?", (uid, r_neu)).fetchone()[0] >= JE_RICHTUNG:
+                raise Fehler("richtung_voll", 409)
+            if (r_neu, s_neu) != tuple(alt) and db.execute("SELECT 1 FROM alarme WHERE uid=? AND richtung=? AND schwelle=? AND id<>?",
+                                                           (uid, r_neu, s_neu, int(alarm_id))).fetchone():
+                raise Fehler("doppelt", 409)
+            # Neue Schwelle: wie neu angelegt (schon ueberschritten -> gilt sofort als ausgeloest), Ausloese-Tag zuruecksetzen
+            n = db.execute("UPDATE alarme SET richtung=?, schwelle=?, scharf=?, ausgeloest_am=NULL WHERE id=? AND uid=?",
+                           (r_neu, s_neu, 1 if scharf_bei(r_neu, s_neu, _letzter_wert(db)) else 0, int(alarm_id), uid)).rowcount
         if sprache is not None:
             db.execute("UPDATE alarme SET sprache=? WHERE id=? AND uid=?", (_sprache(sprache), int(alarm_id), uid))
         if aktiv is not None:

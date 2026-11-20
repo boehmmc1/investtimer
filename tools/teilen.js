@@ -31,7 +31,12 @@ function knopf(art,phase){const aria=art==='verlauf'?tt('ariaVerlauf'):art==='ph
 IT.teilenKnopf=knopf;
 
 /* Startseite: in der Stufen-Zeile (Platz liegt fest im HTML, kein Layoutsprung) */
-function startKnopf(){const k=$('.teilen-start');if(k)k.innerHTML=knopf('wert')}
+/* Startseite (Auftrag 20.11.2026): nur Symbol, rechts auf Hoehe der Pille "Aktualisiert"/Stand; Stufen-Zeile bleibt frei */
+function startKnopf(){const k=$('.teilen-start');if(!k)return;const st=$('.snapshot-label');
+ if(st&&!k.classList.contains('am-stand')){let r=st.parentElement;if(!r.classList.contains('stand-reihe')){r=document.createElement('div');r.className='stand-reihe';st.before(r);r.append(st)}r.append(k);k.classList.add('am-stand')}
+ k.innerHTML=knopf('wert').replace(/<span aria-hidden="true">[^<]*<\/span>/,'');const b=k.querySelector('.teilen-knopf');if(b)b.setAttribute('aria-label',tt('teilen'));standHoehe()}
+function standHoehe(){const k=$('.teilen-start.am-stand'),st=$('.stand-reihe .snapshot-label');if(k&&st&&st.offsetHeight)k.style.top=Math.round(st.offsetTop+st.offsetHeight/2-22)+'px'}
+addEventListener('resize',standHoehe);document.addEventListener('investtimer:update',()=>requestAnimationFrame(standHoehe));setInterval(standHoehe,60000);
 
 /* Was wird geteilt: Bildname, Link, Text */
 function ziel(m,art,phase){

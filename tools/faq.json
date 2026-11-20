@@ -64,11 +64,11 @@
   {
    "de": {
     "f": "Wie funktionieren Alarme?",
-    "a": "Du legst eine Schwelle fest und wählst, ob der Wert sie nach oben oder nach unten überqueren soll. Dann bekommst du eine Push-Mitteilung oder eine E-Mail, höchstens einmal am Tag je Alarm. Liegt der Wert beim Anlegen schon jenseits der Schwelle, meldet sich der Alarm erst, nachdem er zurückgelaufen ist und die Schwelle erneut überquert."
+    "a": "Du legst eine Schwelle fest und wählst, ob der Marktstress über sie steigen oder unter sie fallen soll, und ob du eine Push-Mitteilung, eine E-Mail oder beides bekommst. Ein Alarm ist „bereit“, solange er auf das Überqueren wartet. Überquert der Wert die Schwelle, ist er „ausgelöst“: Du bekommst eine Nachricht, höchstens einmal am Tag je Alarm. Wieder bereit wird er, sobald der Wert zurückkommt; danach meldet er sich beim nächsten Überqueren erneut. Liegt der Wert beim Anlegen schon jenseits der Schwelle, gilt der Alarm sofort als ausgelöst. Du kannst höchstens 3 Alarme für steigenden und 3 für fallenden Marktstress anlegen; ausgelöste zählen mit."
    },
    "en": {
     "f": "How do alerts work?",
-    "a": "You set a threshold and choose whether the score should cross it upward or downward. You then get a push notification or an email, at most once a day per alert. If the score is already past the threshold when you create the alert, it waits until the score has moved back and crosses again."
+    "a": "You set a threshold, choose whether market stress should rise above it or fall below it, and pick a push notification, an email or both. An alert is “armed” while it waits for the crossing. When the score crosses the threshold, the alert is “triggered”: you get a message, at most once a day per alert. It is armed again once the score comes back, and then notifies you at the next crossing. If the score is already past the threshold when you create the alert, it counts as triggered right away. You can have up to 3 alerts for rising and 3 for falling market stress; triggered alerts count too."
    }
   },
   {
