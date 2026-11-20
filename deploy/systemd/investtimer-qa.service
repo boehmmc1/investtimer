@@ -1,0 +1,10 @@
+[Unit]
+Description=InvestTimer: woechentliche Gesamtpruefung (tools/qa_gesamt.sh, nur Kurzbericht per Mail, keine Aenderungen)
+After=network-online.target volafly-chat.service
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=4h
+ExecStart=/bin/bash /var/www/investtimer/tools/qa_gesamt.sh --mail

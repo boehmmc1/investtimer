@@ -1,0 +1,9 @@
+[Unit]
+Description=InvestTimer: Gesamtpruefung sonntags 06:00 (Europe/Berlin)
+
+[Timer]
+OnCalendar=Sun *-*-* 06:00:00 Europe/Berlin
+Persistent=true
+
+[Install]
+WantedBy=timers.target
