@@ -114,6 +114,9 @@ def neu(uid, richtung, schwelle, kanal="push", email=None, sprache="de"):
     kanal = _kanal(kanal, email)
     if richtung not in ("ueber", "unter"):
         raise Fehler("richtung")
+    # nur ganze Zahlen (auch als Text "50"); 50.5, True, "5e1" werden abgelehnt (QA 20.11.2026)
+    if isinstance(schwelle, bool) or (isinstance(schwelle, float) and not schwelle.is_integer()):
+        raise Fehler("schwelle")
     try:
         schwelle = int(schwelle)
     except (TypeError, ValueError):
