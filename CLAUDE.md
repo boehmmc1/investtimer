@@ -121,3 +121,7 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   `/api/teilen/bild?aktuell=1` rendern je Wert+Zeitstempel einmal nach `/var/lib/investtimer/teilen/live/<JJJJ-MM-TTTHHMM>/` (oeffentlich, 30 Tage),
   Links `/s/wert/<stamp>`, `/s/verlauf/<Z>/<stamp>` (og:image = geteiltes Bild, fehlendes Querformat wird nachgerendert), Ziel `?geteilt=..&st=..` -> Band.
   Verlauf-Endpunkt eingeloggt = IT.live (`vMitAktuell` in tools/verlauf.js). Neue API-Pfade brauchen eine eigene nginx-Location (UI-Tests sehen das nicht!).
+- Verlauf erkunden (20.11.2026): Werte-Zeile `.verlauf-wertzeile` ueber dem Chart, Pointer-Events + rAF + binaere Suche (`vPos`, `vNaechster`),
+  keine Textauswahl/Callout. Teilen: Timer `investtimer-teilen-live` (POST /v1/investtimer/teilen/vorab, nur lokal) erzeugt nach jeder Berechnung
+  24 Bilder; PNG-Optimierung ueber /opt/investtimer-bild (Pillow, getrennt vom System-Python); Vorladen in tools/teilen.js (`IT.teilenVorladen`).
+  Messung: `tests/last/teilen_zeit.py [--drossel]`.
