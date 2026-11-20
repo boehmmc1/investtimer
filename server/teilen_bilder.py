@@ -342,14 +342,26 @@ def varianten(d):
     return aus
 
 
+BILD_PY = os.environ.get("IT_BILD_PY", "/opt/investtimer-bild/bin/python")
+OPTIMIEREN = ("import sys;from PIL import Image;im=Image.open(sys.argv[1]).convert('RGB');"
+              "im.quantize(colors=128,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE).save(sys.argv[1],optimize=True)")
+
+
+def optimieren(pfad):
+    """PNG mit 128-Farben-Palette (Diagramme/Text bleiben scharf): typisch 50-60 % kleiner, Ziel < 150 KB. Ohne Pillow-Umgebung: unveraendert."""
+    if os.path.exists(BILD_PY):
+        subprocess.run(["nice", "-n", "10", BILD_PY, "-c", OPTIMIEREN, str(pfad)], capture_output=True, timeout=60)
+
+
 def rendern(html_text, W, H, ziel):
     with tempfile.TemporaryDirectory() as tmp:
         seite_ = Path(tmp) / "s.html"
         seite_.write_text(html_text, encoding="utf-8")
         bild = Path(tmp) / "b.png"
-        subprocess.run([CHROME, "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+        subprocess.run(["nice", "-n", "10", CHROME, "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
                         "--virtual-time-budget=4000", "--window-size=%d,%d" % (W, H), "--screenshot=" + str(bild), seite_.as_uri()],
                        check=True, capture_output=True, timeout=90)
+        optimieren(bild)
         shutil.copy(bild, ziel)
     os.chmod(ziel, 0o644)
 
@@ -364,6 +376,15 @@ def manifest(d):
 
 def main():
     args = sys.argv[1:]
+    if "--optimieren" in args:   # bestehende Bilder einmalig verkleinern
+        n = 0
+        for f in Path(args[args.index("--optimieren") + 1] if len(args) > args.index("--optimieren") + 1 else ZIEL).rglob("*.png"):
+            vorher = f.stat().st_size
+            optimieren(f)
+            n += 1
+            print("%s %d -> %d KB" % (f.name, vorher // 1024, f.stat().st_size // 1024))
+        print("ok: %d Bilder optimiert" % n)
+        return
     nur = args[args.index("--nur") + 1] if "--nur" in args else None
     ziel_basis = Path(args[args.index("--ziel") + 1]) if "--ziel" in args else ZIEL
     d = laden()

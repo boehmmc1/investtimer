@@ -80,13 +80,13 @@ async def main():
                     await pg.click('[data-spanne="%s"]' % sp); await pg.wait_for_timeout(500)
                     box = await pg.locator('#verlauf-ansicht .verlauf-svg').bounding_box()
                     await pg.mouse.move(box['x'] + box['width'] * 0.45, box['y'] + box['height'] * 0.5); await pg.wait_for_timeout(200)
-                    tip = await pg.evaluate("(()=>{const t=document.querySelector('.verlauf-tip');return t.hidden?null:[...t.children].map(x=>x.textContent)})()")
+                    tip = await pg.evaluate("(()=>{const z=document.querySelector('.verlauf-wertzeile');return z&&z.classList.contains('erkunden')?z.querySelector('.wz-text').textContent.split(' · '):null})()")
                     if w < 760 and not tip:
                         await pg.locator('#verlauf-ansicht .verlauf-diagramm').focus(); await pg.keyboard.press('ArrowLeft'); await pg.wait_for_timeout(150)
-                        tip = await pg.evaluate("(()=>{const t=document.querySelector('.verlauf-tip');return t.hidden?null:[...t.children].map(x=>x.textContent)})()")
+                        tip = await pg.evaluate("(()=>{const z=document.querySelector('.verlauf-wertzeile');return z&&z.classList.contains('erkunden')?z.querySelector('.wz-text').textContent.split(' · '):null})()")
                     wert = 'Market stress ' if sprache == 'en' else 'Marktstress '
                     verboten = ('zurück', 'zum Schluss', 'aufgezeichnet', 'Bestandteile', 'back-calculated', 'recorded', 'at close', 'components')
-                    pruefe(tip and len(tip) == 2 and tip[1].startswith(wert) and tip[1][len(wert):].isdigit() and not any(v in ' '.join(tip) for v in verboten), f'{tag} {sp}: Tooltip zwei Zeilen {tip}')
+                    pruefe(tip and len(tip) == 2 and tip[1].startswith(wert) and tip[1][len(wert):].isdigit() and not any(v in ' '.join(tip) for v in verboten), f'{tag} {sp}: Werte-Zeile Zeitpunkt + Wert {tip}')
                     if sp == 'A' and tip: pruefe(len(tip[0].split()) == 2 and tip[0].split()[1].isdigit(), f'{tag} Alle: Tooltip Monat Jahr "{tip[0]}"')
                     if sp == '1M' and tip: pruefe(sum(x.strip('.,').isdigit() for x in tip[0].split()) == 2 and tip[0].split()[-1].isdigit(), f'{tag} 1M: Tooltip Tagesdatum "{tip[0]}"')
                     if sp in ('5J', 'A'):

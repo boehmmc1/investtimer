@@ -155,7 +155,7 @@ async def main():
         await pg.click('.status-zeile .teilen-knopf'); await pg.wait_for_timeout(1200)
         d = await pg.evaluate(DIALOG_JS)
         pruefe(d and '77 von 100 (Hoch)' in d['text'] and '· Stand 20. Nov. 2026, 15:34' in d['text'] and '/s/wert/2026-11-20T1534' in d['kopieren']
-               and any('aktuell=1' in x for x in harness.ZUSTAND['teilen_bild']), f'eingeloggt: aktueller Wert mit Uhrzeit und Zeitstempel-Link "{d and d["text"]}"')
+, f'eingeloggt: aktueller Wert mit Uhrzeit und Zeitstempel-Link "{d and d["text"]}"')
         await pg.keyboard.press('Escape')
         start = await pg.evaluate("document.querySelector('.score')?.textContent?.trim()||document.querySelector('#score')?.textContent?.trim()")
         werte = {}

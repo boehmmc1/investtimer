@@ -1,0 +1,9 @@
+[Unit]
+Description=InvestTimer: Teilen-Bilder des aktuellen Stands alle 5 Minuten pruefen
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

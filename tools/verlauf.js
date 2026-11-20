@@ -114,9 +114,9 @@ function verlaufHtml(){
  const chips=e.length?'<div class="verlauf-chips" role="group" aria-label="'+t('ereignisseLabel')+'">'+e.slice().reverse().map(m=>'<button type="button" class="verlauf-chip" data-ereignis="'+m.id+'" aria-pressed="'+(m.id===aktiv)+'">'+esc(vEn()?m.kurz_en:m.kurz)+'</button>').join('')+'</div>':'';
 const legende='';/* ohne Legende */ const _legendeAlt=art==='taeglich'?'':'<p class="verlauf-legende"><span><i class="legende-linie" aria-hidden="true"></i>'+t(art==='monatlich'?'schlussMonat':'schlussWoche')+'</span><span><i class="legende-flaeche" aria-hidden="true"></i>'+t(art==='monatlich'?'flaecheMonat':'flaecheWoche')+'</span></p>';
  return '<div class="verlauf-kopf"><div class="verlauf-knoepfe" role="group" aria-label="'+t('verlaufSpanne')+'">'+knoepfe+'</div>'+(IT.teilenKnopf?IT.teilenKnopf('verlauf'):'')+'</div>'
+  +'<div class="verlauf-wertzeile" role="status" aria-live="polite" aria-atomic="true">'+vWertzeileHtml(null)+'</div>'
   +'<div class="verlauf-diagramm" tabindex="0" role="group" aria-label="'+esc(t('verlaufAria').replace('{n}',p.length))+'">'
-  +stressSvg(p,x,e,art)+baender
-  +'<div class="verlauf-tip" role="status" aria-live="polite" hidden></div></div>'
+  +stressSvg(p,x,e,art)+baender+'</div>'
   +legende+chips+'<div class="ereignis-karte" aria-live="polite"'+(aktiv?'':' hidden')+'>'+vKarte(e.find(m=>m.id===aktiv))+'</div>'
   ;
 }
@@ -147,34 +147,58 @@ function vAktiviere(id){
  box.querySelectorAll('[data-band]').forEach(r=>r.classList.toggle('aktiv',r.dataset.band===id));
  box.querySelectorAll('[data-ereignis]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ereignis===id)));
  const k=box.querySelector('.ereignis-karte');if(k){k.innerHTML=vKarte(m);k.hidden=false;IT.kiBruecke&&IT.kiBruecke.beleben(k)}
+ IT.teilenVorladen&&IT.teilenVorladen('phase',id);
  vChipInSicht(box,true);
 }
+/* Teilen-Bilder des sichtbaren Zeitraums und der offenen Ereigniskarte im Hintergrund vorhalten */
+function vVorladen(){if(!IT.teilenVorladen||panel.hidden||!verlauf||verlauf.fehler)return;IT.teilenVorladen('verlauf');
+ const a=panel.querySelector('.ereignis-karte .teilen-knopf');if(a)IT.teilenVorladen('phase',a.dataset.phase)}
 function vZeichnen(fokus){
  const box=panel&&panel.querySelector('.verlauf');if(!box)return;
- box.innerHTML=verlaufHtml();verlaufIndex=null;vChipInSicht(box,false);vKopf();IT.kiBruecke&&IT.kiBruecke.beleben(box);
+ vPos=null;verlaufIndex=null;box.innerHTML=verlaufHtml();vChipInSicht(box,false);vKopf();IT.kiBruecke&&IT.kiBruecke.beleben(box);vVorladen();
  if(fokus)box.querySelector(fokus)?.focus();
 }
-/* Tooltip: naechster Wert zur Zeigerposition bzw. per Pfeiltasten */
-function vZeige(i){
- const box=panel.querySelector('.verlauf'),dia=box&&box.querySelector('.verlauf-diagramm');if(!dia)return;
- const {p,art}=vAuswahl();if(!p.length)return;i=Math.max(0,Math.min(p.length-1,i));verlaufIndex=i;
- const q=p[i],x=vX(p)(q[0]),svg=dia.querySelector('[data-panel=stress]'),yy=vY(q[1]);
- dia.querySelectorAll('.verlauf-cursor').forEach(l=>{l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('visibility','visible')});
- const c=dia.querySelector('.verlauf-cursor-punkt');c.setAttribute('cx',x);c.setAttribute('cy',yy);c.setAttribute('visibility','visible');
- const tip=dia.querySelector('.verlauf-tip');
- /* Zwei Zeilen: Zeitpunkt (Monat bzw. Tag, bei Wochenwerten mit "Woche bis") und Wert */
- const tag=new Date(vMs(q[0])).toLocaleDateString(vLang(),{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
- const kopf=art==='monatlich'?new Date(vMs(q[0])).toLocaleDateString(vLang(),{month:'long',year:'numeric',timeZone:'UTC'}):art==='woechentlich'?t('tipWoche').replace('{d}',tag):tag;
- tip.innerHTML='<b>'+esc(kopf)+'</b><span>'+esc(t('tipWert').replace('{w}',q[1]))+'</span>';
- tip.hidden=false;
- const r=svg.getBoundingClientRect(),d=dia.getBoundingClientRect(),px=r.left-d.left+x/vW*r.width;
- tip.style.left=Math.max(0,Math.min(d.width-tip.offsetWidth,px-tip.offsetWidth/2))+'px';
+/* Erkunden per Finger, Stift und Maus (Pointer-Events), Tastatur: Werte-Zeile fest ueber dem Chart (nie unter dem Finger, nie am Rand),
+   senkrechte Linie und Punkt in Stufenfarbe. Positionen sind beim Zeichnen vorberechnet (vPos), der naechste Punkt wird per binaerer
+   Suche gefunden, gezeichnet wird hoechstens einmal pro Frame. Senkrecht wischen scrollt weiter die Seite (touch-action: pan-y). */
+let vPos=null,vRaf=0,vZiel=null,vAus=null,vGeste=null;
+function vPositionen(){const {p,e,art}=vAuswahl();if(!p.length){vPos=null;return}const x=vX(p);vPos={p,e,art,xs:p.map(q=>x(q[0]))}}
+function vNaechster(xv){const xs=vPos.xs;let lo=0,hi=xs.length-1;while(lo<hi){const m=(lo+hi)>>1;if(xs[m]<xv)lo=m+1;else hi=m}
+ return lo>0&&xv-xs[lo-1]<xs[lo]-xv?lo-1:lo}
+function vZeitpunkt(q,art){const tag=new Date(vMs(q[0])).toLocaleDateString(vLang(),{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+ return art==='monatlich'?new Date(vMs(q[0])).toLocaleDateString(vLang(),{month:'long',year:'numeric',timeZone:'UTC'}):art==='woechentlich'?t('tipWoche').replace('{d}',tag):tag}
+function vWertzeileHtml(i){
+ if(!vPos)vPositionen();if(!vPos)return '';
+ const {p,e,art}=vPos,ende=i==null,q=p[ende?p.length-1:i];
+ const wann=ende?(vAn()?(vEn()?'Today':'Heute'):vZeitpunkt(q,'taeglich')):vZeitpunkt(q,art);
+ const ph=ende?null:(e||[]).find(m=>q[0]>=m.start&&q[0]<m.ende);
+ return '<span class="wz-punkt" style="background:'+ITStufe.farbe(q[1])+'" aria-hidden="true"></span><span class="wz-text">'+esc(wann)+' · '+esc(t('tipWert').replace('{w}',q[1]))+'</span>'
+  +(ph?'<button type="button" class="wz-phase" data-ereignis="'+ph.id+'">'+esc(vEn()?ph.kurz_en:ph.kurz)+'</button>':'');
 }
-function vVerberge(){const dia=panel.querySelector('.verlauf-diagramm');if(!dia)return;dia.querySelector('.verlauf-tip').hidden=true;dia.querySelectorAll('.verlauf-cursor,.verlauf-cursor-punkt').forEach(l=>l.setAttribute('visibility','hidden'))}
+function vZeige(i){
+ if(!vPos)vPositionen();if(!vPos)return;
+ i=Math.max(0,Math.min(vPos.p.length-1,i));if(i===verlaufIndex&&!vAus)return;verlaufIndex=i;vZiel=i;
+ if(!vRaf)vRaf=requestAnimationFrame(vMalen);
+}
+function vMalen(){
+ vRaf=0;const dia=panel.querySelector('.verlauf-diagramm'),z=panel.querySelector('.verlauf-wertzeile');if(!dia||!vPos)return;
+ const i=vZiel;if(i==null)return;const q=vPos.p[i],x=vPos.xs[i],y=vY(q[1]),f=ITStufe.farbe(q[1]);
+ const l=dia.querySelector('.verlauf-cursor'),c=dia.querySelector('.verlauf-cursor-punkt');
+ l.setAttribute('x1',x);l.setAttribute('x2',x);l.style.stroke=f;c.setAttribute('cx',x);c.setAttribute('cy',y);c.style.fill=f;
+ dia.classList.add('erkunden');dia.classList.remove('ausblenden');z.classList.add('erkunden');z.innerHTML=vWertzeileHtml(i);
+}
+function vVerberge(sofort){
+ clearTimeout(vAus);vAus=null;verlaufIndex=null;vZiel=null;
+ const dia=panel.querySelector('.verlauf-diagramm'),z=panel.querySelector('.verlauf-wertzeile');if(!dia)return;
+ const fertig=()=>{dia.classList.remove('erkunden','ausblenden');if(z){z.classList.remove('erkunden');z.innerHTML=vWertzeileHtml(null)}};
+ if(sofort){fertig();return}
+ dia.classList.add('ausblenden');vAus=setTimeout(fertig,260);
+}
+function vSpaeterVerbergen(){clearTimeout(vAus);vAus=setTimeout(()=>vVerberge(false),2000)}
 function vIndexBei(ev){
- const dia=ev.target.closest('.verlauf-diagramm'),svg=dia&&dia.querySelector('[data-panel=stress]');if(!svg)return null;
- const r=svg.getBoundingClientRect(),xv=(ev.clientX-r.left)/r.width*vW,{p}=vAuswahl(),x=vX(p);
- let best=0,bd=Infinity;p.forEach((q,i)=>{const d=Math.abs(x(q[0])-xv);if(d<bd){bd=d;best=i}});return best;
+ const dia=panel.querySelector('.verlauf-diagramm'),svg=dia&&dia.querySelector('[data-panel=stress]');if(!svg)return null;
+ if(!vPos)vPositionen();if(!vPos)return null;
+ const r=svg.getBoundingClientRect();return vNaechster((ev.clientX-r.left)/r.width*vW);
 }
 function vKopf(){
  const k=panel.querySelector('.verlauf-ansicht-kopf');if(!k)return;
@@ -188,26 +212,42 @@ function zeigeVerlauf(){
  const box=panel.querySelector('.verlauf');vKopf();
  const frisch=verlauf&&!verlauf.fehler&&verlaufFuer===vAn();
  if(frisch)vStartAnwenden();
- box.innerHTML=verlaufHtml();
+ vPos=null;box.innerHTML=verlaufHtml();
  if(fokus)$('#verlauf-ansicht-titel')?.focus({preventScroll:true});
- if(!frisch){if(verlauf&&verlaufFuer!==vAn())verlauf=null;box.innerHTML=verlaufHtml();ladeVerlauf().then(()=>{vStartAnwenden();if(!panel.hidden)vZeichnen()})}else vChipInSicht(box,false);
+ if(!frisch){if(verlauf&&verlaufFuer!==vAn())verlauf=null;vPos=null;box.innerHTML=verlaufHtml();ladeVerlauf().then(()=>{vStartAnwenden();if(!panel.hidden)vZeichnen()})}else{vChipInSicht(box,false);vVorladen()}
 }
 IT.verlaufAnsicht={zeigen(){const war=panel.hidden;panel.hidden=false;if(war||!panel.querySelector('.verlauf'))zeigeVerlauf()},verbergen(){panel.hidden=true}};
 if(panel){
- panel.addEventListener('click',e=>{const ev=e.target.closest('[data-ereignis]');if(ev){vAktiviere(ev.dataset.ereignis);return}
+ panel.addEventListener('click',e=>{const wz=e.target.closest('.verlauf-wertzeile'),ph=wz&&wz.querySelector('.wz-phase');
+  const ev=e.target.closest('[data-ereignis]')||ph;if(ev){vAktiviere(ev.dataset.ereignis);if(ph)panel.querySelector('.ereignis-karte')?.scrollIntoView({block:'nearest',behavior:'smooth'});return}
   const b=e.target.closest('[data-spanne],#verlauf-premium');if(!b)return;
   if(b.id==='verlauf-premium'){IT.oeffneKonto&&IT.oeffneKonto(b,'paywall');return}
   verlaufSpanne=b.dataset.spanne;vZeichnen('[data-spanne="'+verlaufSpanne+'"]')});
  panel.addEventListener('pointerover',e=>{const b=e.target.closest('.verlauf-band-knopf');if(b&&e.pointerType==='mouse')vAktiviere(b.dataset.ereignis)});
- panel.addEventListener('pointermove',e=>{if(!e.target.closest('.verlauf-diagramm'))return;const i=vIndexBei(e);if(i!=null)vZeige(i)});
- panel.addEventListener('pointerdown',e=>{if(!e.target.closest('.verlauf-diagramm'))return;const i=vIndexBei(e);if(i!=null)vZeige(i)});
- panel.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&e.target.classList&&e.target.classList.contains('verlauf-diagramm'))vVerberge()},true);
+ /* Finger/Stift: Auflegen zeigt sofort den naechsten Punkt; waagerecht folgen; senkrechtes Wischen ueberlaesst die Geste dem Browser
+    (pointercancel -> sofort weg); Loslassen: 2 s stehen, dann sanft ausblenden. Maus: Hover folgt, Verlassen blendet aus. */
+ panel.addEventListener('pointerdown',e=>{
+  if(!e.target.closest('.verlauf-diagramm'))return;
+  if(e.target.closest('.verlauf-band-knopf')&&e.pointerType==='mouse')return;
+  clearTimeout(vAus);vAus=null;vGeste={id:e.pointerId,x:e.clientX,y:e.clientY,t:e.timeStamp,typ:e.pointerType};
+  const i=vIndexBei(e);if(i!=null)vZeige(i)});
+ panel.addEventListener('pointermove',e=>{
+  if(e.pointerType==='mouse'){if(e.target.closest('.verlauf-diagramm')){clearTimeout(vAus);vAus=null;const i=vIndexBei(e);if(i!=null)vZeige(i)}return}
+  if(!vGeste||e.pointerId!==vGeste.id)return;const i=vIndexBei(e);if(i!=null)vZeige(i)});
+ const ende=e=>{if(vGeste&&e.pointerId===vGeste.id){vGeste=null;if(e.type==='pointercancel')vVerberge(true);else vSpaeterVerbergen()}};
+ panel.addEventListener('pointerup',ende);panel.addEventListener('pointercancel',ende);
+ panel.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&e.target.classList&&e.target.classList.contains('verlauf-diagramm'))vVerberge(false)},true);
+ /* Tippen bzw. Klicken irgendwo ausserhalb von Chart und Werte-Zeile schliesst sofort */
+ document.addEventListener('pointerdown',e=>{if(verlaufIndex!=null&&!e.target.closest('.verlauf-diagramm,.verlauf-wertzeile'))vVerberge(true)},true);
+ /* iOS: kein Kontextmenue (Kopieren/Nachschlagen) beim Gedrueckthalten im Chart */
+ panel.addEventListener('contextmenu',e=>{if(e.target.closest('.verlauf-diagramm,.verlauf-wertzeile'))e.preventDefault()});
  panel.addEventListener('keydown',e=>{if(!e.target.classList||!e.target.classList.contains('verlauf-diagramm'))return;
   const n=vAuswahl().p.length;let i=verlaufIndex==null?n-1:verlaufIndex;
-  if(e.key==='ArrowLeft')i--;else if(e.key==='ArrowRight')i++;else if(e.key==='Home')i=0;else if(e.key==='End')i=n-1;else if(e.key==='Escape'){vVerberge();return}else return;
+  if(e.key==='ArrowLeft')i--;else if(e.key==='ArrowRight')i++;else if(e.key==='Home')i=0;else if(e.key==='End')i=n-1;else if(e.key==='Escape'){vVerberge(true);return}else return;
   e.preventDefault();vZeige(i)});
  panel.addEventListener('focusin',e=>{if(e.target.classList&&e.target.classList.contains('verlauf-diagramm'))vZeige(verlaufIndex==null?vAuswahl().p.length-1:verlaufIndex)});
- panel.addEventListener('focusout',e=>{if(e.target.classList&&e.target.classList.contains('verlauf-diagramm'))vVerberge()});
+ /* Fokus weg (z. B. Tippen auf die Phase in der Werte-Zeile): wie Loslassen erst nach 2 s ausblenden, sonst waere der Phasen-Knopf vor dem Klick weg */
+ panel.addEventListener('focusout',e=>{if(e.target.classList&&e.target.classList.contains('verlauf-diagramm'))vSpaeterVerbergen()});
 }
 let vGroesse=null;window.addEventListener('resize',()=>{clearTimeout(vGroesse);vGroesse=setTimeout(()=>{if(verlauf&&panel&&panel.querySelector('.verlauf-diagramm')){const alt=vW,altM=panel.querySelector('.verlauf-chips')!=null;vBreite();if(alt!==vW||altM!==vMobil())vZeichnen();else vChipsRand(panel.querySelector('.verlauf-chips'))}},150)});
 document.addEventListener('investtimer:update',()=>{if(verlaufFuer!==vAn()){verlauf=null}if(!panel.hidden)zeigeVerlauf()});

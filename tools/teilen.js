@@ -49,29 +49,55 @@ async function stand(){
   if(r.ok){const m=await r.json();if(m.aktuell)return m}}catch{}}
  return ladeManifest();
 }
+/* Bilder liegen als fertige Dateien vor (zeitversetzt: /teilen/<datum>/, aktuell: /teilen/live/<stamp>/, vom Server nach jeder
+   Berechnung vorab erzeugt). Fehlt eine Datei ausnahmsweise noch, rendert die API sie einmal (nur mit Login). */
+const pfad=(m,z,fmt)=>(m.stamp?'/teilen/live/'+m.stamp:'/teilen/'+m.asOf)+'/'+z.name+'-'+fmt+'-'+sp()+'.png';
 async function bildUrl(m,z,fmt){
- const datei=z.name+'-'+fmt+'-'+sp()+'.png';
- if(!m.stamp)return '/teilen/'+m.asOf+'/'+datei;
+ const p=pfad(m,z,fmt);if(!m.stamp)return p;
+ const h=await fetch(p,{method:'HEAD'}).catch(()=>null);if(h&&h.ok)return p;
  const q=z.name.split('-'),art=q[0],tok=IT.token?await IT.token():null;
  const r=await fetch('/api/teilen/bild?aktuell=1&art='+art+(art==='verlauf'?'&zeitraum='+q[1]:'')+(art==='phase'?'&phase='+q[1]:'')+'&format='+fmt+'&l='+sp(),
   {headers:tok?{Authorization:'Bearer '+tok}:{}});
  if(!r.ok)throw 0;return new URL(r.url).pathname}
 const link=(z,kanal)=>location.origin+z.pfad+'?'+(en()?'l=en&':'')+'utm_source=teilen&utm_medium='+kanal;
+const nativMoeglich=()=>!!(navigator.share&&navigator.canShare&&matchMedia('(pointer:coarse)').matches);
+/* Vorab-Speicher: je Teilen-Art (und Zeitraum/Phase) Stand, Ziel und fertige Bilddatei, damit beim Tippen sofort geteilt wird.
+   Wichtig fuer Safari: navigator.share muss direkt aus dem Tippen kommen, ohne vorherigen Netzwerkabruf. */
+const vorab=new Map(),dateien=new Map();
+const schluessel=(art,phase)=>art+'|'+(art==='verlauf'?(IT.verlaufZeitraum?IT.verlaufZeitraum():'1J'):phase||'')+'|'+sp();
+let standCache=null,standZeit=0;
+async function standFrisch(){if(standCache&&Date.now()-standZeit<60000)return standCache;standCache=await stand();standZeit=Date.now();return standCache}
+async function vorladen(art,phase){
+ const k=schluessel(art,phase);
+ try{
+  let m=art==='phase'?await ladeManifest():await standFrisch();let z=ziel(m,art,phase);   /* Phasen: immer der feste Bildsatz */
+  if(!z)return null;
+  const fmt=nativMoeglich()?'hoch':'quer',url=await bildUrl(m,z,fmt);
+  if(!dateien.has(url)){const r=await fetch(url);if(!r.ok)throw 0;const b=await r.blob();
+   dateien.set(url,{datei:new File([b],'investtimer-'+z.name+'.png',{type:'image/png'})})}   /* Vorschau im Dialog nutzt dieselbe Adresse aus dem Browser-Cache (CSP erlaubt kein blob:) */
+  z[fmt]=url;const e={m,z,url};vorab.set(k,e);return e;
+ }catch{return null}
+}
+IT.teilenVorladen=(art,phase)=>{(window.requestIdleCallback||setTimeout)(()=>vorladen(art,phase),{timeout:2000})};
 
-async function teilen(art,phase,quelle){
- const m0=await stand();let m=m0,z=ziel(m,art,phase);
- if(!z&&m0&&m0.stamp){m=await ladeManifest();z=ziel(m,art,phase)}   /* Phase nur im zeitversetzten Stand: dann von dort */
- if(!z){typeof toast==='function'&&toast(tt('fehlt'));return}
- const nativ=navigator.share&&navigator.canShare&&matchMedia('(pointer:coarse)').matches;
- try{z.hoch=await bildUrl(m,z,'hoch');if(!nativ)z.quer=await bildUrl(m,z,'quer')}catch{typeof toast==='function'&&toast(tt('fehlt'));return}
- zaehlen('teilen-'+art);
- if(nativ){
-  try{const r=await fetch(z.hoch);if(!r.ok)throw 0;const b=await r.blob();
-   const f=new File([b],'investtimer-'+z.name+'.png',{type:'image/png'}),url=link(z,'nativ');
-   if(navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'InvestTimer',text:z.text+' '+url});zaehlen('teilen-'+art+'-nativ');return}
-  }catch(e){if(e&&e.name==='AbortError')return}
+function sofortTeilen(art,phase,quelle,e){
+ const {z,url}=e,d=dateien.get(url);zaehlen('teilen-'+art);
+ if(nativMoeglich()&&d&&navigator.canShare({files:[d.datei]})){
+  navigator.share({files:[d.datei],title:'InvestTimer',text:z.text+' '+link(z,'nativ')}).then(()=>zaehlen('teilen-'+art+'-nativ'))
+   .catch(f=>{if(!f||f.name!=='AbortError')dialog(art,z,quelle)});
+  return;
  }
  dialog(art,z,quelle);
+}
+async function teilen(art,phase,quelle){
+ const e=vorab.get(schluessel(art,phase));
+ if(e){sofortTeilen(art,phase,quelle,e);return}
+ /* noch nicht vorgeladen: Lade-Kreis im Knopf, dann teilen (Safari kann dann ablehnen -> Dialog) */
+ quelle&&quelle.classList.add('laedt');
+ const n=await vorladen(art,phase);
+ quelle&&quelle.classList.remove('laedt');
+ if(!n){typeof toast==='function'&&toast(tt('fehlt'));return}
+ sofortTeilen(art,phase,quelle,n);
 }
 
 let dlg=null,zurueck=null;
@@ -86,8 +112,7 @@ function dialog(art,z,quelle){
     (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).catch(()=>{const i=document.createElement('textarea');i.value=u;document.body.append(i);i.select();try{document.execCommand('copy')}catch{}i.remove()})
      .finally(()=>{const s=k.querySelector('span');s.textContent=tt('kopiert');setTimeout(()=>{if(s.isConnected)s.textContent=tt('kopieren')},2200)})}})}
  dlg.dataset.art=art;
- if(!z.quer)z.quer=z.hoch;
- const enc=encodeURIComponent,quer=z.quer,hoch=z.hoch;
+ const enc=encodeURIComponent,quer=z.quer||z.hoch,hoch=z.hoch||z.quer;
  const netz=[['whatsapp','WhatsApp','https://wa.me/?text='+enc(z.text+' '+link(z,'whatsapp'))],
   ['linkedin','LinkedIn','https://www.linkedin.com/sharing/share-offsite/?url='+enc(link(z,'linkedin'))],
   ['x','X','https://x.com/intent/post?text='+enc(z.text)+'&url='+enc(link(z,'x'))],
@@ -129,7 +154,9 @@ document.addEventListener('click',e=>{
  if(e.target.closest('[data-band-registrieren]')){IT.zugangModus&&IT.zugangModus('registrieren');$('#account-login')?.click();setTimeout(()=>{IT.zugangModus&&IT.zugangModus('registrieren');IT.zugangNeu&&IT.zugangNeu()},0)}
 });
 startKnopf();band();
-document.addEventListener('investtimer:update',()=>{startKnopf();band()});
+const startVorladen=()=>{standCache=null;if(!$('.teilen-start .teilen-knopf'))return;IT.teilenVorladen('wert')};
+document.addEventListener('investtimer:update',()=>{startKnopf();band();startVorladen()});
+setTimeout(startVorladen,1200);
 new MutationObserver(()=>{startKnopf();if($('.geteilt-band'))band()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 ladeManifest();
 })();

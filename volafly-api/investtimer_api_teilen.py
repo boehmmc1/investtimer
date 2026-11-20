@@ -168,6 +168,40 @@ def _it_teilen_live_bild(name):
     return _TRedirect("/teilen/live/%s/%s.png" % (stand["stamp"], name), status_code=302, headers={"Cache-Control": "private, no-store"})
 
 
+_it_vorab = {"stamp": None, "laeuft": False}
+
+
+@app.post("/v1/investtimer/teilen/vorab")
+def it_teilen_vorab(request: Request):
+    """Nur lokal (Timer investtimer-teilen-live, nicht ueber nginx erreichbar): nach jeder neuen Berechnung die Bilder des aktuellen
+    Stands im Hintergrund erzeugen - erst Wert (beide Formate, DE/EN), dann Verlauf je Zeitraum. Teilen liefert danach nur fertige Dateien."""
+    if (request.client.host if request.client else "") != "127.0.0.1" or request.headers.get("x-real-ip"):
+        return _JSONResp({"error": "nur lokal"}, status_code=403)
+    if _it_env("IT_TEILEN_AKTUELL") != "1":
+        return {"ok": True, "aktuell": False}
+    stand = _it_teilen_live()
+    if not stand:
+        return _it_aus()
+    if _it_vorab["laeuft"] or _it_vorab["stamp"] == stand["stamp"]:
+        return {"ok": True, "stamp": stand["stamp"], "neu": False}
+
+    def los():
+        _it_vorab["laeuft"] = True
+        try:
+            namen = ["wert-%s-%s" % (f, l) for f in ("hoch", "quer") for l in ("de", "en")]
+            namen += ["verlauf-%s-%s-%s" % (z, f, l) for z in _IT_SPANNEN for f in ("hoch", "quer") for l in ("de", "en")]
+            for n in namen:
+                _it_teilen_rendern(stand, n)
+            _it_vorab["stamp"] = stand["stamp"]
+            print(f"[investtimer] Teilen vorab: {stand['stamp']} ({len(namen)} Bilder)", flush=True)
+        except Exception as e:
+            print(f"[investtimer] Teilen vorab: {type(e).__name__}: {e}", flush=True)
+        finally:
+            _it_vorab["laeuft"] = False
+    __import__("threading").Thread(target=los, daemon=True).start()
+    return {"ok": True, "stamp": stand["stamp"], "neu": True}
+
+
 @app.get("/v1/investtimer/teilen/stand")
 def it_teilen_stand(request: Request):
     """Fuer das Teilen mit Login: aktueller Stand (Wert, Stufe, Zeitpunkt, Stamp fuer Links). Ohne Schalter: zeitversetzter Stand."""

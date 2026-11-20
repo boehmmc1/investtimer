@@ -293,3 +293,24 @@ body[data-live=laedt] .snapshot-label::after{content:'';position:absolute;right:
 /* Reservierte Hoehe des 12-Monats-Ausschnitts (ausgeloggt), damit beim Nachladen nichts springt */
 .verlauf-mini{--mini-h:164px}
 @media(max-width:359px){.verlauf-mini{--mini-h:188px}}
+/* Teilen: sofortige Rueckmeldung beim Tippen; Lade-Kreis nur, falls das Bild ausnahmsweise noch nicht vorgeladen ist */
+.teilen-knopf{-webkit-tap-highlight-color:transparent;transition:background-color .08s}
+.teilen-knopf:active{background:color-mix(in srgb,var(--sub) 14%,transparent);color:var(--text)}
+.teilen-knopf.laedt{color:var(--text);pointer-events:none}
+.teilen-knopf.laedt svg{border:2px solid color-mix(in srgb,var(--sub) 35%,transparent);border-top-color:var(--text);border-radius:50%;animation:teilen-dreh .7s linear infinite}
+.teilen-knopf.laedt svg *{display:none}
+@keyframes teilen-dreh{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.teilen-knopf.laedt svg{animation-duration:2s}}
+/* Verlauf erkunden (Finger/Maus): keine Textauswahl, kein iOS-Menue; Werte-Zeile fest ueber dem Chart; Linie und Punkt in Stufenfarbe */
+.verlauf-diagramm,.verlauf-diagramm *,.verlauf-wertzeile{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.verlauf-diagramm{touch-action:pan-y;cursor:crosshair}
+.verlauf-wertzeile{display:flex;align-items:center;gap:8px;min-height:30px;margin:2px 0 4px;font-size:13px;line-height:1.3;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.verlauf-wertzeile.erkunden{color:var(--text)}
+.verlauf-wertzeile .wz-punkt{width:8px;height:8px;border-radius:50%;flex:none}
+.verlauf-wertzeile .wz-text{overflow:hidden;text-overflow:ellipsis}
+.verlauf-wertzeile .wz-phase{flex:none;min-height:30px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface,#fff);font-size:12px;color:color-mix(in srgb,var(--stress) 72%,#000);cursor:pointer}
+.verlauf-diagramm .verlauf-cursor{stroke-dasharray:none;stroke-width:1.2;opacity:.85}
+.verlauf-diagramm .verlauf-cursor-punkt{r:5px}
+.verlauf-diagramm.erkunden .verlauf-cursor,.verlauf-diagramm.erkunden .verlauf-cursor-punkt{visibility:visible;transition:opacity .25s}
+.verlauf-diagramm.erkunden.ausblenden .verlauf-cursor,.verlauf-diagramm.erkunden.ausblenden .verlauf-cursor-punkt{opacity:0}
+.verlauf-tip{display:none!important}
