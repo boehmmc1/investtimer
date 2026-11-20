@@ -102,3 +102,8 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   `investtimer_fragen.json` ki_ansicht + `historie/ereignisse.json`) zaehlen nicht, Modell ohne Denken + effort low, Tages-Cache in ki.db.
   Jeder Modellaufruf ueber `_it_usage` (usage-Zeile + Kostenbuchung). Kostenmail `IT_KI_KOSTEN_TAG_EUR`/`IT_KI_KOSTEN_MONAT_EUR` an `IT_KI_KOSTEN_AN`,
   Pause ab 2x Tagesschwelle. Tests: `tests/test_ki_limit.py`, `tests/test_ki_limit_api.py` (ohne Kosten, nachgebaute Dienste), `tests/ui/test_ki_limit.py`.
+- Teilen seit 20.11.2026: Bilder `server/teilen_bilder.py` (Chrome headless, 84 Bilder je zeitversetztem Stand in `/var/lib/investtimer/teilen/<asOf>/`,
+  Symlink `aktuell`, manifest.json; Timer `investtimer-teilen` stuendlich, rendert nur Fehlendes). API-Block `volafly-api/investtimer_api_teilen.py`:
+  `/api/teilen/bild` (302 auf Datei; mit `IT_TEILEN_AKTUELL=1` + Login aktueller Stand, privat, je Tag), `/s/wert|verlauf|phase/...` (og/twitter-Tags,
+  Weiterleitung mit ?z= / ?phase= / lang=en und utm). Frontend `tools/teilen.js` (Knoepfe, navigator.share, Dialog), Startparameter in `tools/verlauf.js`.
+  nginx-Bloecke in `deploy/nginx.live.conf` (= /etc/nginx/sites-available/investtimer). Tests: `tests/ui/test_teilen.py`, Teilen-Teil in `tests/test_ki_limit_api.py`.
