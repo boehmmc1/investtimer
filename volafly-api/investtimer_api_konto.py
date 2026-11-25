@@ -332,25 +332,40 @@ def _it_historie_daten():
         return _it_historie_rechnen(key)
 
 
+_IT_RUECK_KIND = r"""
+import json, sys
+rt, rb = {}, {}
+try:
+    with open(sys.argv[1]) as f:
+        for d, t in json.load(f).get("tage", {}).items():
+            if t.get("count", 0) >= 8:
+                rt[d] = [t["rounded"], t["count"]]
+                if t.get("bloecke"):
+                    rb[d] = t["bloecke"]
+except (OSError, ValueError):
+    pass
+json.dump({"rt": rt, "rb": rb}, sys.stdout, separators=(",", ":"))
+"""
+
+
+def _it_rueck_lesen(pfad):
+    """Rueckrechnung (11 MB JSON) in einem kurzlebigen Kindprozess verdichten (Speicher 25.11.2026): die Parse-Spitze (~90 MB)
+    entsteht nur dort; der Dienst bekommt nur die kompakten Tageswerte (~1 MB) und waechst nicht mehr stufenweise."""
+    import subprocess, sys
+    try:
+        r = subprocess.run([sys.executable, "-c", _IT_RUECK_KIND, pfad], capture_output=True, text=True, timeout=60)
+        d = json.loads(r.stdout or "{}")
+    except (OSError, ValueError, subprocess.SubprocessError):
+        d = {}
+    return {k: (v[0], v[1], "r") for k, v in d.get("rt", {}).items()}, d.get("rb", {})
+
+
 def _it_historie_rechnen(key):
     from datetime import date as _date, timedelta as _td
     m = os.path.getmtime(IT_HIST_PFADE[1]) if os.path.exists(IT_HIST_PFADE[1]) else 0
     if _it_rueck_cache["mtime"] != m:
-        rt, rb = {}, {}
-        try:
-            with open(IT_HIST_PFADE[1]) as f:
-                for d, t in json.load(f).get("tage", {}).items():
-                    if t.get("count", 0) >= 8:
-                        rt[d] = (t["rounded"], t["count"], "r")
-                        if t.get("bloecke"):
-                            rb[d] = t["bloecke"]
-        except (OSError, ValueError):
-            pass
+        rt, rb = _it_rueck_lesen(IT_HIST_PFADE[1])
         _it_rueck_cache.update(mtime=m, tage=rt, bl=rb)
-        try:  # 11-MB-Datei geparst: Spitze sofort ans Betriebssystem zurueckgeben (Speicher 25.11.2026)
-            __import__("ctypes").CDLL("libc.so.6").malloc_trim(0)
-        except Exception:
-            pass
     tage, bl = dict(_it_rueck_cache["tage"]), _it_rueck_cache["bl"]
     try:
         with open(IT_HIST_PFADE[0]) as f:
