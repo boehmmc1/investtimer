@@ -347,6 +347,10 @@ def _it_historie_rechnen(key):
         except (OSError, ValueError):
             pass
         _it_rueck_cache.update(mtime=m, tage=rt, bl=rb)
+        try:  # 11-MB-Datei geparst: Spitze sofort ans Betriebssystem zurueckgeben (Speicher 25.11.2026)
+            __import__("ctypes").CDLL("libc.so.6").malloc_trim(0)
+        except Exception:
+            pass
     tage, bl = dict(_it_rueck_cache["tage"]), _it_rueck_cache["bl"]
     try:
         with open(IT_HIST_PFADE[0]) as f:

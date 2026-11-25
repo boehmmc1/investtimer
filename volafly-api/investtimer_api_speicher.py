@@ -28,3 +28,21 @@ def it_speicher(request: Request, n: int = 25):
                    top=[{"wo": str(s.traceback[0]), "kb": round(s.size / 1024), "anzahl": s.count} for s in snap.statistics("lineno")[:n]],
                    top_kette=[{"wo": " <- ".join(str(f) for f in list(s.traceback)[:4]), "kb": round(s.size / 1024)} for s in snap.statistics("traceback")[:8]])
     return aus
+
+
+# Freigegebenen Heap regelmaessig ans Betriebssystem zurueckgeben (glibc behaelt ihn sonst nach grossen JSON-Spitzen, RSS waechst stufenweise).
+def _it_trim():
+    try:
+        import ctypes
+        return ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        return None
+
+
+def _it_trim_schleife():
+    while True:
+        time.sleep(120)
+        _it_trim()
+
+
+__import__("threading").Thread(target=_it_trim_schleife, daemon=True, name="it-trim").start()
