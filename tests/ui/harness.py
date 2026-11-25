@@ -212,6 +212,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 def starten(verzeichnis=PUBLIC, port=0):
+    # Einzelaufruf: dieselben Regeln wie check_mobile (nacheinander, nicht waehrend des Scrapers); unter check_mobile regelt das der Elternlauf
+    if not os.environ.get('IT_TESTLAUF'):
+        import testlauf
+        testlauf.exklusiv(); testlauf.warten_auf_ruhe(); os.environ['IT_TESTLAUF'] = '1'
+        import atexit; atexit.register(testlauf.chrome_aufraeumen)
     h = functools.partial(Handler, directory=str(verzeichnis))
     s = http.server.ThreadingHTTPServer(('127.0.0.1', port), h)
     threading.Thread(target=s.serve_forever, daemon=True).start()
