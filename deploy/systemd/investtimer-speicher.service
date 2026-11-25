@@ -1,0 +1,6 @@
+[Unit]
+Description=InvestTimer Speicherwaechter volafly-chat
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/www/investtimer/deploy/speicher_waechter.py
