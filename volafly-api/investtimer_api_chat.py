@@ -658,6 +658,8 @@ def _it_aktuell_roh():
 
 
 _it_bu = {"t": 0.0, "wert": None}
+_it_sheets = {"svc": None}
+_it_sheets_sperre = __import__("threading").Lock()
 
 
 def _it_berechnet_um():
@@ -666,16 +668,20 @@ def _it_berechnet_um():
         return _it_bu["wert"]
     wert = _it_bu["wert"]
     try:
-        creds = service_account.Credentials.from_service_account_file(
-            SA_FILE, scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
-        zeilen = build("sheets", "v4", credentials=creds).spreadsheets().values().get(
-            spreadsheetId=SHEET_ID, range="SCRAPER_STATUS!A1:B400").execute().get("values", [])
+        with _it_sheets_sperre:  # Client einmal bauen und wiederverwenden (build() parst sonst jedes Mal ~100 MB Discovery, Speicher 26.11.2026)
+            if _it_sheets["svc"] is None:
+                creds = service_account.Credentials.from_service_account_file(
+                    SA_FILE, scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
+                _it_sheets["svc"] = build("sheets", "v4", credentials=creds, cache_discovery=False)
+            zeilen = _it_sheets["svc"].spreadsheets().values().get(
+                spreadsheetId=SHEET_ID, range="SCRAPER_STATUS!A1:B400").execute().get("values", [])
         roh = next((z[1] for z in zeilen if len(z) > 1 and z[0] == "Stress_Score"), None)
         if roh:
             t = str(int(float(roh)))
             wert = "%s-%s-%sT%s:%s:00Z" % (t[0:4], t[4:6], t[6:8], t[8:10], t[10:12])
     except Exception as e:
         print(f"[investtimer] berechnetUm: {type(e).__name__}", flush=True)
+        _it_sheets["svc"] = None  # beim naechsten Mal neu verbinden
     _it_bu.update(t=time.time(), wert=wert)
     return wert
 
