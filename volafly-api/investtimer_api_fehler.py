@@ -13,7 +13,30 @@ def _it_fehler_db():
     db.execute("CREATE TABLE IF NOT EXISTS fehler (fp TEXT PRIMARY KEY, meldung TEXT, datei TEXT, zeile INTEGER, stack TEXT, ansicht TEXT,"
                " version TEXT, geraet TEXT, anzahl INTEGER, erst TEXT, zuletzt TEXT, gemeldet TEXT)")
     db.execute("CREATE TABLE IF NOT EXISTS tage (tag TEXT, fp TEXT, anzahl INTEGER, PRIMARY KEY (tag, fp))")
+    if "umfeld" not in {r[1] for r in db.execute("PRAGMA table_info(fehler)")}:
+        db.execute("ALTER TABLE fehler ADD COLUMN umfeld TEXT")
     return db
+
+
+def _it_umfeld(u):
+    """Umfeld ohne Personenbezug (Block E, 25.11.2026): nur feste Felder, Werte streng gefiltert."""
+    if not isinstance(u, dict):
+        return ""
+    teile = []
+    for k in ("score", "stage"):
+        try:
+            teile.append("%s=%d" % (k, max(0, min(99, int(u.get(k))))))
+        except (TypeError, ValueError):
+            pass
+    for k in ("uebersetzt", "erweiterung", "webdriver"):
+        if u.get(k) in ("ja", "nein"):
+            teile.append("%s=%s" % (k, u[k]))
+    if u.get("sichtbar") in ("visible", "hidden", "prerender"):
+        teile.append("sichtbar=" + u["sichtbar"])
+    ref = _re.sub(r"[^a-z0-9.\-]", "", str(u.get("ref") or "").lower())[:80]
+    if ref:
+        teile.append("ref=" + ref)
+    return " ".join(teile)
 
 
 def _it_kurz(text, n):
@@ -46,6 +69,7 @@ async def it_fehler(request: Request):
     ansicht = _re.sub(r"[^a-z]", "", str(d.get("ansicht") or ""))[:20]
     version = _re.sub(r"[^0-9A-Za-z.\-]", "", str(d.get("version") or ""))[:40]
     geraet = _re.sub(r"[^A-Za-z ,]", "", str(d.get("geraet") or ""))[:60]
+    umfeld = _it_umfeld(d.get("umfeld"))
     fp = _hl.sha1(("%s|%s|%s" % (_re.sub(r"\d+", "#", meldung), datei, zeile)).encode()).hexdigest()[:16]
     jetzt, heute = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), time.strftime("%Y-%m-%d", time.gmtime())
     mail = False
@@ -55,10 +79,11 @@ async def it_fehler(request: Request):
             db.execute("DELETE FROM tage WHERE tag < ?", (time.strftime("%Y-%m-%d", time.gmtime(time.time() - 30 * 86400)),))
             alt = db.execute("SELECT gemeldet FROM fehler WHERE fp=?", (fp,)).fetchone()
             if alt is None:
-                db.execute("INSERT INTO fehler VALUES (?,?,?,?,?,?,?,?,1,?,?,NULL)", (fp, meldung, datei, zeile, stack, ansicht, version, geraet, jetzt, jetzt))
+                db.execute("INSERT INTO fehler (fp, meldung, datei, zeile, stack, ansicht, version, geraet, anzahl, erst, zuletzt, gemeldet, umfeld)"
+                           " VALUES (?,?,?,?,?,?,?,?,1,?,?,NULL,?)", (fp, meldung, datei, zeile, stack, ansicht, version, geraet, jetzt, jetzt, umfeld))
                 mail = True
             else:
-                db.execute("UPDATE fehler SET anzahl=anzahl+1, zuletzt=?, version=?, geraet=?, ansicht=? WHERE fp=?", (jetzt, version, geraet, ansicht, fp))
+                db.execute("UPDATE fehler SET anzahl=anzahl+1, zuletzt=?, version=?, geraet=?, ansicht=?, umfeld=? WHERE fp=?", (jetzt, version, geraet, ansicht, umfeld, fp))
             db.execute("INSERT INTO tage VALUES (?,?,1) ON CONFLICT(tag, fp) DO UPDATE SET anzahl=anzahl+1", (heute, fp))
             if mail:
                 db.execute("UPDATE fehler SET gemeldet=? WHERE fp=?", (heute, fp))
@@ -67,8 +92,8 @@ async def it_fehler(request: Request):
         return _JSONResp({"error": "intern"}, status_code=500)
     if mail:
         key = _it_resend()
-        text = ("Neuer Fehler auf investtimer.net (erstmals gemeldet %s UTC)\n\nMeldung: %s\nDatei/Zeile: %s:%s\nAnsicht: %s\nVersion: %s\nGeraet: %s\n\nStack:\n%s\n\n"
-                "Fingerabdruck %s. Weitere Meldungen derselben Art werden nur gezaehlt (Wochenbericht)." % (jetzt, meldung, datei or "-", zeile, ansicht or "-", version or "-", geraet or "-", stack or "-", fp))
+        text = ("Neuer Fehler auf investtimer.net (erstmals gemeldet %s UTC)\n\nMeldung: %s\nDatei/Zeile: %s:%s\nAnsicht: %s\nVersion: %s\nGeraet: %s\nUmfeld: %s\n\nStack:\n%s\n\n"
+                "Fingerabdruck %s. Weitere Meldungen derselben Art werden nur gezaehlt (Wochenbericht)." % (jetzt, meldung, datei or "-", zeile, ansicht or "-", version or "-", geraet or "-", umfeld or "-", stack or "-", fp))
         try:
             if key:
                 _rq.post(os.environ.get("IT_RESEND_API", "https://api.resend.com") + "/emails", timeout=15, headers={"Authorization": "Bearer " + key},

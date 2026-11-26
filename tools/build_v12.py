@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "volafly-api"))
 sys.path.insert(0, str(ROOT / "tools"))
 import marktstress as engine  # noqa: E402
+import robust  # noqa: E402
 from build_public import GAUGE_CSS, GAUGE_JS, MOBILE_CSS, once, sub_once  # noqa: E402
 # Gespeicherter Wert beim Start (angemeldet): sofort stehen lassen, keine Fuellanimation; spaetere Aenderung gleitet
 _G_ALT = "if(!valid||visual==='line'||matchMedia('(prefers-reduced-motion: reduce)').matches||(!gaugeEntrance&&gaugeShown===p)){"
@@ -1055,6 +1056,7 @@ def main(source, target_dir, preview, anmeldung=None):
     # Safe-Area ueberall ueber Variablen (eine Stelle in tools/ansichten.css liest env(), Tests koennen sie setzen)
     for seite in ("top", "bottom", "left", "right"):
         html = html.replace("env(safe-area-inset-%s,0px)" % seite, "var(--sa-%s)" % seite).replace("env(safe-area-inset-%s)" % seite, "var(--sa-%s)" % seite)
+    html, _robust = robust.anwenden(html)  # Block E: Anzeige bricht bei fehlenden Elementen nicht ab
     html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
     if not film_schalter():  # Film aus (LIC-001): Filmdateien nicht ausliefern

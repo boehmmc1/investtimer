@@ -36,15 +36,24 @@ const geraet=()=>{const u=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(u)||(n
  android=/Android/.test(u),browser=/Edg\//.test(u)?'Edge':/Firefox\//.test(u)?'Firefox':/Chrome\//.test(u)?'Chrome':/Safari\//.test(u)?'Safari':'anderer Browser',
  inst=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
  return (ios?'iOS':android?'Android':/Mac/.test(u)?'macOS':/Windows/.test(u)?'Windows':'Desktop')+' '+browser+(inst?', installiert':'')};
+/* Umfeld ohne Personenbezug und ohne Kennung (Block E): Anzahl Wert/Bogen im DOM, Seitenuebersetzung, Erweiterung im Stack,
+   Automatisierung, Sichtbarkeit, nur Host des Referrers */
+const umfeld=stack=>{const h=document.documentElement,ref=(()=>{try{return document.referrer?new URL(document.referrer).host:''}catch{return ''}})();
+ return {score:document.querySelectorAll('.score').length,stage:document.querySelectorAll('.gauge-stage').length,
+  uebersetzt:/translated-(ltr|rtl)/.test(h.className)?'ja':'nein',erweiterung:/(chrome|moz)-extension:\/\//.test(String(stack||''))?'ja':'nein',
+  webdriver:navigator.webdriver?'ja':'nein',sichtbar:document.visibilityState,ref:ref.slice(0,80)}};
 const ohneQuery=s=>String(s||'').replace(/\?[^\s:)]*/g,'');
 function melden(meldung,datei,zeile,stack){
  meldung=String(meldung||'').slice(0,300);if(!meldung||anzahl>=5)return;
  const schluessel=meldung+'|'+datei+'|'+zeile;if(gesendet.has(schluessel))return;gesendet.add(schluessel);anzahl++;
  try{fetch('/api/fehler',{method:'POST',keepalive:true,cache:'no-store',credentials:'omit',headers:{'Content-Type':'application/json'},
   body:JSON.stringify({meldung,datei:ohneQuery(datei).slice(0,200),zeile:zeile||0,stack:ohneQuery(stack).slice(0,1500),
-   ansicht:(location.hash.replace('#','')||'start').slice(0,20),version:window.INVESTTIMER_VERSION||'',geraet:geraet()})}).catch(()=>{})}catch{}
+   ansicht:(location.hash.replace('#','')||'start').slice(0,20),version:window.INVESTTIMER_VERSION||'',geraet:geraet(),umfeld:umfeld(stack)})}).catch(()=>{})}catch{}
 }
 addEventListener('error',e=>{if(!e.message)return;melden(e.message,e.filename,e.lineno,e.error&&e.error.stack)});
 addEventListener('unhandledrejection',e=>{const r=e.reason;melden(r&&r.message?r.message:String(r),'',0,r&&r.stack)});
 IT.fehlerMelden=melden;
+/* Anzeige fehlt (Block E): einmalig melden, auch fuer Faelle vor dem Laden dieses Teils */
+window.ITMeldeFehlt=sel=>melden('Anzeige fehlt im DOM','',0,'fehlt: '+String(sel).slice(0,60));
+(window.ITFehltWarte||[]).splice(0).forEach(s=>window.ITMeldeFehlt(s));
 })();

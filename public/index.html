@@ -2,6 +2,14 @@
 
 <html lang="de">
 <head>
+<script>/* Block E: sichere Elementabfrage fuer die Anzeige */
+(()=>{const leer=new Proxy(function(){},{get:(t,k)=>k===Symbol.toPrimitive?()=>'':k==='length'?0:k==='then'?undefined:leer,set:()=>true,apply:()=>leer});
+let gemeldet=false;const warte=[];
+window.ITLeer=leer;
+window.$s=sel=>{const e=document.querySelector(sel);if(e)return e;
+ if(!gemeldet){gemeldet=true;const m=()=>{try{window.ITMeldeFehlt?window.ITMeldeFehlt(sel):warte.push(sel)}catch{}};m()}
+ return leer};
+window.ITFehltWarte=warte;})();</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f8f8f3">
 <title>InvestTimer — Marktstress auf einen Blick</title>
 <meta name="application-name" content="InvestTimer">
@@ -842,8 +850,8 @@ body:not(.members-layout) .first-look .details-toggle{margin-top:16px}
 <script type="application/json" id="investtimer-result">
 {
  "model": "investtimer-us-market-stress",
- "asOf": "2026-11-13",
- "rounded": 34,
+ "asOf": "2026-11-19",
+ "rounded": 59,
  "count": 14,
  "total": 14,
  "rows": [
@@ -1205,7 +1213,7 @@ function alertList(){return state.alerts.map(a=>`<article class="alert-item"><di
 function renderAlerts(){const list=$('#saved-alerts');if(list)list.innerHTML=alertList()}
 function groups(){return ['volatility','price','positioning'].map((key,i)=>{const block=result?.blocks.find(b=>b.name===key);return `<details class="perspective" data-perspective="${key}"><summary><span class="perspective-top"><span class="perspective-number">0${i+1}</span></span><span class="perspective-title">${t(key)}</span><span class="perspective-question">${t('groupcopy')[key]}</span><span class="perspective-bottom"><span>${t('share')}</span>${arrow}</span></summary><div class="perspective-content"><p>${t('groupbody')[key]}</p>${explanations.filter(e=>e.block===key).map(e=>{const row=rowFor(e.id),c=e[state.lang];return `<button type="button" class="explain-row" data-explain="${e.id}" aria-haspopup="dialog" aria-controls="explain-dialog" aria-label="${escapeText(c.title)} — ${t('explain')}"><span class="explain-row-text"><span>${escapeText(c.title)}</span><small>${escapeText(c.kicker)}</small></span><span class="explain-row-end">${info}</span></button>`}).join('')}</div></details>`}).join('')}
 function details(){return `<div class="detail-intro"><div><span class="eyebrow">INVESTTIMER</span><h2>${t('detailtitle')}</h2><p>${t('detailintro')}</p></div></div><h3 class="composition-eyebrow">${t('groups')}</h3><div class="perspectives">${groups()}</div><details class="secondary-disclosure"><summary>${t('how')}</summary><p>${t('howbody')}</p><p>${t('missingbody')}</p><p>${t('timing')}</p></details><div class="detail-bottom"><select id="language" hidden aria-hidden="true" tabindex="-1"><option value="de" ${state.lang==='de'?'selected':''}>Deutsch</option><option value="en" ${state.lang==='en'?'selected':''}>English</option></select><button class="return-button" id="return-score" type="button">↑ ${t('back')}</button></div>`}
-function render(){document.documentElement.lang=state.lang;document.title='InvestTimer — '+t('score');$$('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));const valid=result&&result.rounded!==null;$('.score').textContent=valid?result.rounded:'—';$('.score').setAttribute('aria-label',valid?`${result.rounded} ${t('outof')}`:t('unavailable'));{const cc=$('#component-count'),eng=!!result&&14-(result.count??0)>2;cc.hidden=!eng;cc.textContent=eng?(state.lang==='de'?'Eingeschränkte Datenbasis':'Limited data today'):''}$('#status').textContent=valid?t('status')[level(result.rounded)]:'—';$('#summary').textContent=valid?t('summary')[level(result.rounded)]:t('unavailable');document.documentElement.style.setProperty('--stress',ITStufe.farbe(valid?result.rounded:null));document.documentElement.style.setProperty('--stufe-text',ITStufe.text(valid?result.rounded:null));document.documentElement.dataset.stufe=valid?String(level(result.rounded)):'';$('#alert-direction').options[0].textContent=t('above');$('#alert-direction').options[1].textContent=t('below');$('#close-alert').setAttribute('aria-label',t('close'));$('#details-panel').setAttribute('aria-label',state.lang==='de'?'Details zum Marktstress':'Market stress details');$('#details-panel').innerHTML=details();$('#details-panel').hidden=!state.details;$('#details-toggle').setAttribute('aria-expanded',String(state.details));$('#details-toggle span').textContent=t(state.details?'less':'more')}
+function render(){document.documentElement.lang=state.lang;document.title='InvestTimer — '+t('score');$$('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));const valid=result&&result.rounded!==null;$s('.score').textContent=valid?result.rounded:'—';$s('.score').setAttribute('aria-label',valid?`${result.rounded} ${t('outof')}`:t('unavailable'));{const cc=$s('#component-count'),eng=!!result&&14-(result.count??0)>2;cc.hidden=!eng;cc.textContent=eng?(state.lang==='de'?'Eingeschränkte Datenbasis':'Limited data today'):''}$s('#status').textContent=valid?t('status')[level(result.rounded)]:'—';$s('#summary').textContent=valid?t('summary')[level(result.rounded)]:t('unavailable');document.documentElement.style.setProperty('--stress',ITStufe.farbe(valid?result.rounded:null));document.documentElement.style.setProperty('--stufe-text',ITStufe.text(valid?result.rounded:null));document.documentElement.dataset.stufe=valid?String(level(result.rounded)):'';$s('#alert-direction').options[0].textContent=t('above');$s('#alert-direction').options[1].textContent=t('below');$s('#close-alert').setAttribute('aria-label',t('close'));$s('#details-panel').setAttribute('aria-label',state.lang==='de'?'Details zum Marktstress':'Market stress details');$s('#details-panel').innerHTML=details();$s('#details-panel').hidden=!state.details;$s('#details-toggle').setAttribute('aria-expanded',String(state.details));$s('#details-toggle span').textContent=t(state.details?'less':'more')}
 function toggleDetails(open,returnToScore=false){state.details=open;$('#details-panel').hidden=!open;$('#details-toggle').setAttribute('aria-expanded',String(open));$('#details-toggle span').textContent=t(open?'less':'more');const behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';if(returnToScore){window.scrollTo({top:0,behavior});$('#details-toggle').focus({preventScroll:true})}else if(open)$('#details-panel').scrollIntoView({behavior,block:'start'})}
 function openExplanation(id){const entry=explanations.find(e=>e.id===id);if(!entry)return;state.explanation=id;const c=entry[state.lang],row=rowFor(id);$('#explain-dialog').innerHTML=`<div class="sheet-handle" aria-hidden="true"></div><div class="modal-top"><span class="eyebrow">${t(entry.block)}</span><button type="button" class="close-button" id="close-explain" aria-label="${t('close')}">×</button></div><h2 id="explain-title" tabindex="-1">${escapeText(c.title)}</h2><p class="explain-kicker">${escapeText(c.kicker)}</p><div class="explanation-sections">${[['what',c.what],['stress',c.stress],['why',c.why]].map(([key,text])=>`<section><h3>${t(key)}</h3><p>${escapeText(text)}</p></section>`).join('')}</div><button type="button" id="understood" class="primary full">${t('understood')}</button>`;const d=$('#explain-dialog');d.showModal();document.body.classList.add('explanation-open');$('#explain-title').focus({preventScroll:true})}
 function closeExplanation(){const id=state.explanation;$('#explain-dialog').close();document.body.classList.remove('explanation-open');state.explanation=null;if(id)$(`[data-explain="${id}"]`)?.focus({preventScroll:true})}
@@ -1372,17 +1380,17 @@ let gaugeDrawn=0;
 function drawGauge(v){
  gaugeDrawn=v;if(visual==='line')return;
  const p=Math.max(0,Math.min(100,v)),isArc=visual==='arc',angle=(isArc?180+p*1.8:135+p*2.7)*Math.PI/180,centre=isArc?250:200,r=isArc?200:165;
- $('.gauge-value').style.strokeDasharray=`${p} 100`;
- {const ziel=gaugeTarget??p,f=ziel>0?ITStufe.mische(ITStufe.ruhig,ITStufe.farbe(ziel),p/ziel):ITStufe.farbe(ziel);$('.gauge-value').style.stroke=f;$('.gauge-point').style.fill=f}
- $('.gauge-point').setAttribute('cx',centre+r*Math.cos(angle));$('.gauge-point').setAttribute('cy',(isArc?250:200)+r*Math.sin(angle));
+ $s('.gauge-value').style.strokeDasharray=`${p} 100`;
+ {const ziel=gaugeTarget??p,f=ziel>0?ITStufe.mische(ITStufe.ruhig,ITStufe.farbe(ziel),p/ziel):ITStufe.farbe(ziel);$s('.gauge-value').style.stroke=f;$s('.gauge-point').style.fill=f}
+ $s('.gauge-point').setAttribute('cx',centre+r*Math.cos(angle));$s('.gauge-point').setAttribute('cy',(isArc?250:200)+r*Math.sin(angle));
 }
 function gaugeTicks(){
- const svg=$('.gauge-svg');if(!svg||visual!=='arc'||svg.querySelector('.gauge-tick'))return;
+ const svg=$s('.gauge-svg');if(!svg||visual!=='arc'||svg.querySelector('.gauge-tick'))return;
  [20,40,60,80].forEach(t=>{const a=(180+t*1.8)*Math.PI/180,l=document.createElementNS(svgNS,'line');l.setAttribute('class','gauge-tick');
   l.setAttribute('x1',250+212*Math.cos(a));l.setAttribute('y1',250+212*Math.sin(a));l.setAttribute('x2',250+221*Math.cos(a));l.setAttribute('y2',250+221*Math.sin(a));svg.prepend(l)});
 }
 function setScore(text){gaugeWritten=text;if(score.textContent!==text){score.textContent=text;gaugeObserver&&gaugeObserver.takeRecords()}}
-function updateGauge(){
+function updateGauge(){if(!score||!score.isConnected||!stage||!stage.isConnected){$s('.gauge-stage .score');return}
  // Waehrend der Fuellung steht in .score ein Zwischenstand; massgeblich bleibt das Ziel.
  let text=score.textContent.trim();
  if(gaugeFrame&&gaugeTarget!==null&&text===gaugeWritten)text=String(gaugeTarget);
@@ -1391,7 +1399,7 @@ function updateGauge(){
  if(gaugeFrame&&valid&&p===gaugeTarget)return;
  stage.style.setProperty('--value',p);document.body.style.setProperty('--value',p);document.body.dataset.wert=valid?String(p):'';
  gaugeTicks();
- if(visual!=='line'){$('.gauge-value').style.display=valid?'':'none';$('.gauge-point').style.display=valid?'':'none'}
+ if(visual!=='line'){$s('.gauge-value').style.display=valid?'':'none';$s('.gauge-point').style.display=valid?'':'none'}
  if($('.signal-marker'))$('.signal-marker').style.display=valid?'':'none';
  document.dispatchEvent(new CustomEvent('investtimer:wert',{detail:valid?p:null}));
  const laufend=gaugeFrame!==0;cancelAnimationFrame(gaugeFrame);gaugeFrame=0;
@@ -1405,7 +1413,7 @@ function updateGauge(){
  gaugeTarget=p;
  if(!laufend)drawGauge(from);
  setScore(String(Math.round(gaugeDrawn)));  // neuer Text von aussen sofort wieder auf den gezeichneten Stand
- const step=now=>{
+ const step=now=>{if(!document.querySelector('.gauge-value')){$s('.gauge-value');gaugeFrame=0;return}
   const e=gaugeEntrance;
   // Waehrend der Live-Wert noch laedt, bleibt der Bogen hoechstens 600 ms laenger leer.
   if(e&&document.body.dataset.live==='laedt'&&now<e.t0+600&&now>e.start)e.start=now;
@@ -2782,7 +2790,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.20-2149", "d": "20.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
+const VERSION={"v": "2026.11.26-2144", "d": "26.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -3464,17 +3472,26 @@ const geraet=()=>{const u=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(u)||(n
  android=/Android/.test(u),browser=/Edg\//.test(u)?'Edge':/Firefox\//.test(u)?'Firefox':/Chrome\//.test(u)?'Chrome':/Safari\//.test(u)?'Safari':'anderer Browser',
  inst=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
  return (ios?'iOS':android?'Android':/Mac/.test(u)?'macOS':/Windows/.test(u)?'Windows':'Desktop')+' '+browser+(inst?', installiert':'')};
+/* Umfeld ohne Personenbezug und ohne Kennung (Block E): Anzahl Wert/Bogen im DOM, Seitenuebersetzung, Erweiterung im Stack,
+   Automatisierung, Sichtbarkeit, nur Host des Referrers */
+const umfeld=stack=>{const h=document.documentElement,ref=(()=>{try{return document.referrer?new URL(document.referrer).host:''}catch{return ''}})();
+ return {score:document.querySelectorAll('.score').length,stage:document.querySelectorAll('.gauge-stage').length,
+  uebersetzt:/translated-(ltr|rtl)/.test(h.className)?'ja':'nein',erweiterung:/(chrome|moz)-extension:\/\//.test(String(stack||''))?'ja':'nein',
+  webdriver:navigator.webdriver?'ja':'nein',sichtbar:document.visibilityState,ref:ref.slice(0,80)}};
 const ohneQuery=s=>String(s||'').replace(/\?[^\s:)]*/g,'');
 function melden(meldung,datei,zeile,stack){
  meldung=String(meldung||'').slice(0,300);if(!meldung||anzahl>=5)return;
  const schluessel=meldung+'|'+datei+'|'+zeile;if(gesendet.has(schluessel))return;gesendet.add(schluessel);anzahl++;
  try{fetch('/api/fehler',{method:'POST',keepalive:true,cache:'no-store',credentials:'omit',headers:{'Content-Type':'application/json'},
   body:JSON.stringify({meldung,datei:ohneQuery(datei).slice(0,200),zeile:zeile||0,stack:ohneQuery(stack).slice(0,1500),
-   ansicht:(location.hash.replace('#','')||'start').slice(0,20),version:window.INVESTTIMER_VERSION||'',geraet:geraet()})}).catch(()=>{})}catch{}
+   ansicht:(location.hash.replace('#','')||'start').slice(0,20),version:window.INVESTTIMER_VERSION||'',geraet:geraet(),umfeld:umfeld(stack)})}).catch(()=>{})}catch{}
 }
 addEventListener('error',e=>{if(!e.message)return;melden(e.message,e.filename,e.lineno,e.error&&e.error.stack)});
 addEventListener('unhandledrejection',e=>{const r=e.reason;melden(r&&r.message?r.message:String(r),'',0,r&&r.stack)});
 IT.fehlerMelden=melden;
+/* Anzeige fehlt (Block E): einmalig melden, auch fuer Faelle vor dem Laden dieses Teils */
+window.ITMeldeFehlt=sel=>melden('Anzeige fehlt im DOM','',0,'fehlt: '+String(sel).slice(0,60));
+(window.ITFehltWarte||[]).splice(0).forEach(s=>window.ITMeldeFehlt(s));
 })();
 
 /* Teilen (Auftrag C, 20.11.2026): Knopf auf der Startseite (Wert), im Verlauf (gewaehlter Zeitraum) und in jeder Ereigniskarte (Phase).
