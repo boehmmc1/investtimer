@@ -33,6 +33,7 @@ function kmSchliessen(fokus){
  if(kmMenue.hidden)return;kmMenue.hidden=true;kmKnopf.setAttribute('aria-expanded','false');if(fokus)kmKnopf.focus();
 }
 /* Mobil fuehrt der Initialen-Kreis direkt in die Konto-Ansicht, auf dem Desktop oeffnet er das Menue */
+IT.kontoMenueZu=()=>kmSchliessen(false);
 const kmMobil=()=>matchMedia('(max-width:759px)').matches;
 const kmZurAnsicht=()=>{if(location.hash!=='#konto')location.hash='konto';else IT.route&&IT.route()};
 kmKnopf.addEventListener('click',()=>{if(kmMobil()){kmSchliessen(false);kmZurAnsicht();return}kmMenue.hidden?kmOeffnen():kmSchliessen(true)});

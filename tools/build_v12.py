@@ -380,7 +380,7 @@ a.primary.full{display:flex;align-items:center;justify-content:center;text-decor
 """
 
 # Alarme, Push und Installation (tools/alarme.js)
-ALARM_JS = (ROOT / "tools" / "alarme.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "alarmblatt.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "aufbau.js").read_text(encoding="utf-8")
+ALARM_JS = (ROOT / "tools" / "alarme.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "alarmblatt.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "aufbau.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "startknopf.js").read_text(encoding="utf-8")
 TEXTE_ALARM_DE = ("alarmEyebrow:'DEINE ALARME',alarmTitle:'Deine Schwelle. Dein Hinweis.',"
                   "alarmIntro:'Lege fest, bei welchem Marktstress du eine Nachricht aufs Handy bekommst.',"
                   "alarmWenn:'Benachrichtigen, wenn der Marktstress',alarmSteigt:'über die Schwelle steigt',alarmFaellt:'unter die Schwelle fällt',"
@@ -1061,6 +1061,9 @@ def main(source, target_dir, preview, anmeldung=None):
     if os.environ.get("IT_TESTUMGEBUNG") == "1":  # Testumgebung (DEC-020): Band oben, nicht indexieren
         html = html.replace("<head>\n", '<head>\n<meta name="robots" content="noindex, nofollow">\n', 1)
         html = re.sub(r"(<body[^>]*>)", r'\1<div class="test-band" role="note" style="position:sticky;top:0;z-index:9999;background:#a24524;color:#fff;font:600 12px/1.4 system-ui,sans-serif;text-align:center;padding:6px 12px;letter-spacing:.4px">TESTUMGEBUNG – keine echten Zahlungen</div>', html, count=1)
+    # Nachtrag L: Logo samt Schriftzug als Startseiten-Link (Verhalten in tools/startknopf.js)
+    html = once(html, '<div class="wordmark" aria-label="InvestTimer">', '<a class="wordmark" href="/" data-start-knopf aria-label="Zur Startseite">', "Logo-Link")
+    html = once(html, '<span class="brand-timer">Timer</span></span></div>', '<span class="brand-timer">Timer</span></span></a>', "Logo-Link Ende")
     # Erklaerungen der 14 Bestandteile fuer den Reiter Aufbau (Block K) global verfuegbar
     html = once(html, "return explanations;\n})();\n", "return explanations;\n})();\nwindow.ITErklaerungen=explanations;\n", "Erklaerungen global")
     # Block K5: Hinweiszeile ausgeloggt schon im HTML (Platz ab dem ersten Bild, kein Layoutsprung); mit gespeicherter Sitzung sofort weg

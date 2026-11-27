@@ -14,7 +14,7 @@ sys.path.insert(0, str(UI))
 import os, testlauf  # nacheinander, nie waehrend des Scrapers, Chrome danach beenden
 testlauf.exklusiv()
 os.environ['IT_TESTLAUF'] = '1'
-TESTS = ['test_navigation.py', 'test_safearea.py', 'test_verlauf.py', 'test_stufen.py', 'test_ki.py', 'test_start.py', 'test_zustaende.py', 'test_update.py', 'test_feedback.py', 'test_rueckkehr.py', 'test_block11.py', 'test_ki_limit.py', 'test_teilen.py', 'test_verlauf_finger.py', 'test_alarme_start.py', 'test_robust.py', 'test_aufbau.py', 'test_ki_tab.py', 'test_film.py']
+TESTS = ['test_navigation.py', 'test_safearea.py', 'test_verlauf.py', 'test_stufen.py', 'test_ki.py', 'test_start.py', 'test_zustaende.py', 'test_update.py', 'test_feedback.py', 'test_rueckkehr.py', 'test_block11.py', 'test_ki_limit.py', 'test_teilen.py', 'test_verlauf_finger.py', 'test_alarme_start.py', 'test_robust.py', 'test_aufbau.py', 'test_ki_tab.py', 'test_film.py', 'test_startknopf.py']
 fehler = 0
 for t in TESTS:
     testlauf.warten_auf_ruhe()

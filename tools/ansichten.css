@@ -510,3 +510,28 @@ body.wert-laedt #aufbau-karte{visibility:hidden}
 @media(max-width:400px){.zeitversatz-zeile{margin:4px 12px 6px;padding:8px 8px 8px 9px;gap:6px}.zeitversatz-zeile svg{width:15px;height:15px}}
 .aufbau-gruppe-kopf{flex-wrap:wrap;row-gap:2px}.aufbau-gruppe h3{overflow:visible;text-overflow:clip}.aufbau-gruppe-wert{margin-left:auto}
 @media(max-width:760px){.app>main{min-height:calc(100dvh - 60px)}}
+/* Nachtrag L: Logo als Startseiten-Knopf */
+a.wordmark{color:inherit;text-decoration:none;min-height:44px;min-width:44px;padding:0 6px;margin-left:-6px;border-radius:10px;-webkit-tap-highlight-color:transparent;transition:transform .12s,opacity .12s;touch-action:manipulation}
+a.wordmark:hover{text-decoration:none}
+a.wordmark:focus-visible{outline:3px solid #698dbc;outline-offset:2px}
+a.wordmark:active{transform:scale(.96);opacity:.72}
+@media(prefers-reduced-motion:reduce){a.wordmark{transition:none}a.wordmark:active{transform:none}}
+.start-ansage{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@keyframes start-dreh{to{transform:rotate(360deg)}}
+.zeitversatz-zeile{position:relative}
+.zeitversatz-zeile.start-laedt>svg:first-child{display:none}
+.zeitversatz-zeile.start-laedt::before{content:'';flex:none;width:12px;height:12px;margin:2px;border:2px solid #dcc39c;border-top-color:#8a5f24;border-radius:50%;animation:start-dreh .8s linear infinite}
+.zeitversatz-zeile.start-frisch::after,.snapshot-label.start-frisch:not(.mit-aktualitaet)::after{content:attr(data-start-ok);position:absolute;top:-9px;right:12px;padding:2px 9px;border-radius:10px;background:#3f8f5a;color:#fff;font-size:11px;font-weight:600;line-height:1.5;animation:start-ein .2s ease-out}
+.snapshot-label.start-frisch:not(.mit-aktualitaet){position:relative}
+.snapshot-label.start-laedt .aktualitaet-punkt{background:none!important;width:9px;height:9px;border:2px solid #b9d3c1;border-top-color:#3f8f5a;animation:start-dreh .8s linear infinite;vertical-align:-1px}
+.snapshot-label.start-frisch.mit-aktualitaet{animation:start-puls .9s ease-out}
+@keyframes start-puls{0%{background:#dcefe2}100%{background:transparent}}
+@keyframes start-ein{from{opacity:0;transform:translateY(3px)}}
+@media(prefers-reduced-motion:reduce){.zeitversatz-zeile.start-laedt::before,.snapshot-label.start-laedt .aktualitaet-punkt{animation-duration:2.4s}.snapshot-label.start-frisch,.zeitversatz-zeile.start-frisch::after{animation:none}}
+.start-frage{border:0;border-radius:16px;padding:22px 22px 18px;max-width:min(340px,calc(100vw - 32px));background:var(--surface,#fff);color:var(--text);box-shadow:0 12px 40px rgba(20,40,35,.25)}
+.start-frage::backdrop{background:rgba(20,35,30,.28)}
+.start-frage h2{font:600 18px var(--display);margin:0 0 6px}
+.start-frage p{font-size:14px;color:var(--sub);margin:0 0 18px;line-height:1.5}
+.start-frage-knoepfe{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.start-frage-knoepfe button{min-height:44px;padding:10px 16px;font-size:14px}
+.start-frage .primary.warn{background:#a24524;color:#fff}

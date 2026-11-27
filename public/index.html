@@ -882,6 +882,31 @@ body.wert-laedt #aufbau-karte{visibility:hidden}
 @media(max-width:400px){.zeitversatz-zeile{margin:4px 12px 6px;padding:8px 8px 8px 9px;gap:6px}.zeitversatz-zeile svg{width:15px;height:15px}}
 .aufbau-gruppe-kopf{flex-wrap:wrap;row-gap:2px}.aufbau-gruppe h3{overflow:visible;text-overflow:clip}.aufbau-gruppe-wert{margin-left:auto}
 @media(max-width:760px){.app>main{min-height:calc(100dvh - 60px - var(--sa-top))}}
+/* Nachtrag L: Logo als Startseiten-Knopf */
+a.wordmark{color:inherit;text-decoration:none;min-height:44px;min-width:44px;padding:0 6px;margin-left:-6px;border-radius:10px;-webkit-tap-highlight-color:transparent;transition:transform .12s,opacity .12s;touch-action:manipulation}
+a.wordmark:hover{text-decoration:none}
+a.wordmark:focus-visible{outline:3px solid #698dbc;outline-offset:2px}
+a.wordmark:active{transform:scale(.96);opacity:.72}
+@media(prefers-reduced-motion:reduce){a.wordmark{transition:none}a.wordmark:active{transform:none}}
+.start-ansage{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@keyframes start-dreh{to{transform:rotate(360deg)}}
+.zeitversatz-zeile{position:relative}
+.zeitversatz-zeile.start-laedt>svg:first-child{display:none}
+.zeitversatz-zeile.start-laedt::before{content:'';flex:none;width:12px;height:12px;margin:2px;border:2px solid #dcc39c;border-top-color:#8a5f24;border-radius:50%;animation:start-dreh .8s linear infinite}
+.zeitversatz-zeile.start-frisch::after,.snapshot-label.start-frisch:not(.mit-aktualitaet)::after{content:attr(data-start-ok);position:absolute;top:-9px;right:12px;padding:2px 9px;border-radius:10px;background:#3f8f5a;color:#fff;font-size:11px;font-weight:600;line-height:1.5;animation:start-ein .2s ease-out}
+.snapshot-label.start-frisch:not(.mit-aktualitaet){position:relative}
+.snapshot-label.start-laedt .aktualitaet-punkt{background:none!important;width:9px;height:9px;border:2px solid #b9d3c1;border-top-color:#3f8f5a;animation:start-dreh .8s linear infinite;vertical-align:-1px}
+.snapshot-label.start-frisch.mit-aktualitaet{animation:start-puls .9s ease-out}
+@keyframes start-puls{0%{background:#dcefe2}100%{background:transparent}}
+@keyframes start-ein{from{opacity:0;transform:translateY(3px)}}
+@media(prefers-reduced-motion:reduce){.zeitversatz-zeile.start-laedt::before,.snapshot-label.start-laedt .aktualitaet-punkt{animation-duration:2.4s}.snapshot-label.start-frisch,.zeitversatz-zeile.start-frisch::after{animation:none}}
+.start-frage{border:0;border-radius:16px;padding:22px 22px 18px;max-width:min(340px,calc(100vw - 32px));background:var(--surface,#fff);color:var(--text);box-shadow:0 12px 40px rgba(20,40,35,.25)}
+.start-frage::backdrop{background:rgba(20,35,30,.28)}
+.start-frage h2{font:600 18px var(--display);margin:0 0 6px}
+.start-frage p{font-size:14px;color:var(--sub);margin:0 0 18px;line-height:1.5}
+.start-frage-knoepfe{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.start-frage-knoepfe button{min-height:44px;padding:10px 16px;font-size:14px}
+.start-frage .primary.warn{background:#a24524;color:#fff}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -914,7 +939,7 @@ body:not(.members-layout) .first-look .details-toggle{margin-top:16px}
 <body>
 <div class="app">
  <header class="app-header">
-  <div class="wordmark" aria-label="InvestTimer"><svg data-brand-symbol viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 34a18 18 0 0 1 36 0"/><path d="m24 34-8-13"/><circle cx="24" cy="34" r="2.4" fill="currentColor" stroke="none"/><circle cx="15" cy="18.4" r="3.1" fill="currentColor" stroke="none"/></svg><span>Invest<span class="brand-timer">Timer</span></span></div>
+  <a class="wordmark" href="/" data-start-knopf aria-label="Zur Startseite"><svg data-brand-symbol viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 34a18 18 0 0 1 36 0"/><path d="m24 34-8-13"/><circle cx="24" cy="34" r="2.4" fill="currentColor" stroke="none"/><circle cx="15" cy="18.4" r="3.1" fill="currentColor" stroke="none"/></svg><span>Invest<span class="brand-timer">Timer</span></span></a>
   <span class="kopf-hinweis" data-i18n="snapshot">Stichtag</span>
  </header>
  <div class="zeitversatz-zeile wartet-auf-daten" id="zeitversatz-zeile" role="note"><p>&nbsp;<span class="zz-mobil"><br>&nbsp;</span></p></div><script>try{if(localStorage.getItem('investtimer-sitzung')||/access_token=|type=(magiclink|signup|recovery)/.test(location.hash))document.getElementById('zeitversatz-zeile').hidden=true}catch(e){}</script>
@@ -2069,6 +2094,9 @@ function karte(){
 const blatt=document.createElement('dialog');blatt.className='alarm-blatt';blatt.setAttribute('aria-labelledby','alarm-blatt-titel');document.body.append(blatt);
 let zustand=null,oeffner=null,ringAnim=0,ringIst=null;
 function zu(){if(blatt.open)blatt.close()}
+/* Logo (Nachtrag L): ungespeicherte Aenderung im Blatt erkennen, Blatt von aussen schliessen */
+IT.alarmBlattGeaendert=()=>!!(blatt.open&&zustand&&zustand.start!==[zustand.richtung,zustand.schwelle,zustand.push,zustand.email].join());
+IT.alarmBlattZu=zu;
 blatt.addEventListener('close',()=>{document.body.classList.remove('alarm-blatt-offen');oeffner&&oeffner.isConnected&&oeffner.focus({preventScroll:true})});
 blatt.addEventListener('click',e=>{if(e.target===blatt){const r=blatt.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)zu()}});
 function zeigen(html,fokus){
@@ -2089,6 +2117,7 @@ function oeffneBlatt(alarm,von){
  zustand={alarm:alarm||null,richtung:alarm?alarm.richtung:(voll('ueber')&&!voll('unter')?'unter':'ueber'),schwelle:0,
   push:kanal!=='email',email:kanal!=='push',frage:false,fehler:'',pushHinweis:''};
  zustand.schwelle=alarm?alarm.schwelle:vorbelegen(zustand.richtung);ringIst=null;
+ zustand.start=[zustand.richtung,zustand.schwelle,zustand.push,zustand.email].join();
  renderBlatt();
 }
 function bogenPunkt(v,r){const a=(180+Math.max(0,Math.min(100,v))*1.8)*Math.PI/180;return [100+r*Math.cos(a),100+r*Math.sin(a)]}
@@ -2161,6 +2190,7 @@ async function speichern(knopf){
   const body={richtung:z.richtung,schwelle:z.schwelle,kanal,sprache:document.documentElement.lang};
   daten=z.alarm?await api('alarme/'+z.alarm.id,{method:'PATCH',body:JSON.stringify(body)}):await api('alarme',{method:'POST',body:JSON.stringify(body)});
   IT.alarmKanalStandard=kanal;melden();
+  z.start=[z.richtung,z.schwelle,z.push,z.email].join();
  }catch(x){z.fehler=x==='doppelt'?at('doppelt'):x==='richtung_voll'?at(z.richtung==='ueber'?'vollUeber':'vollUnter'):at('fehler');renderBlatt('.blatt-fehler');return}
  const p=await pushPruefen();
  if(p){z.pushHinweis='<p><b>'+esc(at('gespeichert'))+'</b></p>'+p;z.alarm=liste().find(a=>a.richtung===z.richtung&&a.schwelle===z.schwelle)||z.alarm;renderBlatt('.blatt-push');return}
@@ -2391,6 +2421,96 @@ addEventListener('hashchange',()=>requestAnimationFrame(ausgeloggtZeichnen));
 document.addEventListener('investtimer:wertfertig',alles);
 new MutationObserver(alles).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 alles();
+})();
+
+/* Logo "InvestTimer" oben links als Startseiten-Knopf (Nachtrag L, 27.11.2026). Web, mobil, installierte Web-App, ein- und ausgeloggt.
+   - aus einem anderen Reiter oder dem Konto: offene Blaetter/Menues/Info-Felder schliessen, Ansicht Marktstress, ganz oben (Verlaufseintrag)
+   - ungespeicherte Eingaben im Alarm-Blatt: Rueckfrage "Aenderungen verwerfen?"
+   - Startseite gescrollt: sanft nach oben (reduzierte Bewegung: sofort)
+   - Startseite oben: Wert neu laden wie bei der Rueckkehr in die App (no-store), Lade-Hinweis an der Pille bzw. ausgeloggt an der
+     Hinweiszeile, danach kurz "Aktualisiert"; hoechstens alle 10 Sekunden
+   - eine laufende KI-Unterhaltung bleibt erhalten (sie liegt im Speicher der Seite, der Wechsel laedt nichts neu)
+   Offene modale Blaetter machen den Rest der Seite inert: ein Tippen auf die Stelle des Logos landet dann auf dem Hintergrund des
+   Blatts und wird hier als Logo-Tippen behandelt. */
+(()=>{
+const logo=document.querySelector('a.wordmark[data-start-knopf]');if(!logo)return;
+const LT={de:{aria:'Zur Startseite',frage:'Änderungen verwerfen?',frageText:'Dein Alarm ist noch nicht gespeichert.',verwerfen:'Verwerfen',bleiben:'Weiter bearbeiten',laedt:'Wird aktualisiert …',ok:'Aktualisiert'},
+ en:{aria:'Home',frage:'Discard changes?',frageText:'Your alert has not been saved yet.',verwerfen:'Discard',bleiben:'Keep editing',laedt:'Updating …',ok:'Up to date'}};
+const lt=k=>LT[document.documentElement.lang==='en'?'en':'de'][k];
+const ruhig=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function texte(){logo.setAttribute('aria-label',lt('aria'))}
+new MutationObserver(texte).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});texte();
+
+/* Ansage fuer Screenreader */
+const ansage=document.createElement('span');ansage.className='start-ansage';ansage.setAttribute('role','status');document.body.append(ansage);
+
+/* Rueckfrage bei ungespeichertem Alarm (eigenes kleines Blatt ueber dem Alarm-Blatt) */
+let frage=null;
+function rueckfrage(){return new Promise(fertig=>{
+ if(!frage){frage=document.createElement('dialog');frage.className='start-frage';frage.setAttribute('aria-labelledby','start-frage-titel');document.body.append(frage)}
+ frage.innerHTML='<h2 id="start-frage-titel">'+esc(lt('frage'))+'</h2><p>'+esc(lt('frageText'))+'</p><div class="start-frage-knoepfe">'
+  +'<button type="button" class="text-button" data-start="bleiben">'+esc(lt('bleiben'))+'</button><button type="button" class="primary warn" data-start="verwerfen">'+esc(lt('verwerfen'))+'</button></div>';
+ let antwort=false;
+ const klick=e=>{const b=e.target.closest('[data-start]');if(b){antwort=b.dataset.start==='verwerfen';frage.close()}else if(e.target===frage)frage.close()};
+ frage.addEventListener('click',klick);
+ frage.addEventListener('close',()=>{frage.removeEventListener('click',klick);fertig(antwort)},{once:true});
+ frage.showModal();frage.querySelector('[data-start=bleiben]').focus();
+})}
+
+function allesSchliessen(){
+ document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch{}});
+ document.body.classList.remove('access-open','assistant-open','alarm-blatt-offen');
+ IT.kontoMenueZu&&IT.kontoMenueZu();
+ IT.kiInfoZu&&IT.kiInfoZu();
+ const vi=document.querySelector('#verlauf-info-text');if(vi&&!vi.hidden){vi.hidden=true;document.querySelector('.verlauf-info')?.setAttribute('aria-expanded','false')}
+ document.activeElement&&document.activeElement!==document.body&&document.activeElement.blur&&document.activeElement.blur();
+}
+
+/* Neuladen: dieselbe Funktion wie bei der Rueckkehr in die App, Sperre 10 s */
+const SPERRE=10000;let letztesNeu=0,ladeTimer=0;
+function hinweisZiel(){
+ if(IT.member){const p=document.querySelector('.snapshot-label');return p&&p.offsetParent?p:null}
+ const z=document.querySelector('#zeitversatz-zeile');return z&&!z.hidden?z:null;
+}
+function neuLaden(){
+ const jetzt=Date.now();if(jetzt-letztesNeu<SPERRE)return false;letztesNeu=jetzt;
+ const ziel=hinweisZiel(),t0=jetzt;
+ document.querySelectorAll('.start-laedt,.start-frisch').forEach(x=>x.classList.remove('start-laedt','start-frisch'));
+ if(ziel){ziel.classList.add('start-laedt');ziel.setAttribute('aria-busy','true')}
+ ansage.textContent=lt('laedt');
+ const ende=()=>{beob.disconnect();clearTimeout(ladeTimer);
+  const rest=Math.max(0,450-(Date.now()-t0));   /* Lade-Hinweis kurz sichtbar lassen, kein Flackern */
+  setTimeout(()=>{const z=hinweisZiel()||ziel;ziel&&ziel.classList.remove('start-laedt');ziel&&ziel.removeAttribute('aria-busy');
+   if(z){z.dataset.startOk=lt('ok');z.classList.add('start-frisch');setTimeout(()=>z.classList.remove('start-frisch'),1800)}
+   ansage.textContent=lt('ok');setTimeout(()=>{ansage.textContent=''},2500)},rest)};
+ const beob=new MutationObserver(()=>{if(document.body.dataset.live==='fertig')ende()});
+ beob.observe(document.body,{attributes:true,attributeFilter:['data-live']});
+ ladeTimer=setTimeout(ende,8000);
+ if(IT.loadLive){IT.loadLive(true);if(document.body.dataset.live!=='laedt')ende()}else ende();
+ IT.updatePruefen&&IT.updatePruefen();
+ return true;
+}
+
+async function startTippen(){
+ if(IT.alarmBlattGeaendert&&IT.alarmBlattGeaendert()){if(!await rueckfrage())return;IT.alarmBlattZu&&IT.alarmBlattZu()}
+ const offen=!!document.querySelector('dialog[open]')||(document.querySelector('#konto-menue')&&!document.querySelector('#konto-menue').hidden);
+ allesSchliessen();
+ const ansicht=IT.aktiveAnsicht?IT.aktiveAnsicht():'stress';
+ if(ansicht!=='stress'){IT.zurStartseite?IT.zurStartseite():(location.hash='');return}
+ if(window.scrollY>4){window.scrollTo({top:0,behavior:ruhig()?'auto':'smooth'});return}
+ if(!offen)neuLaden();
+}
+logo.addEventListener('click',e=>{
+ if(e.button>0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;   /* neuer Tab / neues Fenster wie bei jedem Link */
+ e.preventDefault();startTippen();
+});
+/* Blatt offen: Tippen auf die Stelle des Logos (Hintergrund des modalen Blatts) */
+addEventListener('click',e=>{
+ const d=e.target;if(!(d instanceof HTMLDialogElement)||!d.open||d===frage)return;
+ const r=logo.getBoundingClientRect(),x=e.clientX,y=e.clientY;
+ if(r.width&&x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom){e.stopImmediatePropagation();e.preventDefault();startTippen()}
+},true);
+IT.startTippen=startTippen;
 })();
 
 /* Mein Konto: Abo-Status, Tarifauswahl (Paywall), Verwaltung, KI-Kontingent, Kontoloeschung.
@@ -2885,6 +3005,7 @@ function kmSchliessen(fokus){
  if(kmMenue.hidden)return;kmMenue.hidden=true;kmKnopf.setAttribute('aria-expanded','false');if(fokus)kmKnopf.focus();
 }
 /* Mobil fuehrt der Initialen-Kreis direkt in die Konto-Ansicht, auf dem Desktop oeffnet er das Menue */
+IT.kontoMenueZu=()=>kmSchliessen(false);
 const kmMobil=()=>matchMedia('(max-width:759px)').matches;
 const kmZurAnsicht=()=>{if(location.hash!=='#konto')location.hash='konto';else IT.route&&IT.route()};
 kmKnopf.addEventListener('click',()=>{if(kmMobil()){kmSchliessen(false);kmZurAnsicht();return}kmMenue.hidden?kmOeffnen():kmSchliessen(true)});
@@ -2979,7 +3100,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.27-0149", "d": "27.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
+const VERSION={"v": "2026.11.27-1148", "d": "27.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -3310,6 +3431,9 @@ if(kopf){kopf.insertBefore(tabs,werkzeuge||null);document.body.append(leiste);do
 /* "#" als Ziel fuer Marktstress: ohne Rest-Raute in der Adresse, Zurueck-Taste bleibt nutzbar */
 function navKlick(e){const l=e.target.closest('a[data-ziel]');if(!l||e.metaKey||e.ctrlKey||e.shiftKey)return;
  if(l.dataset.ziel==='stress'){e.preventDefault();if(aktiv()!=='stress'){history.pushState(null,'',location.pathname+location.search);route();window.scrollTo({top:0})}else window.scrollTo({top:0,behavior:'smooth'})}}
+/* Logo (Nachtrag L): zur Ansicht Marktstress als normaler Verlaufseintrag, ganz oben (gemerkte Scrollhoehe verwerfen) */
+IT.zurStartseite=()=>{scrollMerk.stress=0;history.pushState(null,'',location.pathname+location.search);route();window.scrollTo({top:0,behavior:'instant'});requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'instant'}))};
+IT.kiInfoZu=()=>{if(!infoOffen)return;infoOffen=false;if(!ansicht)return;const f=ansicht.querySelector('.ki-info-feld');if(f)f.hidden=true;ansicht.querySelectorAll('.ki-info').forEach(x=>x.setAttribute('aria-expanded','false'))};
 leiste.addEventListener('click',navKlick);tabs.addEventListener('click',navKlick);
 
 /* ---------- KI-Ansicht ---------- */

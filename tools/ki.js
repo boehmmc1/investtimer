@@ -108,6 +108,9 @@ if(kopf){kopf.insertBefore(tabs,werkzeuge||null);document.body.append(leiste);do
 /* "#" als Ziel fuer Marktstress: ohne Rest-Raute in der Adresse, Zurueck-Taste bleibt nutzbar */
 function navKlick(e){const l=e.target.closest('a[data-ziel]');if(!l||e.metaKey||e.ctrlKey||e.shiftKey)return;
  if(l.dataset.ziel==='stress'){e.preventDefault();if(aktiv()!=='stress'){history.pushState(null,'',location.pathname+location.search);route();window.scrollTo({top:0})}else window.scrollTo({top:0,behavior:'smooth'})}}
+/* Logo (Nachtrag L): zur Ansicht Marktstress als normaler Verlaufseintrag, ganz oben (gemerkte Scrollhoehe verwerfen) */
+IT.zurStartseite=()=>{scrollMerk.stress=0;history.pushState(null,'',location.pathname+location.search);route();window.scrollTo({top:0,behavior:'instant'});requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'instant'}))};
+IT.kiInfoZu=()=>{if(!infoOffen)return;infoOffen=false;if(!ansicht)return;const f=ansicht.querySelector('.ki-info-feld');if(f)f.hidden=true;ansicht.querySelectorAll('.ki-info').forEach(x=>x.setAttribute('aria-expanded','false'))};
 leiste.addEventListener('click',navKlick);tabs.addEventListener('click',navKlick);
 
 /* ---------- KI-Ansicht ---------- */

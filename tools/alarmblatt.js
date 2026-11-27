@@ -99,6 +99,9 @@ function karte(){
 const blatt=document.createElement('dialog');blatt.className='alarm-blatt';blatt.setAttribute('aria-labelledby','alarm-blatt-titel');document.body.append(blatt);
 let zustand=null,oeffner=null,ringAnim=0,ringIst=null;
 function zu(){if(blatt.open)blatt.close()}
+/* Logo (Nachtrag L): ungespeicherte Aenderung im Blatt erkennen, Blatt von aussen schliessen */
+IT.alarmBlattGeaendert=()=>!!(blatt.open&&zustand&&zustand.start!==[zustand.richtung,zustand.schwelle,zustand.push,zustand.email].join());
+IT.alarmBlattZu=zu;
 blatt.addEventListener('close',()=>{document.body.classList.remove('alarm-blatt-offen');oeffner&&oeffner.isConnected&&oeffner.focus({preventScroll:true})});
 blatt.addEventListener('click',e=>{if(e.target===blatt){const r=blatt.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)zu()}});
 function zeigen(html,fokus){
@@ -119,6 +122,7 @@ function oeffneBlatt(alarm,von){
  zustand={alarm:alarm||null,richtung:alarm?alarm.richtung:(voll('ueber')&&!voll('unter')?'unter':'ueber'),schwelle:0,
   push:kanal!=='email',email:kanal!=='push',frage:false,fehler:'',pushHinweis:''};
  zustand.schwelle=alarm?alarm.schwelle:vorbelegen(zustand.richtung);ringIst=null;
+ zustand.start=[zustand.richtung,zustand.schwelle,zustand.push,zustand.email].join();
  renderBlatt();
 }
 function bogenPunkt(v,r){const a=(180+Math.max(0,Math.min(100,v))*1.8)*Math.PI/180;return [100+r*Math.cos(a),100+r*Math.sin(a)]}
@@ -191,6 +195,7 @@ async function speichern(knopf){
   const body={richtung:z.richtung,schwelle:z.schwelle,kanal,sprache:document.documentElement.lang};
   daten=z.alarm?await api('alarme/'+z.alarm.id,{method:'PATCH',body:JSON.stringify(body)}):await api('alarme',{method:'POST',body:JSON.stringify(body)});
   IT.alarmKanalStandard=kanal;melden();
+  z.start=[z.richtung,z.schwelle,z.push,z.email].join();
  }catch(x){z.fehler=x==='doppelt'?at('doppelt'):x==='richtung_voll'?at(z.richtung==='ueber'?'vollUeber':'vollUnter'):at('fehler');renderBlatt('.blatt-fehler');return}
  const p=await pushPruefen();
  if(p){z.pushHinweis='<p><b>'+esc(at('gespeichert'))+'</b></p>'+p;z.alarm=liste().find(a=>a.richtung===z.richtung&&a.schwelle===z.schwelle)||z.alarm;renderBlatt('.blatt-push');return}

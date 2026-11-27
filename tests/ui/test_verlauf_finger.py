@@ -74,7 +74,7 @@ async def main():
                 box = await pg.locator('#verlauf-ansicht .verlauf-svg').bounding_box(); y0 = box['y'] + box['height'] * 0.5
                 # Tippen ausserhalb schliesst sofort
                 await touch('touchStart', box['x'] + box['width'] * 0.6, y0); await touch('touchEnd', 0, 0); await pg.wait_for_timeout(100)
-                await pg.touchscreen.tap(10, 10); await pg.wait_for_timeout(120)
+                eb = await pg.locator('#verlauf-ansicht .verlauf-eyebrow').bounding_box(); await pg.touchscreen.tap(eb['x'] + eb['width'] / 2, eb['y'] + eb['height'] / 2); await pg.wait_for_timeout(120)  # neutrale Stelle (oben links liegt seit Nachtrag L der Logo-Link)
                 pruefe(not (await pg.evaluate(ZEILE))['aktiv'], f'{tag}: Tippen ausserhalb schliesst sofort')
                 # Textauswahl per langem Druck: keine Auswahl
                 await touch('touchStart', box['x'] + box['width'] * 0.4, y0); await pg.wait_for_timeout(900); await touch('touchEnd', 0, 0)

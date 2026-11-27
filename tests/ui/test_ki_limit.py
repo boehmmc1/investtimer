@@ -39,7 +39,8 @@ async def main():
                 if SHOT and sp == 'de': await pg.screenshot(path=str(SHOT / f'ki_vorher_{w}.png'))
                 # freie Frage stellen: Antwort meldet "verbraucht"
                 harness.ZUSTAND['frei'] = {'verbraucht': True, 'ausgelastet': False}
-                await pg.fill('#ki-eingabe', 'Eine eigene Frage'); await pg.press('#ki-eingabe', 'Enter'); await pg.wait_for_timeout(1200)
+                await pg.fill('#ki-eingabe', 'Eine eigene Frage'); await pg.press('#ki-eingabe', 'Enter')
+                await pg.wait_for_selector('.ki-antwort', timeout=8000); await pg.wait_for_timeout(400)  # erste Antwort kann beim kalten Testserver laenger dauern
                 z = await pg.evaluate(ZUSTAND_JS)
                 pruefe(z['gesperrt'] is True and z['limit'] == TEXT[sp][1] and z['hervor'], f'{tag}: nach Verbrauch Eingabe gesperrt mit Text')
                 pruefe('Noch' not in z['text'] and ' left' not in z['text'] and '0 Fragen' not in z['text'], f'{tag}: keine Zaehler')
