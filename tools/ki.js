@@ -21,7 +21,7 @@ const KT={de:{
  fLimit:'Deine freie Frage für heute ist verbraucht. Morgen geht’s weiter – die Beispielfragen funktionieren weiterhin.',fAusgelastet:'Die KI ist für heute ausgelastet. Die Beispielfragen funktionieren weiter.',
  fLogin:'Deine Anmeldung ist abgelaufen. Melde dich neu an, dann kannst du weiterfragen.',fLoginKnopf:'Neu anmelden',
  fAus:'Die KI ist gerade ausgeschaltet. Versuch es später noch einmal.',
- fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',
+ fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',fPremium:'Die KI gehört zu Premium.',fPremiumKnopf:'Premium ansehen',
  zumKi:'Zur KI',brueckeWert:'Was steckt hinter der {w}?',brueckeOhne:'Was steckt hinter dem Wert?',brueckeGrossText:'Die KI ordnet den Wert ein und beantwortet deine Fragen.',
  brueckePhase:'{n} mit der KI einordnen',kontextWert:'Du kommst von: Marktstress {w}',kontextPhase:'Du kommst von: {n}',
  frageEreignis:'Wie verlief „{n}“?',
@@ -40,7 +40,7 @@ const KT={de:{
  fLimit:'You’ve used today’s free question. More tomorrow – the example questions still work.',fAusgelastet:'The AI is at capacity for today. The example questions still work.',
  fLogin:'Your session has expired. Sign in again to keep asking.',fLoginKnopf:'Sign in again',
  fAus:'The AI is switched off right now. Try again later.',
- fNetz:'Can’t reach the AI. Check your connection and try again.',
+ fNetz:'Can’t reach the AI. Check your connection and try again.',fPremium:'The AI is part of Premium.',fPremiumKnopf:'See Premium',
  zumKi:'Go to AI',brueckeWert:'What’s behind the {w}?',brueckeOhne:'What’s behind the score?',brueckeGrossText:'The AI puts the score in context and answers your questions.',
  brueckePhase:'Put {n} in context with the AI',kontextWert:'You came from: market stress {w}',kontextPhase:'You came from: {n}',
  frageEreignis:'How did “{n}” unfold?',
@@ -188,7 +188,7 @@ function gespraechHtml(){
 }
 function nachrichtHtml(m,i){
  if(m.rolle==='du')return '<div class="ki-du"><span class="sr-only">'+esc(kt('du'))+': </span>'+esc(m.text)+'</div>';
- if(m.rolle==='fehler')return '<div class="ki-fehler" role="alert">'+esc(kt(m.text))+(m.text==='fLogin'?' <button type="button" class="text-button" data-ki="anmelden">'+esc(kt('fLoginKnopf'))+'</button>':'')+'</div>';
+ if(m.rolle==='fehler')return '<div class="ki-fehler" role="alert">'+esc(kt(m.text))+(m.text==='fLogin'?' <button type="button" class="text-button" data-ki="anmelden">'+esc(kt('fLoginKnopf'))+'</button>':'')+(m.text==='fPremium'?' <button type="button" class="text-button" data-ki="premium">'+esc(kt('fPremiumKnopf'))+'</button>':'')+'</div>';
  const letzte=i===st.gespraech.length-1;
  return '<article class="ki-antwort"><span class="sr-only">'+esc(kt('ki'))+': </span>'+md(m.text)
   +(letzte&&!st.busy&&m.folge&&m.folge.length?'<div class="ki-folge" aria-label="'+esc(kt('weiter'))+'">'+m.folge.map(q=>'<button type="button" class="ki-frage ki-chip" data-frage="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>':'')+'</article>';
@@ -264,6 +264,7 @@ async function fragen(text){
   if(r.status===401){antwort={rolle:'fehler',text:'fLogin'}}
   else if(r.status===429){const d=await r.json().catch(()=>({}));const aus=d.error==='ausgelastet';
    antwort={rolle:'fehler',text:aus?'fAusgelastet':'fLimit'};freiSetzen(Object.assign({},st.frei,aus?{ausgelastet:true}:{verbraucht:true}))}
+  else if(r.status===403){antwort={rolle:'fehler',text:'fPremium'}}  /* Premium-Pflicht, freies Konto (Nachtrag N2) */
   else if(r.status===503){antwort={rolle:'fehler',text:'fAus'}}
   else if(!r.ok){antwort={rolle:'fehler',text:'fNetz'}}
   else{const d=await r.json();if(d.frei)freiSetzen(d.frei);
@@ -279,6 +280,7 @@ function klick(e){
  if(f){if(!angemeldet()){$('#account-login')?.click();return}st.notiz=f.dataset.frage;const i=$('#ki-eingabe');if(i){i.value=st.notiz;i.focus();i.setSelectionRange(i.value.length,i.value.length)}return}
  const b=e.target.closest('[data-ki]');if(!b)return;
  if(b.dataset.ki==='anmelden'){$('#account-login')?.click();return}
+ if(b.dataset.ki==='premium'){IT.oeffneKonto&&IT.oeffneKonto(b,'paywall');return}
  if(b.dataset.ki==='info'){infoOffen=!infoOffen;const f=ansicht.querySelector('.ki-info-feld');if(f)f.hidden=!infoOffen;ansicht.querySelectorAll('.ki-info').forEach(x=>x.setAttribute('aria-expanded',infoOffen));platzUnten();return}
  if(b.dataset.ki==='neu'){st.gespraech=[];st.notiz='';st.kontext=null;haftUnten=true;zeichnen('titel');window.scrollTo({top:0})}
 }

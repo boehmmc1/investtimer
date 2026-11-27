@@ -16,6 +16,7 @@ const AT={de:{
   was:'Was wird betrachtet?',stress:'Was bedeutet mehr Stress?',warum:'Warum gehört das dazu?',schliessen:'Schließen',ohneTeil:'Teilwerte für diesen Stand nicht verfügbar',
   stufen:['ruhig','moderat','erhöht','hoch','Panik'],
   hinweis:'Stand {d} · einen Monat zeitversetzt.',hinweis2:'Angemeldet siehst du alles live.',anmelden:'Anmelden',
+  hinweis2Premium:'Mit Premium siehst du alles live.',premium:'Premium ansehen',karteSperre:'Stand {d} · live mit Premium',
   labelAm:'MARKTSTRESS AM {d}',tab:'Aufbau'},
  en:{
   karteKopf:'WHAT MAKES UP THE {w}',karteKopfAus:'WHAT MADE UP THE {w}',details:'Details',karteAus:'As of {d} · live after sign-in',
@@ -29,9 +30,12 @@ const AT={de:{
   was:'What do we look at?',stress:'What does more stress mean?',warum:'Why include it?',schliessen:'Close',ohneTeil:'Sub-scores not available for this reading',
   stufen:['calm','moderate','elevated','high','panic'],
   hinweis:'Snapshot from {d} · one month delayed.',hinweis2:'Sign in to see everything live.',anmelden:'Sign in',
+  hinweis2Premium:'See everything live with Premium.',premium:'See Premium',karteSperre:'As of {d} · live with Premium',
   labelAm:'MARKET STRESS ON {d}',tab:'Breakdown'}};
 const en=()=>document.documentElement.lang==='en',at=k=>AT[en()?'en':'de'][k];
 const angemeldet=()=>!!IT.member;  /* sofort bekannt (gespeicherte Sitzung), kein Layoutsprung beim Laden */
+/* zeitversetzter Stand: ausgeloggt oder angemeldet ohne Premium bei Premium-Pflicht (Nachtrag N2) */
+const sperre=()=>angemeldet()&&!!IT.premiumSperre,verzoegert=()=>!angemeldet()||sperre();
 const stand=()=>IT.view||{};
 const runde=x=>Math.floor(x+0.5);
 const datum=d=>d?new Date(Date.parse(d+'T12:00:00Z')).toLocaleDateString(en()?'en-US':'de-DE',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}):'';
@@ -49,12 +53,12 @@ const karte=document.createElement('a');karte.id='aufbau-karte';karte.className=
 function karteZeichnen(){
  /* ohne Wert (Sitzung laedt noch): gleiche Hoehe mit Platzhaltern, unsichtbar ueber body.wert-laedt -> kein Layoutsprung */
  const v=stand(),w=v.rounded??'–';
- const aus=!angemeldet(),hat=v.rounded==null||KEYS.some(k=>teil(k)!=null);
+ const aus=verzoegert(),hat=v.rounded==null||KEYS.some(k=>teil(k)!=null);
  karte.setAttribute('aria-label',(aus?at('karteKopfAus'):at('karteKopf')).replace('{w}',w)+' – '+at('details'));
  karte.innerHTML='<span class="aufbau-karte-kopf"><span class="aufbau-label">'+esc((aus?at('karteKopfAus'):at('karteKopf')).replace('{w}',w))+'</span><span class="aufbau-details">'+esc(at('details'))+PFEIL+'</span></span>'
   +(hat?KEYS.map(k=>{const x=teil(k);return '<span class="aufbau-zeile"><span class="aufbau-name">'+esc(at(k))+'</span><span class="aufbau-wert">'+(x??'–')+'</span>'+balken(x,4)+'</span>'}).join('')
    :'<span class="aufbau-ohne">'+esc(at('ohneTeil'))+'</span>')
-  +(aus&&v.asOf?'<span class="aufbau-stand">'+UHR+'<span>'+esc(at('karteAus').replace('{d}',datumKurz(v.asOf)))+'</span></span>':'');
+  +(aus&&v.asOf?'<span class="aufbau-stand">'+UHR+'<span>'+esc(at(sperre()?'karteSperre':'karteAus').replace('{d}',datumKurz(v.asOf)))+'</span></span>':'');
 }
 
 /* ---------- Reiter Aufbau ---------- */
@@ -62,7 +66,7 @@ const panel=document.createElement('section');panel.id='aufbau-ansicht';panel.cl
 ($('#verlauf-ansicht')||$('.app-header')||document.body).after(panel);
 const offen=new Set();
 function panelZeichnen(fokus){
- const v=stand(),w=v.rounded,aus=!angemeldet(),liste=erkl();
+ const v=stand(),w=v.rounded,aus=verzoegert(),liste=erkl();
  const gruppen=KEYS.map(k=>{const x=teil(k),teile=liste.filter(e=>e.block===k),id='aufbau-teile-'+k,auf=offen.has(k);
   return '<article class="aufbau-gruppe"><div class="aufbau-gruppe-kopf"><h3>'+esc(at(k))+'</h3><span class="aufbau-gruppe-wert">'+(x??'–')
    +(x!=null?'<small>'+esc(stufenwort(x))+'</small>':'')+'</span></div>'+balken(x,5)
@@ -103,15 +107,17 @@ const zeile=$('#zeitversatz-zeile')||(()=>{const z=document.createElement('div')
 const h1=$('#score-title'),label=document.createElement('span');label.className='label-am';label.setAttribute('aria-hidden','true');if(h1)h1.after(label);
 function ausgeloggtZeichnen(){
  const kopf=$('.app-header');if(kopf&&kopf.nextElementSibling!==zeile)kopf.after(zeile);  /* immer direkt unter der Kopfzeile, auch wenn Ansichten spaeter eingefuegt werden */
- const aus=!angemeldet(),p=IT.pub||{};
- document.body.classList.toggle('it-ausgeloggt',aus);
+ const echtAus=!angemeldet(),sp=sperre(),aus=echtAus||sp,p=IT.pub||{};
+ document.body.classList.toggle('it-ausgeloggt',echtAus);
  /* ausgeloggt sofort Platz reservieren (unsichtbar bis das Datum da ist): kein Layoutsprung beim Laden */
- zeile.hidden=!aus;zeile.classList.toggle('wartet-auf-daten',aus&&!p.asOf);
- if(aus)zeile.innerHTML=UHR+'<p><b>'+esc(at('hinweis').replace('{d}',p.asOf?datumKurz(p.asOf):datumKurz('2026-10-27')))+'</b> <span>'+esc(at('hinweis2'))+'</span> <button type="button" class="zeitversatz-anmelden">'+esc(at('anmelden'))+'</button></p>';
+ zeile.hidden=!aus;zeile.classList.toggle('wartet-auf-daten',aus&&!p.asOf);zeile.classList.toggle('zz-premium',sp);
+ if(aus){const html=UHR+'<p><b>'+esc(at('hinweis').replace('{d}',p.asOf?datumKurz(p.asOf):datumKurz('2026-10-27')))+'</b> <span>'+esc(at(sp?'hinweis2Premium':'hinweis2'))+'</span> <button type="button" class="'+(sp?'zeitversatz-premium':'zeitversatz-anmelden')+'">'+esc(at(sp?'premium':'anmelden'))+'</button></p>';
+  if(zeile.innerHTML!==html)zeile.innerHTML=html}
  const am=aus&&p.asOf?at('labelAm').replace('{d}',datumKurz(p.asOf).toUpperCase()):'';label.textContent=am;
  if(h1){h1.classList.toggle('mit-datum',!!am);if(am)h1.setAttribute('aria-label',am);else h1.removeAttribute('aria-label')}
 }
-zeile.addEventListener('click',e=>{if(e.target.closest('.zeitversatz-anmelden')){try{sessionStorage.setItem('investtimer-nach-login','start')}catch{}$('#account-login')?.click()}});
+zeile.addEventListener('click',e=>{const pr=e.target.closest('.zeitversatz-premium');if(pr){IT.oeffneKonto&&IT.oeffneKonto(pr,'paywall');return}
+ if(e.target.closest('.zeitversatz-anmelden')){try{sessionStorage.setItem('investtimer-nach-login','start')}catch{}$('#account-login')?.click()}});
 
 /* Reihenfolge unter dem Einordnungssatz (I3): Aufbau-Karte, Film-Karte (nur ausgeloggt), Alarm, KI */
 function ordnen(){const as=$('.assessment');if(!as)return;['#aufbau-karte','#film-karte','#alarm-karte','.ki-bruecke-start'].map(x=>$(x)).filter(Boolean).reduce((v,el)=>{if(v.nextElementSibling!==el)v.after(el);return el},as)}

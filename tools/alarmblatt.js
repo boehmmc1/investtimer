@@ -285,6 +285,7 @@ document.addEventListener('click',e=>{
  if(schild&&!e.target.closest('.alarm-schild'))schildZu();
  const a=e.target.closest('#alarm-karte [data-alarm]');if(!a)return;e.preventDefault();
  if(a.dataset.alarm==='login'){try{sessionStorage.setItem('investtimer-nach-login','alarm')}catch{}$('#account-login')?.click();return}
+ if(IT.premiumSperre){IT.oeffneKonto&&IT.oeffneKonto(a,'paywall');return}  /* Alarme gehoeren zu Premium (Nachtrag N2) */
  if(a.dataset.alarm==='neu')oeffneBlatt(null,a);else oeffneListe(a);
 });
 addEventListener('resize',()=>{marken()});

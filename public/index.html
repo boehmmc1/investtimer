@@ -835,8 +835,8 @@ body.wert-laedt .teilen-start{visibility:hidden}
 .zeitversatz-zeile[hidden]{display:none}
 .zeitversatz-zeile svg{width:18px;height:18px}
 .zeitversatz-zeile p{flex:1;margin:0;color:#6b5330}.zeitversatz-zeile b{font-weight:500;color:#5c3f16}
-.zeitversatz-anmelden{display:inline-block;box-sizing:border-box;min-width:44px;padding:13px 8px;margin:-13px -8px;border:0;background:none;color:#2e6d5c;font:500 13px/18px 'DM Sans',var(--sans);cursor:pointer;white-space:nowrap;text-align:center}
-@media(min-width:761px){.zeitversatz-zeile p{display:flex;flex-wrap:wrap;column-gap:4px}.zeitversatz-anmelden{margin-left:auto}}
+.zeitversatz-anmelden,.zeitversatz-premium{display:inline-block;box-sizing:border-box;min-width:44px;padding:13px 8px;margin:-13px -8px;border:0;background:none;color:#2e6d5c;font:500 13px/18px 'DM Sans',var(--sans);cursor:pointer;white-space:nowrap;text-align:center}
+@media(min-width:761px){.zeitversatz-zeile p{display:flex;flex-wrap:wrap;column-gap:4px}.zeitversatz-anmelden,.zeitversatz-premium{margin-left:auto}}
 @media(min-width:761px){.zeitversatz-zeile{max-width:680px;margin:6px auto 8px;box-sizing:border-box}}
 body.it-ausgeloggt .snapshot-label{visibility:hidden}
 #score-title.mit-datum{font-size:0!important;letter-spacing:0;margin-bottom:0}
@@ -857,8 +857,8 @@ body.it-ausgeloggt .snapshot-label{visibility:hidden}
  .ki-unten::before{content:'';position:absolute;left:0;right:0;top:-32px;height:32px;background:linear-gradient(rgba(248,248,243,0),var(--bg));pointer-events:none}
 }
 @media(min-width:761px){.ki-ansicht,#ki-ansicht{max-width:680px}}
-@media(max-width:480px){.zeitversatz-zeile{margin:4px 16px 6px;padding:9px 10px;gap:8px;font-size:12.5px;letter-spacing:-.1px}.zeitversatz-anmelden{font-size:12.5px}}
-@media(max-width:400px){.zeitversatz-zeile{font-size:12px;letter-spacing:-.15px;padding:9px 10px 9px 9px;gap:7px}.zeitversatz-zeile svg{width:16px;height:16px}.zeitversatz-anmelden{font-size:12px}}
+@media(max-width:480px){.zeitversatz-zeile{margin:4px 16px 6px;padding:9px 10px;gap:8px;font-size:12.5px;letter-spacing:-.1px}.zeitversatz-anmelden,.zeitversatz-premium{font-size:12.5px}}
+@media(max-width:400px){.zeitversatz-zeile{font-size:12px;letter-spacing:-.15px;padding:9px 10px 9px 9px;gap:7px}.zeitversatz-zeile svg{width:16px;height:16px}.zeitversatz-anmelden,.zeitversatz-premium{font-size:12px}}
 
 /* ---- Film-Karte (Block G): nur ausgeloggt, unter der Aufbau-Karte ---- */
 .film-karte2{width:100%;max-width:420px;margin:10px auto 0;box-sizing:border-box;border:1px solid #dfe5db;border-radius:18px;background:#fff;overflow:hidden;text-align:left}
@@ -907,6 +907,8 @@ a.wordmark:active{transform:scale(.96);opacity:.72}
 .start-frage-knoepfe{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .start-frage-knoepfe button{min-height:44px;padding:10px 16px;font-size:14px}
 .start-frage .primary.warn{background:#a24524;color:#fff}
+.zeitversatz-premium{font-weight:600}
+body.premium-sperre .snapshot-label{visibility:hidden}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -1354,7 +1356,7 @@ render();
 /* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
 const IT=window.InvestTimer={live:null,pub:result,member:false,chat:null,session:null,gespeichert:null,wertEndgueltig:true,
  /* Mit Sitzung nie den oeffentlichen bzw. eingebetteten Wert: aktueller Wert, sonst der zuletzt geladene (je Konto gespeichert), sonst keiner */
- get view(){return this.member?(this.live||this.gespeichert||null):this.pub},
+ get view(){return this.member?(this.premiumSperre?this.pub:(this.live||this.gespeichert||null)):this.pub},
  setMember(v){this.member=!!v;apply()}};
 function apply(){
  const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
@@ -1422,7 +1424,7 @@ IT.codeFuerAenderung=async()=>{
 };
 IT.emailVonSitzung=()=>{try{return JSON.parse(atob((IT.session||gemerkt()).access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email}catch{return ''}};
 IT.abmelden=async()=>{
- const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.gespeichert=null;IT.vergesseWert();IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');lastSeen='';IT.setMember(false);
+ const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.gespeichert=null;IT.premiumSperre=false;document.body.classList.remove('premium-sperre');IT.vergesseWert();IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');lastSeen='';IT.setMember(false);
  if(s)sb('/auth/v1/logout',{method:'POST',headers:{Authorization:'Bearer '+s.access_token}}).catch(()=>{});
 };
 let lastLoad=0,lastSeen='';
@@ -1431,20 +1433,26 @@ function loadLive(force){
  document.body.dataset.live='laedt';
  const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>{IT.offline=!!r.headers.get('X-InvestTimer-Offline');IT.offlineStand=IT.offline?Date.parse(r.headers.get('Date')||'')||null:null;document.dispatchEvent(new Event(IT.offline?'investtimer:offline':'investtimer:online'));return r.ok?r.json():Promise.reject()})
   .then(d=>normaliseResult(d.publicSnapshot)||normaliseResult(d)).catch(()=>null);
- let liveFehler=false;
+ let liveFehler=false,premium=false;
+ /* 403 "premium" (Premium-Pflicht, freies Konto; Nachtrag N2): angemeldet bleiben, zeitversetzter Stand plus Bezahlschranke, nie abgemeldet */
  const aktuell=IT.token().then(tok=>!tok?null:fetch('/api/aktuell',{cache:'no-store',headers:{Authorization:'Bearer '+tok}})
-  .then(r=>{if(r.status===401){IT.abmelden();return null}if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
+  .then(async r=>{if(r.status===401){IT.abmelden();return null}
+   if(r.status===403){const d=await r.json().catch(()=>({}));if(d.error==='premium'){premium=true;return null}}
+   if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
  Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
   document.body.dataset.live='fertig';
-  IT.liveFehler=!!(liveFehler&&IT.session);IT.aktualitaet&&IT.aktualitaet();
+  IT.liveFehler=!!(liveFehler&&IT.session);
+  const sperreNeu=!!(premium&&IT.session);if(sperreNeu!==!!IT.premiumSperre){IT.premiumSperre=sperreNeu;document.body.classList.toggle('premium-sperre',sperreNeu)}
+  if(sperreNeu&&IT.gespeichert){IT.gespeichert=null;IT.vergesseWert()}  /* kein alter Premium-Wert aus dem Speicher */
+  IT.aktualitaet&&IT.aktualitaet();
   if(!pub&&!live){lastLoad=0;return}
-  const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
+  const seen=JSON.stringify([live,pub,!!IT.session,sperreNeu]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
   /* API nicht erreichbar: angemeldet bleiben, gespeicherten Stand zeigen und das sagen (kein Wechsel auf "Anmelden") */
-  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler));
+  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler||sperreNeu));
   if(live){IT.gespeichert=live;merkeWert(live)}
   /* c) frischer Wert: der Bogen gleitet vom gespeicherten Stand (bzw. fuellt sich einmal aus dem Platzhalter) */
-  if(live||!IT.session||!IT.wertEndgueltig)wertFertig();apply();
+  if(live||sperreNeu||!IT.session||!IT.wertEndgueltig)wertFertig();apply();
   if(liveFehler&&IT.session&&typeof toast==='function')toast(document.documentElement.lang==='en'?'The latest reading isn’t available right now. Showing the saved reading.':'Der aktuelle Wert ist gerade nicht erreichbar. Du siehst den gespeicherten Stand.');
  });
 }
@@ -2280,6 +2288,7 @@ document.addEventListener('click',e=>{
  if(schild&&!e.target.closest('.alarm-schild'))schildZu();
  const a=e.target.closest('#alarm-karte [data-alarm]');if(!a)return;e.preventDefault();
  if(a.dataset.alarm==='login'){try{sessionStorage.setItem('investtimer-nach-login','alarm')}catch{}$('#account-login')?.click();return}
+ if(IT.premiumSperre){IT.oeffneKonto&&IT.oeffneKonto(a,'paywall');return}  /* Alarme gehoeren zu Premium (Nachtrag N2) */
  if(a.dataset.alarm==='neu')oeffneBlatt(null,a);else oeffneListe(a);
 });
 addEventListener('resize',()=>{marken()});
@@ -2316,6 +2325,7 @@ const AT={de:{
   was:'Was wird betrachtet?',stress:'Was bedeutet mehr Stress?',warum:'Warum gehört das dazu?',schliessen:'Schließen',ohneTeil:'Teilwerte für diesen Stand nicht verfügbar',
   stufen:['ruhig','moderat','erhöht','hoch','Panik'],
   hinweis:'Stand {d} · einen Monat zeitversetzt.',hinweis2:'Angemeldet siehst du alles live.',anmelden:'Anmelden',
+  hinweis2Premium:'Mit Premium siehst du alles live.',premium:'Premium ansehen',karteSperre:'Stand {d} · live mit Premium',
   labelAm:'MARKTSTRESS AM {d}',tab:'Aufbau'},
  en:{
   karteKopf:'WHAT MAKES UP THE {w}',karteKopfAus:'WHAT MADE UP THE {w}',details:'Details',karteAus:'As of {d} · live after sign-in',
@@ -2329,9 +2339,12 @@ const AT={de:{
   was:'What we measure',stress:'What adds to stress',warum:'Why it matters',schliessen:'Close',ohneTeil:'Sub-scores not available for this reading',
   stufen:['calm','moderate','elevated','high','panic'],
   hinweis:'Snapshot from {d} · one month delayed.',hinweis2:'Sign in to see everything live.',anmelden:'Sign in',
+  hinweis2Premium:'See everything live with Premium.',premium:'See Premium',karteSperre:'As of {d} · live with Premium',
   labelAm:'MARKET STRESS ON {d}',tab:'Breakdown'}};
 const en=()=>document.documentElement.lang==='en',at=k=>AT[en()?'en':'de'][k];
 const angemeldet=()=>!!IT.member;  /* sofort bekannt (gespeicherte Sitzung), kein Layoutsprung beim Laden */
+/* zeitversetzter Stand: ausgeloggt oder angemeldet ohne Premium bei Premium-Pflicht (Nachtrag N2) */
+const sperre=()=>angemeldet()&&!!IT.premiumSperre,verzoegert=()=>!angemeldet()||sperre();
 const stand=()=>IT.view||{};
 const runde=x=>Math.floor(x+0.5);
 const datum=d=>d?new Date(Date.parse(d+'T12:00:00Z')).toLocaleDateString(en()?'en-US':'de-DE',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}):'';
@@ -2349,12 +2362,12 @@ const karte=document.createElement('a');karte.id='aufbau-karte';karte.className=
 function karteZeichnen(){
  /* ohne Wert (Sitzung laedt noch): gleiche Hoehe mit Platzhaltern, unsichtbar ueber body.wert-laedt -> kein Layoutsprung */
  const v=stand(),w=v.rounded??'–';
- const aus=!angemeldet(),hat=v.rounded==null||KEYS.some(k=>teil(k)!=null);
+ const aus=verzoegert(),hat=v.rounded==null||KEYS.some(k=>teil(k)!=null);
  karte.setAttribute('aria-label',(aus?at('karteKopfAus'):at('karteKopf')).replace('{w}',w)+' – '+at('details'));
  karte.innerHTML='<span class="aufbau-karte-kopf"><span class="aufbau-label">'+esc((aus?at('karteKopfAus'):at('karteKopf')).replace('{w}',w))+'</span><span class="aufbau-details">'+esc(at('details'))+PFEIL+'</span></span>'
   +(hat?KEYS.map(k=>{const x=teil(k);return '<span class="aufbau-zeile"><span class="aufbau-name">'+esc(at(k))+'</span><span class="aufbau-wert">'+(x??'–')+'</span>'+balken(x,4)+'</span>'}).join('')
    :'<span class="aufbau-ohne">'+esc(at('ohneTeil'))+'</span>')
-  +(aus&&v.asOf?'<span class="aufbau-stand">'+UHR+'<span>'+esc(at('karteAus').replace('{d}',datumKurz(v.asOf)))+'</span></span>':'');
+  +(aus&&v.asOf?'<span class="aufbau-stand">'+UHR+'<span>'+esc(at(sperre()?'karteSperre':'karteAus').replace('{d}',datumKurz(v.asOf)))+'</span></span>':'');
 }
 
 /* ---------- Reiter Aufbau ---------- */
@@ -2362,7 +2375,7 @@ const panel=document.createElement('section');panel.id='aufbau-ansicht';panel.cl
 ($('#verlauf-ansicht')||$('.app-header')||document.body).after(panel);
 const offen=new Set();
 function panelZeichnen(fokus){
- const v=stand(),w=v.rounded,aus=!angemeldet(),liste=erkl();
+ const v=stand(),w=v.rounded,aus=verzoegert(),liste=erkl();
  const gruppen=KEYS.map(k=>{const x=teil(k),teile=liste.filter(e=>e.block===k),id='aufbau-teile-'+k,auf=offen.has(k);
   return '<article class="aufbau-gruppe"><div class="aufbau-gruppe-kopf"><h3>'+esc(at(k))+'</h3><span class="aufbau-gruppe-wert">'+(x??'–')
    +(x!=null?'<small>'+esc(stufenwort(x))+'</small>':'')+'</span></div>'+balken(x,5)
@@ -2403,15 +2416,17 @@ const zeile=$('#zeitversatz-zeile')||(()=>{const z=document.createElement('div')
 const h1=$('#score-title'),label=document.createElement('span');label.className='label-am';label.setAttribute('aria-hidden','true');if(h1)h1.after(label);
 function ausgeloggtZeichnen(){
  const kopf=$('.app-header');if(kopf&&kopf.nextElementSibling!==zeile)kopf.after(zeile);  /* immer direkt unter der Kopfzeile, auch wenn Ansichten spaeter eingefuegt werden */
- const aus=!angemeldet(),p=IT.pub||{};
- document.body.classList.toggle('it-ausgeloggt',aus);
+ const echtAus=!angemeldet(),sp=sperre(),aus=echtAus||sp,p=IT.pub||{};
+ document.body.classList.toggle('it-ausgeloggt',echtAus);
  /* ausgeloggt sofort Platz reservieren (unsichtbar bis das Datum da ist): kein Layoutsprung beim Laden */
- zeile.hidden=!aus;zeile.classList.toggle('wartet-auf-daten',aus&&!p.asOf);
- if(aus)zeile.innerHTML=UHR+'<p><b>'+esc(at('hinweis').replace('{d}',p.asOf?datumKurz(p.asOf):datumKurz('2026-10-27')))+'</b> <span>'+esc(at('hinweis2'))+'</span> <button type="button" class="zeitversatz-anmelden">'+esc(at('anmelden'))+'</button></p>';
+ zeile.hidden=!aus;zeile.classList.toggle('wartet-auf-daten',aus&&!p.asOf);zeile.classList.toggle('zz-premium',sp);
+ if(aus){const html=UHR+'<p><b>'+esc(at('hinweis').replace('{d}',p.asOf?datumKurz(p.asOf):datumKurz('2026-10-27')))+'</b> <span>'+esc(at(sp?'hinweis2Premium':'hinweis2'))+'</span> <button type="button" class="'+(sp?'zeitversatz-premium':'zeitversatz-anmelden')+'">'+esc(at(sp?'premium':'anmelden'))+'</button></p>';
+  if(zeile.innerHTML!==html)zeile.innerHTML=html}
  const am=aus&&p.asOf?at('labelAm').replace('{d}',datumKurz(p.asOf).toUpperCase()):'';label.textContent=am;
  if(h1){h1.classList.toggle('mit-datum',!!am);if(am)h1.setAttribute('aria-label',am);else h1.removeAttribute('aria-label')}
 }
-zeile.addEventListener('click',e=>{if(e.target.closest('.zeitversatz-anmelden')){try{sessionStorage.setItem('investtimer-nach-login','start')}catch{}$('#account-login')?.click()}});
+zeile.addEventListener('click',e=>{const pr=e.target.closest('.zeitversatz-premium');if(pr){IT.oeffneKonto&&IT.oeffneKonto(pr,'paywall');return}
+ if(e.target.closest('.zeitversatz-anmelden')){try{sessionStorage.setItem('investtimer-nach-login','start')}catch{}$('#account-login')?.click()}});
 
 /* Reihenfolge unter dem Einordnungssatz (I3): Aufbau-Karte, Film-Karte (nur ausgeloggt), Alarm, KI */
 function ordnen(){const as=$('.assessment');if(!as)return;['#aufbau-karte','#film-karte','#alarm-karte','.ki-bruecke-start'].map(x=>$(x)).filter(Boolean).reduce((v,el)=>{if(v.nextElementSibling!==el)v.after(el);return el},as)}
@@ -3100,7 +3115,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.27-1148", "d": "27.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
+const VERSION={"v": "2026.11.27-1238", "d": "27.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
@@ -3344,7 +3359,7 @@ const KT={de:{
  fLimit:'Deine freie Frage für heute ist verbraucht. Morgen geht’s weiter – die Beispielfragen funktionieren weiterhin.',fAusgelastet:'Die KI ist für heute ausgelastet. Die Beispielfragen funktionieren weiter.',
  fLogin:'Deine Anmeldung ist abgelaufen. Melde dich neu an, dann kannst du weiterfragen.',fLoginKnopf:'Neu anmelden',
  fAus:'Die KI ist gerade ausgeschaltet. Versuch es später noch einmal.',
- fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',
+ fNetz:'Keine Verbindung zur KI. Prüf dein Netz und versuch es gleich noch einmal.',fPremium:'Die KI gehört zu Premium.',fPremiumKnopf:'Premium ansehen',
  zumKi:'Zur KI',brueckeWert:'Was steckt hinter der {w}?',brueckeOhne:'Was steckt hinter dem Wert?',brueckeGrossText:'Die KI ordnet den Wert ein und beantwortet deine Fragen.',
  brueckePhase:'{n} mit der KI einordnen',kontextWert:'Du kommst von: Marktstress {w}',kontextPhase:'Du kommst von: {n}',
  frageEreignis:'Wie verlief „{n}“?',
@@ -3363,7 +3378,7 @@ const KT={de:{
  fLimit:'You’ve used today’s free question. More tomorrow – the example questions still work.',fAusgelastet:'The AI is at capacity for today. The example questions still work.',
  fLogin:'Your session has expired. Sign in again to keep asking.',fLoginKnopf:'Sign in again',
  fAus:'The AI is switched off right now. Try again later.',
- fNetz:'Can’t reach the AI. Check your connection and try again.',
+ fNetz:'Can’t reach the AI. Check your connection and try again.',fPremium:'The AI is part of Premium.',fPremiumKnopf:'See Premium',
  zumKi:'Go to AI',brueckeWert:'What’s behind the {w}?',brueckeOhne:'What’s behind the score?',brueckeGrossText:'The AI puts the score in context and answers your questions.',
  brueckePhase:'Put {n} in context with the AI',kontextWert:'You came from: market stress {w}',kontextPhase:'You came from: {n}',
  frageEreignis:'How did “{n}” unfold?',
@@ -3511,7 +3526,7 @@ function gespraechHtml(){
 }
 function nachrichtHtml(m,i){
  if(m.rolle==='du')return '<div class="ki-du"><span class="sr-only">'+esc(kt('du'))+': </span>'+esc(m.text)+'</div>';
- if(m.rolle==='fehler')return '<div class="ki-fehler" role="alert">'+esc(kt(m.text))+(m.text==='fLogin'?' <button type="button" class="text-button" data-ki="anmelden">'+esc(kt('fLoginKnopf'))+'</button>':'')+'</div>';
+ if(m.rolle==='fehler')return '<div class="ki-fehler" role="alert">'+esc(kt(m.text))+(m.text==='fLogin'?' <button type="button" class="text-button" data-ki="anmelden">'+esc(kt('fLoginKnopf'))+'</button>':'')+(m.text==='fPremium'?' <button type="button" class="text-button" data-ki="premium">'+esc(kt('fPremiumKnopf'))+'</button>':'')+'</div>';
  const letzte=i===st.gespraech.length-1;
  return '<article class="ki-antwort"><span class="sr-only">'+esc(kt('ki'))+': </span>'+md(m.text)
   +(letzte&&!st.busy&&m.folge&&m.folge.length?'<div class="ki-folge" aria-label="'+esc(kt('weiter'))+'">'+m.folge.map(q=>'<button type="button" class="ki-frage ki-chip" data-frage="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>':'')+'</article>';
@@ -3587,6 +3602,7 @@ async function fragen(text){
   if(r.status===401){antwort={rolle:'fehler',text:'fLogin'}}
   else if(r.status===429){const d=await r.json().catch(()=>({}));const aus=d.error==='ausgelastet';
    antwort={rolle:'fehler',text:aus?'fAusgelastet':'fLimit'};freiSetzen(Object.assign({},st.frei,aus?{ausgelastet:true}:{verbraucht:true}))}
+  else if(r.status===403){antwort={rolle:'fehler',text:'fPremium'}}  /* Premium-Pflicht, freies Konto (Nachtrag N2) */
   else if(r.status===503){antwort={rolle:'fehler',text:'fAus'}}
   else if(!r.ok){antwort={rolle:'fehler',text:'fNetz'}}
   else{const d=await r.json();if(d.frei)freiSetzen(d.frei);
@@ -3602,6 +3618,7 @@ function klick(e){
  if(f){if(!angemeldet()){$('#account-login')?.click();return}st.notiz=f.dataset.frage;const i=$('#ki-eingabe');if(i){i.value=st.notiz;i.focus();i.setSelectionRange(i.value.length,i.value.length)}return}
  const b=e.target.closest('[data-ki]');if(!b)return;
  if(b.dataset.ki==='anmelden'){$('#account-login')?.click();return}
+ if(b.dataset.ki==='premium'){IT.oeffneKonto&&IT.oeffneKonto(b,'paywall');return}
  if(b.dataset.ki==='info'){infoOffen=!infoOffen;const f=ansicht.querySelector('.ki-info-feld');if(f)f.hidden=!infoOffen;ansicht.querySelectorAll('.ki-info').forEach(x=>x.setAttribute('aria-expanded',infoOffen));platzUnten();return}
  if(b.dataset.ki==='neu'){st.gespraech=[];st.notiz='';st.kontext=null;haftUnten=true;zeichnen('titel');window.scrollTo({top:0})}
 }

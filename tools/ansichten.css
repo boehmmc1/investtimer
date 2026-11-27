@@ -463,8 +463,8 @@ body.wert-laedt .teilen-start{visibility:hidden}
 .zeitversatz-zeile[hidden]{display:none}
 .zeitversatz-zeile svg{width:18px;height:18px}
 .zeitversatz-zeile p{flex:1;margin:0;color:#6b5330}.zeitversatz-zeile b{font-weight:500;color:#5c3f16}
-.zeitversatz-anmelden{display:inline-block;box-sizing:border-box;min-width:44px;padding:13px 8px;margin:-13px -8px;border:0;background:none;color:#2e6d5c;font:500 13px/18px 'DM Sans',var(--sans);cursor:pointer;white-space:nowrap;text-align:center}
-@media(min-width:761px){.zeitversatz-zeile p{display:flex;flex-wrap:wrap;column-gap:4px}.zeitversatz-anmelden{margin-left:auto}}
+.zeitversatz-anmelden,.zeitversatz-premium{display:inline-block;box-sizing:border-box;min-width:44px;padding:13px 8px;margin:-13px -8px;border:0;background:none;color:#2e6d5c;font:500 13px/18px 'DM Sans',var(--sans);cursor:pointer;white-space:nowrap;text-align:center}
+@media(min-width:761px){.zeitversatz-zeile p{display:flex;flex-wrap:wrap;column-gap:4px}.zeitversatz-anmelden,.zeitversatz-premium{margin-left:auto}}
 @media(min-width:761px){.zeitversatz-zeile{max-width:680px;margin:6px auto 8px;box-sizing:border-box}}
 body.it-ausgeloggt .snapshot-label{visibility:hidden}
 #score-title.mit-datum{font-size:0!important;letter-spacing:0;margin-bottom:0}
@@ -485,8 +485,8 @@ body.it-ausgeloggt .snapshot-label{visibility:hidden}
  .ki-unten::before{content:'';position:absolute;left:0;right:0;top:-32px;height:32px;background:linear-gradient(rgba(248,248,243,0),var(--bg));pointer-events:none}
 }
 @media(min-width:761px){.ki-ansicht,#ki-ansicht{max-width:680px}}
-@media(max-width:480px){.zeitversatz-zeile{margin:4px 16px 6px;padding:9px 10px;gap:8px;font-size:12.5px;letter-spacing:-.1px}.zeitversatz-anmelden{font-size:12.5px}}
-@media(max-width:400px){.zeitversatz-zeile{font-size:12px;letter-spacing:-.15px;padding:9px 10px 9px 9px;gap:7px}.zeitversatz-zeile svg{width:16px;height:16px}.zeitversatz-anmelden{font-size:12px}}
+@media(max-width:480px){.zeitversatz-zeile{margin:4px 16px 6px;padding:9px 10px;gap:8px;font-size:12.5px;letter-spacing:-.1px}.zeitversatz-anmelden,.zeitversatz-premium{font-size:12.5px}}
+@media(max-width:400px){.zeitversatz-zeile{font-size:12px;letter-spacing:-.15px;padding:9px 10px 9px 9px;gap:7px}.zeitversatz-zeile svg{width:16px;height:16px}.zeitversatz-anmelden,.zeitversatz-premium{font-size:12px}}
 
 /* ---- Film-Karte (Block G): nur ausgeloggt, unter der Aufbau-Karte ---- */
 .film-karte2{width:100%;max-width:420px;margin:10px auto 0;box-sizing:border-box;border:1px solid #dfe5db;border-radius:18px;background:#fff;overflow:hidden;text-align:left}
@@ -535,3 +535,5 @@ a.wordmark:active{transform:scale(.96);opacity:.72}
 .start-frage-knoepfe{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .start-frage-knoepfe button{min-height:44px;padding:10px 16px;font-size:14px}
 .start-frage .primary.warn{background:#a24524;color:#fff}
+.zeitversatz-premium{font-weight:600}
+body.premium-sperre .snapshot-label{visibility:hidden}

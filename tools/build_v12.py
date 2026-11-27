@@ -519,7 +519,7 @@ TEXTE_ANMELDUNG_EN = ("email:'Email address',emailPlaceholder:'name@example.com'
 LIVE_JS_ANMELDUNG = """/* Oeffentlich: zeitversetzter Stand aus /data/stress.json. Aktuell: nur nach Anmeldung ueber /api/aktuell. */
 const IT=window.InvestTimer={live:null,pub:result,member:false,chat:null,session:null,gespeichert:null,wertEndgueltig:true,
  /* Mit Sitzung nie den oeffentlichen bzw. eingebetteten Wert: aktueller Wert, sonst der zuletzt geladene (je Konto gespeichert), sonst keiner */
- get view(){return this.member?(this.live||this.gespeichert||null):this.pub},
+ get view(){return this.member?(this.premiumSperre?this.pub:(this.live||this.gespeichert||null)):this.pub},
  setMember(v){this.member=!!v;apply()}};
 function apply(){
  const open=$$('#details-panel details').map(e=>e.open),y=window.scrollY;
@@ -587,7 +587,7 @@ IT.codeFuerAenderung=async()=>{
 };
 IT.emailVonSitzung=()=>{try{return JSON.parse(atob((IT.session||gemerkt()).access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email}catch{return ''}};
 IT.abmelden=async()=>{
- const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.gespeichert=null;IT.vergesseWert();IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');lastSeen='';IT.setMember(false);
+ const s=IT.session||gemerkt();merke(null);IT.session=null;IT.live=null;IT.gespeichert=null;IT.premiumSperre=false;document.body.classList.remove('premium-sperre');IT.vergesseWert();IT.wertEndgueltig=true;document.body.classList.remove('wert-laedt');lastSeen='';IT.setMember(false);
  if(s)sb('/auth/v1/logout',{method:'POST',headers:{Authorization:'Bearer '+s.access_token}}).catch(()=>{});
 };
 let lastLoad=0,lastSeen='';
@@ -596,20 +596,26 @@ function loadLive(force){
  document.body.dataset.live='laedt';
  const oeffentlich=fetch('/data/stress.json',{cache:'no-store'}).then(r=>{IT.offline=!!r.headers.get('X-InvestTimer-Offline');IT.offlineStand=IT.offline?Date.parse(r.headers.get('Date')||'')||null:null;document.dispatchEvent(new Event(IT.offline?'investtimer:offline':'investtimer:online'));return r.ok?r.json():Promise.reject()})
   .then(d=>normaliseResult(d.publicSnapshot)||normaliseResult(d)).catch(()=>null);
- let liveFehler=false;
+ let liveFehler=false,premium=false;
+ /* 403 "premium" (Premium-Pflicht, freies Konto; Nachtrag N2): angemeldet bleiben, zeitversetzter Stand plus Bezahlschranke, nie abgemeldet */
  const aktuell=IT.token().then(tok=>!tok?null:fetch('/api/aktuell',{cache:'no-store',headers:{Authorization:'Bearer '+tok}})
-  .then(r=>{if(r.status===401){IT.abmelden();return null}if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
+  .then(async r=>{if(r.status===401){IT.abmelden();return null}
+   if(r.status===403){const d=await r.json().catch(()=>({}));if(d.error==='premium'){premium=true;return null}}
+   if(!r.ok)liveFehler=true;return r.ok?r.json():null}).then(d=>d&&normaliseResult(d))).catch(()=>{liveFehler=!!IT.session;return null});
  Promise.all([oeffentlich,aktuell]).then(([pub,live])=>{
   document.body.dataset.live='fertig';
-  IT.liveFehler=!!(liveFehler&&IT.session);IT.aktualitaet&&IT.aktualitaet();
+  IT.liveFehler=!!(liveFehler&&IT.session);
+  const sperreNeu=!!(premium&&IT.session);if(sperreNeu!==!!IT.premiumSperre){IT.premiumSperre=sperreNeu;document.body.classList.toggle('premium-sperre',sperreNeu)}
+  if(sperreNeu&&IT.gespeichert){IT.gespeichert=null;IT.vergesseWert()}  /* kein alter Premium-Wert aus dem Speicher */
+  IT.aktualitaet&&IT.aktualitaet();
   if(!pub&&!live){lastLoad=0;return}
-  const seen=JSON.stringify([live,pub,!!IT.session]);if(seen===lastSeen)return;
+  const seen=JSON.stringify([live,pub,!!IT.session,sperreNeu]);if(seen===lastSeen)return;
   if(document.querySelector('dialog[open]:not(#access-preview-dialog)')){lastLoad=0;return}
   /* API nicht erreichbar: angemeldet bleiben, gespeicherten Stand zeigen und das sagen (kein Wechsel auf "Anmelden") */
-  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler));
+  if(pub)IT.pub=pub;IT.live=live;lastSeen=seen;IT.member=!!(IT.session&&(live||liveFehler||sperreNeu));
   if(live){IT.gespeichert=live;merkeWert(live)}
   /* c) frischer Wert: der Bogen gleitet vom gespeicherten Stand (bzw. fuellt sich einmal aus dem Platzhalter) */
-  if(live||!IT.session||!IT.wertEndgueltig)wertFertig();apply();
+  if(live||sperreNeu||!IT.session||!IT.wertEndgueltig)wertFertig();apply();
   if(liveFehler&&IT.session&&typeof toast==='function')toast(document.documentElement.lang==='en'?'The latest reading isn’t available right now. Showing the saved reading.':'Der aktuelle Wert ist gerade nicht erreichbar. Du siehst den gespeicherten Stand.');
  });
 }
