@@ -39,7 +39,7 @@ alarme_setzen([('ueber', 60, 1, None), ('unter', 50, 0, '2026-11-18'), ('unter',
 
 LOGIN_HASH = '#access_token=%s&refresh_token=r1&expires_in=3600&type=magiclink' % TOKEN
 ZUSTAND = {'wert': None, 'chat_status': 200, 'chat_ok': True, 'frei': {'verbraucht': False, 'ausgelastet': False}, 'chat_fehler': 'limit', 'chat_verzoegerung': 0.4, 'alarme': None,
-           'antwort': None, 'aufrufe': [], 'aktuell_verzoegerung': 0, 'feedback_status': 200, 'feedback': [], 'alter_min': 3, 'fehler': [], 'ansichten': []}
+           'antwort': None, 'aufrufe': [], 'aktuell_verzoegerung': 0, 'feedback_status': 200, 'feedback': [], 'alter_min': 3, 'fehler': [], 'ansichten': [], 'pflicht': False}
 
 
 def _historie_funktion():
@@ -96,9 +96,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def _auth(self):
         return self.headers.get('Authorization') == 'Bearer ' + TOKEN
 
+    def _premium_sperre(self, pfad):
+        """Premium-Pflicht (IT_PREMIUM_PFLICHT=1, freies Konto): wie die API 403 {"error":"premium"} auf Premium-Pfaden"""
+        if ZUSTAND['pflicht'] and self._auth() and (pfad in ('/api/aktuell', '/api/historie', '/api/chat', '/api/push/geraet') or pfad.startswith('/api/alarme')):
+            if not (pfad == '/api/chat' and self.command == 'GET'):
+                self._json({'error': 'premium'}, 403); return True
+        return False
+
     def do_GET(self):
         pfad = self.path.split('?')[0]
         ZUSTAND['aufrufe'].append(('GET', pfad))
+        if self._premium_sperre(pfad):
+            return
         if pfad == '/api/teilen/stand':
             if not self._auth():
                 return self._json({'error': 'login'}, 401)
@@ -152,7 +161,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if pfad == '/api/konto':
             if not self._auth():
                 return self._json({'error': 'login'}, 401)
-            return self._json({'premium': False, 'pflicht': False, 'paywall': False, 'status': 'frei',
+            return self._json({'premium': False, 'pflicht': ZUSTAND['pflicht'], 'paywall': ZUSTAND['pflicht'], 'status': 'frei',
                                'ki': dict(ZUSTAND['frei'], heute=int(ZUSTAND['frei']['verbraucht']), frei=1), 'tarife': {}})
         if pfad == '/api/konto/export':
             return self._json({'email': EMAIL, 'alarme': []}) if self._auth() else self._json({'error': 'login'}, 401)
@@ -192,6 +201,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         pfad = self.path.split('?')[0]
+        if self._premium_sperre(pfad):
+            self.rfile.read(int(self.headers.get('Content-Length') or 0)); return
         if pfad == '/api/alarme' or pfad.startswith('/api/alarme/'):
             return self._alarm_schreiben(self.command)
         roh = self.rfile.read(int(self.headers.get('Content-Length') or 0))
