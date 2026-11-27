@@ -6,4 +6,4 @@ After=network-online.target investtimer-test-api.service
 Type=oneshot
 Nice=10
 TimeoutStartSec=20min
-ExecStart=/bin/bash /var/www/investtimer/tools/qa_testumgebung.sh
+ExecStart=/bin/bash /var/www/investtimer-test/tools/qa_testumgebung.sh

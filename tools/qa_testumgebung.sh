@@ -1,7 +1,7 @@
 #!/bin/bash
 # Naechtliche Pruefung der Testumgebung (Nachtrag N5): tests/qa/testumgebung.py (Bearer-Token eines kurzlebigen Testkontos gegen
 # test.investtimer.net, Kontoloeschung -> alter Token 401, nginx /api/ ohne Basic-Auth). Mail an info@ nur bei Befunden.
-# Laeuft ueber investtimer-qa-test.timer (taeglich 04:40 UTC) und zusaetzlich in tools/qa_gesamt.sh.
+# Laeuft ueber investtimer-qa-test.timer (taeglich 04:40 UTC, aus dem Checkout der Testumgebung) und in tools/qa_gesamt.sh.
 set -u
 cd "$(dirname "$0")/.."
 export QA_AUSGABE=/var/lib/investtimer/qa-test/$(date +%Y-%m-%d)
