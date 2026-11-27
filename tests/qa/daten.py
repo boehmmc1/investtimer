@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """QA Bereich 2 – Daten und Berechnung (nur lesend; ein Testkonto fuer die eingeloggten Endpunkte, wird geloescht).
 - Wert der Seite (/api/aktuell eingeloggt) = Wert der Volafly-API (127.0.0.1:8100/v1/marktstress), gleicher Zeitpunkt; Stufe passt.
-- 7-Tage-Regel: stress.json, /api/historie-oeffentlich, Teilen-Manifest und -Bilder, Vorschaubild nirgends juenger als heute-7.
+- 30-Tage-Regel (DEC-018): stress.json, /api/historie-oeffentlich, Teilen-Manifest und -Bilder, Vorschaubild nirgends juenger als heute-30.
 - Verlauf: Wochen- und Monatsverdichtung gegen die Rohhistorie (aufgezeichnet + zurueckgerechnet) nachgerechnet,
   keine Luecken > 7 Kalendertage im letzten Jahr, Endpunkt = letzter Wert.
 - Ereignisphasen: Hoechstwert, Datum und "wieder unter 40 nach X Tagen" fuer 3 Phasen unabhaengig nachgerechnet; Start/Ende plausibel.
@@ -19,7 +19,7 @@ from gemeinsam import ROOT, melde, http, testkonto, aufraeumen, bearer, ende  # 
 
 B = "2 Daten"
 HEUTE = date.today()
-GRENZE = (HEUTE - timedelta(days=7)).isoformat()
+GRENZE = (HEUTE - timedelta(days=30)).isoformat()
 STUFE = lambda w: sum(w >= g for g in (20, 40, 60, 80))
 
 
@@ -42,13 +42,18 @@ def wert_und_regel(tok):
     melde(B, "eingeloggt aktueller Stand (nicht zeitversetzt)", live.get("asOf", "") > GRENZE, "hoch", "/api/aktuell", live.get("asOf"))
     melde(B, "Stufe passt zum Wert (Grenzen 20/40/60/80)", 0 <= STUFE(live["rounded"]) <= 4, "mittel", "Stufe %d fuer %d" % (STUFE(live["rounded"]), live["rounded"]))
     _, s, _ = http("GET", "/data/stress.json")
-    melde(B, "stress.json <= heute-7", s["publicSnapshot"]["asOf"] <= GRENZE and s.get("asOf", "") <= GRENZE, "kritisch", "/data/stress.json", s["publicSnapshot"]["asOf"])
+    melde(B, "stress.json <= heute-30", s["publicSnapshot"]["asOf"] <= GRENZE and s.get("asOf", "") <= GRENZE, "kritisch", "/data/stress.json", s["publicSnapshot"]["asOf"])
     _, h, _ = http("GET", "/api/historie-oeffentlich")
     letzte = max([p[0] for k in ("taeglich", "woechentlich", "monatlich") for p in h.get(k, [])] or ["0"])
-    melde(B, "oeffentlicher Verlauf <= heute-7 (alle Verdichtungen)", h.get("bis", "9") <= GRENZE and letzte <= GRENZE, "kritisch", "/api/historie-oeffentlich", (h.get("bis"), letzte))
-    melde(B, "oeffentliche Ereignisse nur mit Spitze <= heute-7", all(e["spitze"]["d"] <= GRENZE for e in h.get("ereignisse", [])), "hoch", "/api/historie-oeffentlich")
+    melde(B, "oeffentlicher Verlauf <= heute-30 (alle Verdichtungen)", h.get("bis", "9") <= GRENZE and letzte <= GRENZE, "kritisch", "/api/historie-oeffentlich", (h.get("bis"), letzte))
+    melde(B, "oeffentliche Ereignisse nur mit Spitze <= heute-30", all(e["spitze"]["d"] <= GRENZE for e in h.get("ereignisse", [])), "hoch", "/api/historie-oeffentlich")
+    # DEC-019: oeffentlicher Verlauf hoechstens ein Jahr vor dem oeffentlichen Stand (taeglich, woechentlich, monatlich, Ereignisse)
+    von = (date.fromisoformat(h.get("bis", "2000-01-01")) - timedelta(days=365)).isoformat() if isinstance(h, dict) and h.get("bis") else "9"
+    erste = min([r[0][0] for r in (h.get(k) or [] for k in ("taeglich", "woechentlich", "monatlich")) if r] or ["0"])
+    melde(B, "oeffentlicher Verlauf beginnt nicht frueher als ein Jahr vor dem oeffentlichen Stand", erste >= von
+          and all(e["start"] >= von for e in h.get("ereignisse", [])), "hoch", "/api/historie-oeffentlich", (erste, von))
     _, m, _ = http("GET", "/teilen/aktuell/manifest.json")
-    melde(B, "Teilen-Bilder <= heute-7", isinstance(m, dict) and m.get("asOf", "9") <= GRENZE and m.get("wert") == s["publicSnapshot"]["rounded"], "kritisch", "/teilen/aktuell/manifest.json", m.get("asOf") if isinstance(m, dict) else m)
+    melde(B, "Teilen-Bilder <= heute-30", isinstance(m, dict) and m.get("asOf", "9") <= GRENZE and m.get("wert") == s["publicSnapshot"]["rounded"], "kritisch", "/teilen/aktuell/manifest.json", m.get("asOf") if isinstance(m, dict) else m)
     og = sorted(Path("/var/lib/investtimer/og").glob("og-20*.png"))
     melde(B, "Vorschaubild aus dem zeitversetzten Stand erzeugt", bool(og), "mittel", "/var/lib/investtimer/og", og[-1].name if og else "fehlt")
     _, seite, _ = http("GET", "/")

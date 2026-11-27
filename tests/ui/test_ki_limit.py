@@ -10,13 +10,12 @@ fehler = []
 def pruefe(bed, text):
     print(('ok   ' if bed else 'FEHL ') + text)
     if not bed: fehler.append(text)
-TEXT = {'de': ('1 freie Frage pro Tag · Beispielfragen unbegrenzt',
-               'Deine freie Frage für heute ist verbraucht. Morgen geht’s weiter – die Beispielfragen funktionieren weiterhin.',
-               'Die KI ist für heute ausgelastet. Die Beispielfragen funktionieren weiter.'),
-        'en': ('1 free question per day · Example questions unlimited',
-               'You’ve used today’s free question. More tomorrow – the example questions still work.',
-               'The AI is at capacity for today. The example questions still work.')}
-ZUSTAND_JS = """()=>{const i=document.querySelector('#ki-eingabe'),l=document.querySelector('.ki-limit');
+TEXT = {'de': ('1 freie Frage heute · KI, keine Anlageberatung', 'Heutige freie Frage genutzt · KI, keine Anlageberatung',
+               'KI für heute ausgelastet · keine Anlageberatung'),
+        'en': ('1 free question today · AI, not investment advice', 'Today’s free question used · AI, not investment advice',
+               'AI at capacity today · not investment advice')}  # Block J3 (25.11.2026): eine Zeile mit Info-Symbol
+AUS_MELDUNG = {'de': 'Die KI ist für heute ausgelastet. Die Beispielfragen funktionieren weiter.', 'en': 'The AI is at capacity for today. The example questions still work.'}
+ZUSTAND_JS = """()=>{const i=document.querySelector('#ki-eingabe'),l=document.querySelector('#ki-limit span');
  return {gesperrt:i?i.disabled:null,limit:l?l.textContent:'',text:document.querySelector('#ki-ansicht').innerText,
   hervor:document.querySelector('#ki-ansicht').classList.contains('ki-frei-leer')}}"""
 async def main():
@@ -69,7 +68,7 @@ async def main():
                 await pg.fill('#ki-eingabe', 'Noch eine eigene Frage'); await pg.press('#ki-eingabe', 'Enter'); await pg.wait_for_timeout(1000)
                 z = await pg.evaluate(ZUSTAND_JS)
                 fm = await pg.evaluate("[...document.querySelectorAll('.ki-fehler')].pop()?.innerText||''")
-                pruefe(z['gesperrt'] is True and z['limit'] == TEXT[sp][2] and TEXT[sp][2] in fm, f'{tag}: ausgelastet: Meldung und gesperrte Eingabe')
+                pruefe(z['gesperrt'] is True and z['limit'] == TEXT[sp][2] and AUS_MELDUNG[sp] in fm, f'{tag}: ausgelastet: Meldung und gesperrte Eingabe')
                 harness.ZUSTAND.update(chat_status=200, chat_fehler='limit')
                 # Zustand aus dem Konto beim Laden (ohne Frage)
                 harness.ZUSTAND['frei'] = {'verbraucht': True, 'ausgelastet': False}

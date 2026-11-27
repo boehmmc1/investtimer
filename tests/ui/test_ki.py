@@ -36,7 +36,7 @@ async def main():
                 pruefe(g == [3, 3, 3], f'{tag}: drei Gruppen mit je drei Fragen {g}')
                 txt = await pg.evaluate("document.querySelector('#ki-ansicht').innerText")
                 pruefe('Was bewegt dich am Markt?' in txt and ('Anmelden & KI fragen' in txt) == (not ein), f'{tag}: Ueberschrift, Anmelde-Knopf nur ausgeloggt')
-                if ein: pruefe('STAND HEUTE' in txt.upper() and '1 freie Frage pro Tag · Beispielfragen unbegrenzt' in txt and 'Noch' not in txt and 'Keine Anlageberatung' in txt, f'{tag}: Eyebrow mit Wert, Hinweiszeile mit Restfragen')
+                if ein: pruefe('STAND HEUTE' in txt.upper() and '1 freie Frage heute · KI, keine Anlageberatung' in txt and 'Noch' not in txt, f'{tag}: Eyebrow mit Wert, Hinweiszeile (J3)')
                 for k in ('VIX', 'S&P', 'MOVE', 'Put/Call', '{wert}', '…', 'Frag die KI dazu'):
                     pruefe(k not in txt, f'{tag}: kein "{k}" in der KI-Ansicht')
                 if w < 760:

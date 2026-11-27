@@ -65,7 +65,8 @@ async def main():
                 pruefe(any('a=teilen-wert' in a for a in harness.ZUSTAND['ansichten']) and all('@' not in a for a in harness.ZUSTAND['ansichten']), f'{tag}: Zaehlung ohne Kennung')
             # Verlauf: Knopf neben den Zeitraeumen, gewaehlter Zeitraum wird geteilt
             await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1500)
-            await pg.click('[data-spanne="5J"]'); await pg.wait_for_timeout(500)
+            zr = '5J' if ein else '1J'  # DEC-019: ausgeloggt hoechstens ein Jahr
+            await pg.click('[data-spanne="%s"]' % zr); await pg.wait_for_timeout(500)
             vk = pg.locator('.verlauf-kopf .teilen-knopf')
             r = await pg.evaluate("""()=>{const k=document.querySelector('.verlauf-kopf .teilen-knopf'),z=document.querySelector('.verlauf-knoepfe');if(!k)return null;
               const a=k.getBoundingClientRect(),c=z.getBoundingClientRect();return {h:a.height,rechts:a.right<=innerWidth+.5,ueber:!(a.left>=c.right||a.top>=c.bottom||a.bottom<=c.top)}}""")
@@ -73,10 +74,10 @@ async def main():
             await vk.click(); await pg.wait_for_timeout(1200)
             if mobil:
                 g = await pg.evaluate("window.__geteilt")
-                pruefe(g[-1]['name'] == 'investtimer-verlauf-5J.png' and '/s/verlauf/5J/' + STAND in g[-1]['text'], f'{tag}: Verlauf 5J nativ geteilt')
+                pruefe(g[-1]['name'] == 'investtimer-verlauf-%s.png' % zr and '/s/verlauf/%s/' % zr + STAND in g[-1]['text'], f'{tag}: Verlauf {zr} nativ geteilt')
             else:
                 d = await pg.evaluate(DIALOG_JS)
-                pruefe(d and d['bild'].endswith('/verlauf-5J-quer-%s.png' % sp) and d['breite'] == 1200 and '/s/verlauf/5J/' + STAND in d['kopieren'], f'{tag}: Verlauf 5J im Dialog')
+                pruefe(d and d['bild'].endswith('/verlauf-%s-quer-%s.png' % (zr, sp)) and d['breite'] == 1200 and '/s/verlauf/%s/' % zr + STAND in d['kopieren'], f'{tag}: Verlauf {zr} im Dialog')
                 if SHOT and sp == 'de': await pg.screenshot(path=str(SHOT / f'teilen_dialog_verlauf_{w}.png'))
                 await pg.click('.teilen-zu'); await pg.wait_for_timeout(200)
             # Ereigniskarte
@@ -96,9 +97,10 @@ async def main():
             pruefe(not js, f'{tag}: keine JS-/Konsolenfehler {js[:3]}')
             await ctx.close()
         # Ankunft ueber geteilte Links
-        for ziel, erwartet in (('?z=5J&utm_source=teilen&utm_medium=whatsapp#verlauf', {'spanne': '5J', 'm': 'whatsapp'}),
-                               ('?phase=corona&utm_source=teilen&utm_medium=x#verlauf', {'spanne': 'A', 'phase': 'corona', 'm': 'x'}),
-                               ('?phase=fruehjahr2026&utm_source=teilen&utm_medium=linkedin&lang=en#verlauf', {'spanne': '5J', 'phase': 'fruehjahr2026', 'm': 'linkedin', 'lang': 'en'}),
+        # Ausgeloggt (DEC-019): geteilte Links auf 5J/Alle oder aeltere Phasen landen im laengsten oeffentlichen Zeitraum (1J)
+        for ziel, erwartet in (('?z=5J&utm_source=teilen&utm_medium=whatsapp#verlauf', {'spanne': '1J', 'm': 'whatsapp'}),
+                               ('?phase=corona&utm_source=teilen&utm_medium=x#verlauf', {'spanne': '1J', 'm': 'x'}),
+                               ('?phase=fruehjahr2026&utm_source=teilen&utm_medium=linkedin&lang=en#verlauf', {'spanne': '1J', 'phase': 'fruehjahr2026', 'm': 'linkedin', 'lang': 'en'}),
                                ('?utm_source=teilen&utm_medium=threads', {'m': 'threads'})):
             ctx = await b.new_context(viewport={'width': 1280, 'height': 860}); pg = await ctx.new_page(); js = []
             pg.on('pageerror', lambda e: js.append(str(e)))

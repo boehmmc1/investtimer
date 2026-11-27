@@ -38,9 +38,9 @@ async def main():
             css = await pg.evaluate("(()=>{const d=document.querySelector('#verlauf-ansicht .verlauf-diagramm'),t=d.querySelector('text');return [getComputedStyle(d).userSelect,getComputedStyle(t).userSelect,getComputedStyle(d).touchAction,[...document.querySelectorAll('style')].some(s=>/verlauf-diagramm[^{]*\{[^}]*-webkit-touch-callout:none/.test(s.textContent))]})()")
             pruefe(css[0] == 'none' and css[1] == 'none' and css[2] == 'pan-y' and css[3], f'{tag}: keine Textauswahl, kein Callout, touch-action pan-y {css}')
             z = await pg.evaluate(ZEILE)
-            heute = ('Today' if sp == 'en' else 'Heute') if ein else None
-            pruefe(not z['aktiv'] and ((z['text'].startswith(heute + ' · ')) if heute else ' · ' in z['text']) and z['text'].split(' · ')[1].split()[-1].isdigit(), f'{tag}: Werte-Zeile ohne Auswahl "{z["text"]}"')
-            await pg.click('[data-spanne="A"]'); await pg.wait_for_timeout(500)
+            heute = ('Today' if sp == 'en' else 'Heute') if ein else ('As of' if sp == 'en' else 'Stand')
+            pruefe(not z['aktiv'] and (z['text'].startswith(heute + (' · ' if ein else ' '))) and z['text'].split(' · ')[1].split()[-1].isdigit(), f'{tag}: Werte-Zeile ohne Auswahl "{z["text"]}"')
+            await pg.click('[data-spanne="%s"]' % ('A' if ein else '1J')); await pg.wait_for_timeout(500)  # DEC-019
             box = await pg.locator('#verlauf-ansicht .verlauf-svg').bounding_box()
             y0 = box['y'] + box['height'] * 0.5
             if w < 760:
@@ -130,7 +130,7 @@ async def main():
             css = await pg.evaluate("(()=>{const d=document.querySelector('#verlauf-ansicht .verlauf-diagramm'),s=getComputedStyle(d);return [s.webkitUserSelect||s.userSelect,s.touchAction,[...document.querySelectorAll('style')].some(x=>/verlauf-diagramm[^{]*\\{[^}]*-webkit-touch-callout:none/.test(x.textContent))]})()")
             # -webkit-touch-callout wirkt nur in iOS-Safari (Linux-WebKit meldet es nicht): Regel im ausgelieferten CSS pruefen
             pruefe(css[0] == 'none' and css[1] == 'pan-y' and css[2], f'{tag}: -webkit-user-select none, pan-y, -webkit-touch-callout-Regel vorhanden {css}')
-            await pg.click('[data-spanne="A"]'); await pg.wait_for_timeout(500)
+            await pg.click('[data-spanne="%s"]' % ('A' if ein else '1J')); await pg.wait_for_timeout(500)  # DEC-019
             box = await pg.locator('#verlauf-ansicht .verlauf-svg').bounding_box(); y0 = box['y'] + box['height'] * 0.5
             await pg.evaluate("""([x,y,w])=>{const d=document.querySelector('#verlauf-ansicht .verlauf-diagramm');const ev=(t,cx)=>d.dispatchEvent(new PointerEvent(t,{bubbles:true,pointerType:'touch',pointerId:5,clientX:cx,clientY:y}));
               ev('pointerdown',x);for(let i=1;i<=10;i++)ev('pointermove',x+w*0.03*i);}""", [box['x'] + box['width'] * 0.3, y0, box['width']])

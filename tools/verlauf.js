@@ -43,7 +43,10 @@ function vMitAktuell(reihe,art){
  else r.push([d,w,v.count??14,'a'].concat(art==='taeglich'?[]:[w,w]));
  return r;
 }
-function vAuswahl(){
+/* DEC-019: ausgeloggt hoechstens ein Jahr (kein 5J, kein Alle) */
+const vSpannen=()=>vAn()?SPANNEN:SPANNEN.filter(x=>x[0]!=='5J'&&x[0]!=='A');
+function vSpanneGueltig(){if(!vSpannen().some(x=>x[0]===verlaufSpanne))verlaufSpanne='1J'}
+function vAuswahl(){vSpanneGueltig();
  const [,tage,art]=SPANNEN.find(s=>s[0]===verlaufSpanne)||SPANNEN[2];
  const reihe=vMitAktuell((art==='monatlich'&&!verlauf.monatlich?vMonate(verlauf.woechentlich):verlauf[art])||[],art);
  const ende=reihe.length?vMs(reihe[reihe.length-1][0]):Date.now(),start=tage?ende-tage*864e5:-Infinity;
@@ -123,7 +126,7 @@ function verlaufHtml(){
  if(v.fehler||!(v.taeglich||[]).length)return '<p class="chart-note">'+t('verlaufFehlt')+'</p>';
  const {p,e,art}=vAuswahl();if(!p.length)return '<p class="chart-note">'+t('verlaufFehlt')+'</p>';
  const x=vX(p),aktiv=vAktivId(e);
- const knoepfe=SPANNEN.map(([k])=>'<button type="button" class="verlauf-spanne'+(k===verlaufSpanne?' aktiv':'')+'" data-spanne="'+k+'" aria-pressed="'+(k===verlaufSpanne)+'">'+(k==='A'?t('verlaufAlle'):k==='1J'?t('verlauf1J'):k==='5J'?t('verlauf5J'):k)+'</button>').join('');
+ const knoepfe=vSpannen().map(([k])=>'<button type="button" class="verlauf-spanne'+(k===verlaufSpanne?' aktiv':'')+'" data-spanne="'+k+'" aria-pressed="'+(k===verlaufSpanne)+'">'+(k==='A'?t('verlaufAlle'):k==='1J'?t('verlauf1J'):k==='5J'?t('verlauf5J'):k)+'</button>').join('');
  const name=m=>vEn()?m.name_en:m.name;
  /* Desktop: unsichtbare Schaltflaechen ueber den Baendern (Tab, Enter, Hover); mobil: Chips */
  const baender=vMobil()?'':'<div class="verlauf-baender">'+e.map(m=>{const [x0,bx]=vBand(m,x);
@@ -188,7 +191,7 @@ function vZeitpunkt(q,art){const tag=new Date(vMs(q[0])).toLocaleDateString(vLan
 function vWertzeileHtml(i){
  if(!vPos)vPositionen();if(!vPos)return '';
  const {p,e,art}=vPos,ende=i==null,q=p[ende?p.length-1:i];
- const wann=ende?(vAn()?(vEn()?'Today':'Heute'):vZeitpunkt(q,'taeglich')):vZeitpunkt(q,art);
+ const wann=ende?(vAn()?(vEn()?'Today':'Heute'):(vEn()?'As of ':'Stand ')+vZeitpunkt(q,'taeglich')):vZeitpunkt(q,art);
  const ph=ende?null:(e||[]).find(m=>q[0]>=m.start&&q[0]<m.ende);
  return '<span class="wz-punkt" style="background:'+ITStufe.farbe(q[1])+'" aria-hidden="true"></span><span class="wz-text">'+esc(wann)+' · '+esc(t('tipWert').replace('{w}',q[1]))+'</span>'
   +(ph?'<button type="button" class="wz-phase" data-ereignis="'+ph.id+'">'+esc(vEn()?ph.kurz_en:ph.kurz)+'</button>':'')

@@ -380,7 +380,7 @@ a.primary.full{display:flex;align-items:center;justify-content:center;text-decor
 """
 
 # Alarme, Push und Installation (tools/alarme.js)
-ALARM_JS = (ROOT / "tools" / "alarme.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "alarmblatt.js").read_text(encoding="utf-8")
+ALARM_JS = (ROOT / "tools" / "alarme.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "alarmblatt.js").read_text(encoding="utf-8") + "\n" + (ROOT / "tools" / "aufbau.js").read_text(encoding="utf-8")
 TEXTE_ALARM_DE = ("alarmEyebrow:'DEINE ALARME',alarmTitle:'Deine Schwelle. Dein Hinweis.',"
                   "alarmIntro:'Lege fest, bei welchem Marktstress du eine Nachricht aufs Handy bekommst.',"
                   "alarmWenn:'Benachrichtigen, wenn der Marktstress',alarmSteigt:'über die Schwelle steigt',alarmFaellt:'unter die Schwelle fällt',"
@@ -643,7 +643,9 @@ function normaliseResult(d){
   if(rounded!==null&&!(Number.isInteger(rounded)&&rounded>=0&&rounded<=100))return null;
   const part=r=>r&&typeof r.name==='string'&&Number.isFinite(r.effectiveWeight);
   if(!d.rows.every(part)||!d.blocks.every(part)||!Number.isInteger(d.count))return null;
-  return {rounded,count:d.count,rows:d.rows,blocks:d.blocks,asOf:/^\\d{4}-\\d{2}-\\d{2}$/.test(d.asOf)?d.asOf:null,berechnetUm:typeof d.berechnetUm==='string'?d.berechnetUm:null};
+  return {rounded,count:d.count,rows:d.rows,blocks:d.blocks,asOf:/^\\d{4}-\\d{2}-\\d{2}$/.test(d.asOf)?d.asOf:null,berechnetUm:typeof d.berechnetUm==='string'?d.berechnetUm:null,
+   /* Teilwerte der drei Blickwinkel (Aufbau): nur Zahlen 0-100 */
+   bloecke:d.bloecke&&typeof d.bloecke==='object'?Object.fromEntries(['volatility','price','positioning'].filter(k=>Number.isFinite(d.bloecke[k])&&d.bloecke[k]>=0&&d.bloecke[k]<=100).map(k=>[k,d.bloecke[k]])):{}};
 }
 """
 
@@ -852,12 +854,12 @@ def main(source, target_dir, preview, anmeldung=None):
     (ROOT / "server" / "seed_history.json").write_text(
         json.dumps({fallback["asOf"]: fallback}, indent=1) + "\n", encoding="utf-8")
     # Rueckfall in der Seite (nur sichtbar, wenn /data/stress.json nicht laedt): der oeffentliche, zeitversetzte Stand
-    # (mindestens 7 Tage alt, wie /data/stress.json), nicht der juengere Stand der UI-Vorlage
+    # (mindestens 30 Tage alt, wie /data/stress.json), nicht der juengere Stand der UI-Vorlage
     try:
         pub = json.load(open(os.environ.get("IT_STRESS_DATEI", "/var/lib/investtimer/data/stress.json"))).get("publicSnapshot") or {}
         if isinstance(pub.get("rounded"), int) and pub.get("asOf"):
             fallback = {"model": fallback["model"], "asOf": pub["asOf"], "rounded": pub["rounded"], "count": pub.get("count", 14),
-                        "total": pub.get("total", 14), "rows": pub["rows"], "blocks": pub["blocks"]}
+                        "total": pub.get("total", 14), "rows": pub["rows"], "blocks": pub["blocks"], "bloecke": pub.get("bloecke", {})}
     except (OSError, ValueError, KeyError):
         pass
 
@@ -1056,19 +1058,32 @@ def main(source, target_dir, preview, anmeldung=None):
     # Safe-Area ueberall ueber Variablen (eine Stelle in tools/ansichten.css liest env(), Tests koennen sie setzen)
     for seite in ("top", "bottom", "left", "right"):
         html = html.replace("env(safe-area-inset-%s,0px)" % seite, "var(--sa-%s)" % seite).replace("env(safe-area-inset-%s)" % seite, "var(--sa-%s)" % seite)
+    if os.environ.get("IT_TESTUMGEBUNG") == "1":  # Testumgebung (DEC-020): Band oben, nicht indexieren
+        html = html.replace("<head>\n", '<head>\n<meta name="robots" content="noindex, nofollow">\n', 1)
+        html = re.sub(r"(<body[^>]*>)", r'\1<div class="test-band" role="note" style="position:sticky;top:0;z-index:9999;background:#a24524;color:#fff;font:600 12px/1.4 system-ui,sans-serif;text-align:center;padding:6px 12px;letter-spacing:.4px">TESTUMGEBUNG – keine echten Zahlungen</div>', html, count=1)
+    # Erklaerungen der 14 Bestandteile fuer den Reiter Aufbau (Block K) global verfuegbar
+    html = once(html, "return explanations;\n})();\n", "return explanations;\n})();\nwindow.ITErklaerungen=explanations;\n", "Erklaerungen global")
+    # Block K5: Hinweiszeile ausgeloggt schon im HTML (Platz ab dem ersten Bild, kein Layoutsprung); mit gespeicherter Sitzung sofort weg
+    html = once(html, "</header>\n <main>", "</header>\n <div class=\"zeitversatz-zeile wartet-auf-daten\" id=\"zeitversatz-zeile\" role=\"note\"><p>&nbsp;<span class=\"zz-mobil\"><br>&nbsp;</span></p></div>"
+                "<script>try{if(localStorage.getItem('investtimer-sitzung')||/access_token=|type=(magiclink|signup|recovery)/.test(location.hash))document.getElementById('zeitversatz-zeile').hidden=true}catch(e){}</script>\n <main>", "Hinweiszeile")
     html, _robust = robust.anwenden(html)  # Block E: Anzeige bricht bei fehlenden Elementen nicht ab
     html = base64_auslagern(html, target)
     (target / "index.html").write_text(html, encoding="utf-8")
-    if not film_schalter():  # Film aus (LIC-001): Filmdateien nicht ausliefern
-        for f in (target / "media").glob("invest-timer*"):
-            f.unlink()
+    for f in (target / "media").glob("invest-timer*"):  # alter Film (mit S&P-500-Kurve, LIC-001) wird nie ausgeliefert
+        f.unlink()
+    for f in (target / "media").glob("film-*"):
+        f.unlink()
+    if film_schalter():  # neuer Film ohne S&P-Kurve (Block G, 26.11.2026): Quelle /root/volafly-video/film2, Dateien im Repo unter media/film/
+        import shutil
+        for name in ("film-marktstress.mp4", "film-standbild.jpg"):
+            shutil.copy2(ROOT / "media" / "film" / name, target / "media" / name)
     # Service Worker mit Version (Build-Zeit + Inhalts-Hash der Seite): jede neue Seite ergibt einen neuen Service Worker
     import hashlib
     sw_version = VERSION["v"] + "-" + hashlib.sha256(html.encode()).hexdigest()[:8]
     (target / "sw.js").write_text((ROOT / "tools" / "sw.js").read_text(encoding="utf-8").replace("__SW_VERSION__", sw_version), encoding="utf-8")
     (target / "version.json").write_text(json.dumps(dict(VERSION, sw=sw_version)) + "\n", encoding="utf-8")
     print("ok: oeffentlicher Rueckfall %s vom %s, %d Bytes HTML, Film %d Bytes (0 = Film aus)" % (
-        fallback["rounded"], fallback["asOf"], len(html.encode()), (target / "media" / "invest-timer.mp4").stat().st_size if (target / "media" / "invest-timer.mp4").exists() else 0))
+        fallback["rounded"], fallback["asOf"], len(html.encode()), (target / "media" / "film-marktstress.mp4").stat().st_size if (target / "media" / "film-marktstress.mp4").exists() else 0))
 
 
 

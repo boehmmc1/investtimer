@@ -41,12 +41,15 @@ async def lauf(br, url, w, h, ein, sprache):
         await pg.evaluate("()=>{const h=document.querySelector('#header-language');h.value='en';h.dispatchEvent(new Event('change',{bubbles:true}))}"); await pg.wait_for_timeout(400)
     mobil = w < 760
     await ansicht_pruefen(pg, 'Startseite', meta)
-    await pg.click('#details-toggle'); await pg.wait_for_timeout(500)
-    await pg.click('[data-perspective="volatility"] summary'); await pg.wait_for_timeout(200)
-    await ansicht_pruefen(pg, 'Mehr erfahren', meta)
-    await pg.click('[data-explain]'); await pg.wait_for_timeout(400)
-    await ansicht_pruefen(pg, 'Erklaerdialog', meta)
+    # Block K: Aufbau statt "Mehr erfahren"
+    await pg.click('#aufbau-karte'); await pg.wait_for_timeout(700)
+    await ansicht_pruefen(pg, 'Aufbau', meta)
+    await pg.click('[data-gruppe="volatility"]'); await pg.wait_for_timeout(300)
+    await ansicht_pruefen(pg, 'Aufbau aufgeklappt', meta)
+    await pg.click('[data-erkl]'); await pg.wait_for_timeout(400)
+    await ansicht_pruefen(pg, 'Erklaerblatt', meta)
     await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
+    await pg.evaluate("history.pushState(null,'',location.pathname);window.InvestTimer.route&&window.InvestTimer.route()"); await pg.wait_for_timeout(400)
     await pg.evaluate("window.scrollTo(0,0)")
     await pg.evaluate("location.hash='ki'"); await pg.wait_for_timeout(900)
     await ansicht_pruefen(pg, 'KI Start', meta)
@@ -60,7 +63,7 @@ async def lauf(br, url, w, h, ein, sprache):
             await pg.set_viewport_size({'width': w, 'height': h}); await pg.wait_for_timeout(300)
         await pg.click('[data-ki=neu]'); await pg.wait_for_timeout(300)
     await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1300)
-    for sp in ('1M', '1J', 'A'):
+    for sp in (('1M', '1J', 'A') if ein else ('1M', '1J')):  # DEC-019: ausgeloggt kein "Alle"
         await pg.click('[data-spanne="%s"]' % sp); await pg.wait_for_timeout(400)
         await ansicht_pruefen(pg, 'Verlauf ' + sp, meta, erlaubt=())
     await pg.evaluate("location.hash='konto'"); await pg.wait_for_timeout(900)

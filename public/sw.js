@@ -1,12 +1,12 @@
 /* InvestTimer Service Worker (wird beim Build mit Versionsnummer erzeugt: tools/sw.js -> public/sw.js).
-   Version: 2026.11.26-2144-b6a014e5
+   Version: 2026.11.27-0040-393b8f62
    - Seite (HTML) und /data/stress.json: zuerst Netz, bei Ausfall die zuletzt geladene Fassung (offline)
    - versionierte Dateien unter /media/ (Name = Inhalts-Hash): zuerst Cache
    - /api/*: nur Netz, nichts wird gespeichert (Kontodaten, KI)
    - neue Version: sofort aktiv (skipWaiting + clients.claim), alte Caches werden geloescht; die Seite laedt neu
      oder zeigt "Neue Version verfuegbar" (tools/update.js)
    - Push-Benachrichtigungen und Oeffnen der App wie bisher */
-const VERSION = '2026.11.26-2144-b6a014e5';
+const VERSION = '2026.11.27-0040-393b8f62';
 const SEITEN = 'investtimer-seiten-' + VERSION, DATEIEN = 'investtimer-dateien-' + VERSION;
 const VERSIONIERT = /^\/media\/[0-9a-f]{12}\.(woff2|ttf|svg|png|jpg)$/;
 

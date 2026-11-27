@@ -1,0 +1,9 @@
+[Unit]
+Description=InvestTimer Testumgebung: alle 2 Minuten Branch test holen
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=timers.target

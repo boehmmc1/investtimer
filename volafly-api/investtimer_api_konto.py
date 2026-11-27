@@ -435,20 +435,21 @@ def _it_json_antwort(name, builder, headers):
     return _R(content=roh, media_type="application/json", headers=headers)
 
 
-def _it_historie_bis(d, bis):
-    """Verlauf bis einschliesslich 'bis' (oeffentlich, 7-Tage-Regel). Die angebrochene Woche bzw. der angebrochene Monat
-    endet am letzten Handelstag bis 'bis' (statt mit dem spaeteren Wochen-/Monatsschluss)."""
+def _it_historie_bis(d, bis, von=None):
+    """Verlauf bis einschliesslich 'bis' (oeffentlich, 30-Tage-Regel), ab 'von' (DEC-019: hoechstens ein Jahr). Die angebrochene
+    Woche bzw. der angebrochene Monat endet am letzten Handelstag bis 'bis' (statt mit dem spaeteren Wochen-/Monatsschluss)."""
     from datetime import date as _date
-    tage = [p for p in d["taeglich"] if p[0] <= bis]
+    von = von or ""
+    tage = [p for p in d["taeglich"] if von <= p[0] <= bis]
     aus = {"taeglich": tage}
     for art, schluessel in (("woechentlich", lambda x: _date.fromisoformat(x).isocalendar()[:2]), ("monatlich", lambda x: x[:7])):
-        reihe = [p for p in d[art] if p[0] <= bis and schluessel(p[0]) != schluessel(bis)]
+        reihe = [p for p in d[art] if von <= p[0] <= bis and schluessel(p[0]) != schluessel(bis)]
         rest = [p for p in tage if schluessel(p[0]) == schluessel(bis)]
         if rest:
             reihe.append(rest[-1][:4] + [min(x[1] for x in rest), max(x[1] for x in rest)])
         aus[art] = reihe
     aus.update(bis=bis, ersterAufgezeichnet=d["ersterAufgezeichnet"],
-               ereignisse=[e for e in d["ereignisse"] if e["spitze"]["d"] <= bis])
+               ereignisse=[e for e in d["ereignisse"] if e["spitze"]["d"] <= bis and e["start"] >= von])
     return aus
 
 
@@ -472,7 +473,8 @@ def it_historie(request: Request):
 
 @app.get("/v1/investtimer/historie-oeffentlich")
 def it_historie_oeffentlich():
-    """Verlauf ohne Anmeldung: nur bis zum zeitversetzten oeffentlichen Stand (7-Tage-Regel, wie /data/stress.json)."""
+    """Verlauf ohne Anmeldung: nur bis zum zeitversetzten oeffentlichen Stand (30-Tage-Regel DEC-018, wie /data/stress.json)
+    und hoechstens ein Jahr davor (DEC-019): taeglich, woechentlich, monatlich und Ereignismarken nur in diesem Zeitraum."""
     try:
         with open("/var/lib/investtimer/data/stress.json") as f:
             bis = (json.load(f).get("publicSnapshot") or {}).get("asOf")
@@ -481,7 +483,9 @@ def it_historie_oeffentlich():
     d = _it_historie_daten()
     if not bis or not (d["taeglich"] or d["woechentlich"]):
         return _it_aus()
-    return _it_json_antwort("oeffentlich|" + bis, lambda: _it_historie_bis(d, bis), {"Cache-Control": "public, max-age=600"})
+    from datetime import date as _date, timedelta as _td
+    von = (_date.fromisoformat(bis) - _td(days=365)).isoformat()  # DEC-019: ausgeloggt hoechstens ein Jahr
+    return _it_json_antwort("oeffentlich|" + bis, lambda: _it_historie_bis(d, bis, von), {"Cache-Control": "public, max-age=600"})
 
 
 @app.get("/v1/investtimer/konto/export")

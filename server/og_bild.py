@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Vorschaubild zum Teilen (Open Graph, 1200x630), taeglich per Timer investtimer-og.
 
-Zeigt nur den ZEITVERSETZTEN Wert (publicSnapshot aus /data/stress.json, 7-Tage-Regel), nie den aktuellen. Logo, Bogen in der
+Zeigt nur den ZEITVERSETZTEN Wert (publicSnapshot aus /data/stress.json, 30-Tage-Regel, DEC-018), nie den aktuellen. Logo, Bogen in der
 Stufenfarbe, Wert, Stufe, "Stand {Datum}", "Marktstress am US-Aktienmarkt". Keine Indexnamen, keine Datenquellen.
 Ausgabe: /var/lib/investtimer/og/og-JJJJ-MM-TT.png (Datum = UTC-Tag der Erzeugung, nginx setzt es in die Seite ein)
 und og-aktuell.png als Rueckfall; Bilder aelter als 14 Tage werden geloescht. Rendering: Chrome headless (keine Zusatzpakete).

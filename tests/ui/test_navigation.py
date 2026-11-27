@@ -21,7 +21,9 @@ async def main():
             pg.on('pageerror', lambda e: js.append(str(e)))
             await pg.goto(url + (harness.LOGIN_HASH if ein else '')); await pg.wait_for_timeout(1200)
             tag = 'ein' if ein else 'aus'
-            for ziel, sel in (('ki', '#ki-ansicht'), ('verlauf', '#verlauf-ansicht'), ('konto', '#konto-ansicht')):
+            reiter = await pg.evaluate("[...document.querySelectorAll('.it-leiste [data-ziel]')].map(a=>a.dataset.ziel)")
+            pruefe(reiter == ['stress', 'aufbau', 'verlauf', 'ki'], f'{tag} Leiste: Marktstress · Aufbau · Verlauf · KI ({reiter})')
+            for ziel, sel in (('aufbau', '#aufbau-ansicht'), ('verlauf', '#verlauf-ansicht'), ('ki', '#ki-ansicht')):
                 await pg.tap('.it-leiste [data-ziel=%s]' % ziel); await pg.wait_for_timeout(700)
                 h = await pg.evaluate('location.hash')
                 sicht = await pg.evaluate("s=>{const e=document.querySelector(s);return !!e&&!e.hidden&&e.getBoundingClientRect().height>50}", sel)
@@ -65,7 +67,7 @@ async def main():
         pg.on('pageerror', lambda e: js.append(str(e)))
         await pg.goto(url + harness.LOGIN_HASH); await pg.wait_for_timeout(1200)
         tabs = await pg.evaluate("[...document.querySelectorAll('.it-tabs a')].map(a=>a.textContent)")
-        pruefe(tabs == ['Marktstress', 'KI', 'Verlauf'], f'Desktop Tabs {tabs}')
+        pruefe(tabs == ['Marktstress', 'Aufbau', 'Verlauf', 'KI'], f'Desktop Tabs {tabs}')
         await pg.click('#konto-knopf'); await pg.wait_for_timeout(300)
         await pg.click('[data-km=konto]'); await pg.wait_for_timeout(600)
         pruefe(await pg.evaluate("location.hash==='#konto'&&!document.querySelector('#konto-ansicht').hidden"), 'Desktop: Mein Konto fuehrt auf #konto')

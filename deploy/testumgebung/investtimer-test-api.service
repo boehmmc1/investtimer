@@ -1,0 +1,29 @@
+[Unit]
+Description=InvestTimer Testumgebung: API (Branch test, Port 8101)
+After=network.target
+
+[Service]
+WorkingDirectory=/root/investtimer-test-api
+ExecStart=/usr/local/bin/uvicorn volafly_chat:app --host 127.0.0.1 --port 8101
+Restart=always
+RestartSec=5
+# Eigene Einstellungen und Daten; Marktstress-Daten nur lesend wie live
+Environment=IT_ENV_DATEI=/root/investtimer-test-api/.env
+Environment=IT_TESTUMGEBUNG=1
+Environment=IT_RESEND_API=http://127.0.0.1:8101/v1/test/resend
+Environment=INVESTTIMER_KONTO_DB=/var/lib/investtimer-test/konto.db
+Environment=INVESTTIMER_ALARME_DB=/var/lib/investtimer-test/alarme.db
+Environment=IT_KI_DB=/var/lib/investtimer-test/ki.db
+Environment=IT_FEHLER_DB=/var/lib/investtimer-test/fehler.db
+Environment=IT_TEILEN_DIR=/var/lib/investtimer-test/teilen
+Environment=INVESTTIMER_CHAT_TAGESLIMIT=20
+Environment=MALLOC_ARENA_MAX=2
+# Volafly und live duerfen nicht leiden
+MemoryAccounting=yes
+MemoryHigh=300M
+MemoryMax=400M
+CPUWeight=30
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

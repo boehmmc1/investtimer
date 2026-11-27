@@ -130,3 +130,13 @@ der Volafly-API). Vor jeder Änderung an Server-Dateien eine Sicherung anlegen,
   Grenze 3 je Richtung (JE_RICHTUNG, Fehler `richtung_voll`), Bestand mit mehr bleibt. Alter Dialog in alarme.js nur noch fuer
   „Mitteilungen auf diesem Geraet“ (IT.oeffneMitteilungen). Harness nutzt die echte investtimer_alarme.py (harness.alarme_setzen).
   Grautext klein: var(--sub), nicht #6e7b74 (Kontrast < 4,5).
+- Testumgebung test.investtimer.net (DEC-020, 26.11.2026): Branch `test`, Checkout /var/www/investtimer-test (Timer investtimer-test-deploy,
+  baut mit /root/investtimer-test-api/.env: Paywall/Premium-Pflicht/Abo-Mails an, Band "TESTUMGEBUNG"), API investtimer-test-api auf 8101
+  (Kopie unter /root/investtimer-test-api, eigene SQLite unter /var/lib/investtimer-test, MemoryMax 400M), Mails nur ueber den Filter
+  /v1/test/resend ([TEST], nur info@ und IT_TEST_EMPFAENGER). nginx aus deploy/testumgebung/nginx_test.py, Basic-Auth
+  /etc/nginx/investtimer-test.htpasswd (legt Michel an), vom Server selbst ohne Passwort.
+  REGEL: Aenderungen an Konto, Abo, Bezahlung, Paywall, Kuendigung, Widerruf, Abo-Mails und Rechtstexten erst auf Branch test,
+  Tests auf test.investtimer.net gruen, dann Michel melden; erst nach seinem "passt" nach main. Alles andere direkt nach main.
+- Browser-Tests nacheinander (tests/ui/testlauf.py: Sperre, nie waehrend des Scrapers :00/:30, Test-Chrome danach beenden).
+- Ausgeloggt: 30 Tage Verzoegerung (PUBLIC_DELAY_DAYS=30, DEC-018), Verlauf hoechstens 1 Jahr (DEC-019). Teilwerte `bloecke` aus
+  marktstress.calculate, in history.json/stress.json/publicSnapshot.

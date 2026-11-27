@@ -1,0 +1,7 @@
+[Unit]
+Description=InvestTimer Testumgebung: Branch test holen und bauen
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=/var/www/investtimer-test/deploy/testumgebung/auto-deploy-test.sh

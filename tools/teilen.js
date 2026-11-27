@@ -1,5 +1,5 @@
 /* Teilen (Auftrag C, 20.11.2026): Knopf auf der Startseite (Wert), im Verlauf (gewaehlter Zeitraum) und in jeder Ereigniskarte (Phase).
-   Bilder vorab gerendert (server/teilen_bilder.py), standardmaessig zeitversetzter Stand (7-Tage-Regel), auch eingeloggt.
+   Bilder vorab gerendert (server/teilen_bilder.py), standardmaessig zeitversetzter Stand (30-Tage-Regel, DEC-018), auch eingeloggt.
    Mobil mit navigator.share + Datei: natives Teilen-Menue mit Bild 1080x1350, Text und Link.
    Sonst eigener Dialog: Bild, Bild herunterladen, Link kopieren, WhatsApp, LinkedIn, X, Threads (nur einfache Teilen-Adressen,
    keine Skripte der Netzwerke). Links /s/... tragen utm_source=teilen&utm_medium=<kanal>; gezaehlt wird cookiefrei ueber /api/v. */

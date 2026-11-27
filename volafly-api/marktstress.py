@@ -152,6 +152,10 @@ def calculate(metrics, config):
         "blocks": [{"name": b, "effectiveWeight": share(sum(r["weight"] for r in included if r["block"] == b))}
                    for b in BLOCKS],
         "missing": [r["name"] for r in rows if r["score"] is None],
+        # Teilwerte 0-100 der drei Blickwinkel (Aufbau, K 26.11.2026): gleiche Formel wie historie/rechnen.py bloecke()
+        "bloecke": {b: round(sum(r["weight"] * r["score"] for r in included if r["block"] == b)
+                             / sum(r["weight"] for r in included if r["block"] == b), 1)
+                    for b in BLOCKS if any(r["block"] == b for r in included)},
     }
 
 
@@ -166,6 +170,7 @@ def public_payload(result, now=None):
         "total": result["total"],
         "rows": result["rows"],
         "blocks": result["blocks"],
+        "bloecke": result.get("bloecke", {}),
     }
 
 

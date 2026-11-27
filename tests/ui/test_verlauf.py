@@ -26,7 +26,7 @@ async def main():
                 vorher = [a for a in harness.ZUSTAND['aufrufe'] if a[1] == '/api/historie']
                 pruefe(not vorher, f'{tag}: voller Verlauf nicht auf der Startseite geladen')
                 await pg.evaluate("location.hash='verlauf'"); await pg.wait_for_timeout(1500)
-                for sp in ('1M', '3M', '1J', '5J', 'A'):
+                for sp in (('1M', '3M', '1J', '5J', 'A') if ein else ('1M', '3M', '1J')):  # DEC-019: ausgeloggt hoechstens ein Jahr
                     await pg.click('[data-spanne="%s"]' % sp); await pg.wait_for_timeout(500)
                     r = await pg.evaluate("""()=>{const svg=document.querySelector('#verlauf-ansicht .verlauf-svg');const lin=svg.querySelector('.verlauf-linie');
                       const pts=lin.getAttribute('points').trim().split(' ').map(s=>s.split(',').map(Number));const last=pts[pts.length-1];
@@ -56,9 +56,10 @@ async def main():
                 pruefe(any(a[1] == ('/api/historie' if ein else '/api/historie-oeffentlich') for a in geladen), f'{tag}: richtiger Endpunkt geladen')
                 # Ereignis waehlen
                 if w < 760:
-                    await pg.click('[data-spanne="5J"]'); await pg.wait_for_timeout(400)
-                    chips = await pg.evaluate("""()=>{const c=document.querySelector('.verlauf-chips');if(!c)return null;const a=c.querySelector('[aria-pressed=true]').getBoundingClientRect(),r=c.getBoundingClientRect();return {rand:c.className,inSicht:a.left>=r.left-1&&a.right<=r.right+1}}""")
-                    pruefe(chips and chips['inSicht'] and 'rand' in chips['rand'], f'{tag}: Chip-Leiste mit Randverlauf, aktiver Chip in Sicht {chips}')
+                    await pg.click('[data-spanne="%s"]' % ('5J' if ein else '1J')); await pg.wait_for_timeout(400)
+                    chips = await pg.evaluate("""()=>{const c=document.querySelector('.verlauf-chips');if(!c)return null;const a=c.querySelector('[aria-pressed=true]').getBoundingClientRect(),r=c.getBoundingClientRect();return {rand:c.className,inSicht:a.left>=r.left-1&&a.right<=r.right+1,ueber:c.scrollWidth>c.clientWidth+1}}""")
+                    # Randverlauf nur, wenn die Leiste ueberlaeuft (ausgeloggt im 1-Jahres-Bereich oft nur wenige Chips)
+                    pruefe(chips and chips['inSicht'] and ('rand' in chips['rand'] or not chips['ueber']), f'{tag}: Chip-Leiste (Randverlauf bei Ueberlauf), aktiver Chip in Sicht {chips}')
                     await pg.click('.verlauf-chip:last-child'); await pg.wait_for_timeout(400)
                 k = await pg.evaluate("document.querySelector('#verlauf-ansicht .ereignis-karte').innerText")
                 pruefe('Höchster Marktstress' in k and 'Wieder unter 40' in k and 'mit der KI einordnen' in k and 'Frag die KI' not in k and 'folgt' not in k, f'{tag}: Ereigniskarte vollstaendig ohne Beschreibung')

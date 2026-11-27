@@ -44,11 +44,11 @@
   {
    "de": {
     "f": "Warum sehe ich ohne Anmeldung einen älteren Wert?",
-    "a": "Ohne Anmeldung zeigt InvestTimer einen zeitversetzten Stand, der mindestens sieben Tage alt ist. Den aktuellen Wert, die KI und die Alarme gibt es nach der Anmeldung."
+    "a": "Ohne Anmeldung zeigt InvestTimer einen zeitversetzten Stand, der einen Monat (30 Tage) zurückliegt. Den aktuellen Wert, die KI und die Alarme gibt es nach der Anmeldung."
    },
    "en": {
     "f": "Why do I see an older score without signing in?",
-    "a": "Without signing in, InvestTimer shows a delayed reading that is at least seven days old. The latest score, the AI and alerts are available after you sign in."
+    "a": "Without signing in, InvestTimer shows a delayed reading from one month (30 days) ago. The latest score, the AI and alerts are available after you sign in."
    }
   },
   {

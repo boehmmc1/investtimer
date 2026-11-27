@@ -2,7 +2,7 @@
 """Teilen-Bilder (Auftrag C, 20.11.2026): Wert, Verlauf (1M/3M/1J/5J/Alle) und Stressphasen als PNG,
 je 1200x630 ("quer": Link-Vorschau, X, LinkedIn) und 1080x1350 ("hoch": Instagram/WhatsApp-Status), Deutsch und Englisch.
 
-Standard: nur der ZEITVERSETZTE Stand (7-Tage-Regel) aus /data/stress.json und /v1/investtimer/historie-oeffentlich.
+Standard: nur der ZEITVERSETZTE Stand (30-Tage-Regel, DEC-018) aus /data/stress.json und /v1/investtimer/historie-oeffentlich.
 Ausgabe: /var/lib/investtimer/teilen/<asOf>/<name>.png plus manifest.json; jeder Stand wird genau einmal gerendert
 (laeuft der Timer erneut, fehlen nur neue Dateien). Staende aelter als 60 Tage werden geloescht.
 Keine Indexkurse, keine Rohwerte einzelner Indikatoren, keine Datenquellen in Bildern oder Texten.

@@ -5,7 +5,7 @@ stress.json fuer die Seite ab. Keine eigene Berechnung, keine Rohdaten.
 Umgebungsvariablen (siehe /etc/investtimer.env):
   STRESS_API_URL     Standard https://api.volafly.net/v1/marktstress
   OUTPUT_PATH        Standard /var/lib/investtimer/data/stress.json
-  PUBLIC_DELAY_DAYS  Standard 7
+  PUBLIC_DELAY_DAYS  Standard 30 (DEC-018, ein Monat)
   PUBLIC_ONLY        1 = stress.json enthaelt nur den zeitversetzten Stand
                      (aktueller Wert nur nach Anmeldung ueber /api/aktuell)
 
@@ -27,7 +27,7 @@ import urllib.request
 from datetime import date, timedelta
 
 DEFAULT_URL = "https://api.volafly.net/v1/marktstress"
-PUBLIC_KEYS = ("model", "asOf", "updatedAt", "rounded", "count", "total", "rows", "blocks")
+PUBLIC_KEYS = ("model", "asOf", "updatedAt", "rounded", "count", "total", "rows", "blocks", "bloecke")
 
 
 def validate(data):
@@ -90,7 +90,7 @@ def load_rueckrechnung(path, min_count=8):
     except (OSError, ValueError):
         return {}
     return {d: {"model": "investtimer-us-market-stress", "asOf": d, "rounded": t["rounded"], "count": t["count"],
-                "total": t.get("total", 14), "rows": t["rows"], "blocks": t["blocks"]}
+                "total": t.get("total", 14), "rows": t["rows"], "blocks": t["blocks"], "bloecke": t.get("bloecke", {})}
             for d, t in tage.items() if t.get("count", 0) >= min_count}
 
 
@@ -110,7 +110,7 @@ def main(argv):
     payload = validate(fetch(url))
     print("Marktstress %d (%d von %s Bestandteilen, Datenstand %s)" % (
         payload["rounded"], payload["count"], payload.get("total", 14), payload["asOf"]))
-    delay = int(os.environ.get("PUBLIC_DELAY_DAYS", "").strip() or 7)
+    delay = int(os.environ.get("PUBLIC_DELAY_DAYS", "").strip() or 30)
     history_path = os.path.join(os.path.dirname(output), "history.json")
     seed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed_history.json")
     history = load_history(history_path, seed_path)

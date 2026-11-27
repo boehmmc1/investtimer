@@ -67,10 +67,13 @@ def pfade():
     melde(B, "api.volafly.net/v1/marktstress oeffentlich gesperrt", code in (401, 403, 404), "hoch", "curl", code)
     code, b, _ = http("GET", "/data/stress.json")
     from datetime import date, timedelta
-    grenze = (date.today() - timedelta(days=7)).isoformat()
+    grenze = (date.today() - timedelta(days=30)).isoformat()  # DEC-018
     ps = (b.get("publicSnapshot") or {}) if isinstance(b, dict) else {}
-    melde(B, "stress.json nur zeitversetzt (oben und publicSnapshot <= heute-7)", isinstance(b, dict) and b.get("asOf", "9") <= grenze and ps.get("asOf", "9") <= grenze
+    melde(B, "stress.json nur zeitversetzt (oben und publicSnapshot <= heute-30)", isinstance(b, dict) and b.get("asOf", "9") <= grenze and ps.get("asOf", "9") <= grenze
           and b.get("rounded") == ps.get("rounded"), "kritisch", "/data/stress.json", (b.get("asOf"), ps.get("asOf")) if isinstance(b, dict) else b)
+    # K5 (26.11.2026): Teilwerte oeffentlich nur aus demselben zeitversetzten Stichtag, nie aktueller
+    melde(B, "stress.json: Teilwerte nur vom zeitversetzten Stichtag (bloecke = publicSnapshot.bloecke)", isinstance(b, dict) and b.get("bloecke", {}) == ps.get("bloecke", {})
+          and b.get("asOf", "9") <= grenze, "kritisch", "/data/stress.json", (b.get("bloecke"), ps.get("bloecke")) if isinstance(b, dict) else b)
 
 
 ENDPUNKTE_TOKEN = [("GET", "/api/aktuell"), ("GET", "/api/historie"), ("GET", "/api/konto"), ("GET", "/api/konto/export"), ("GET", "/api/alarme"),

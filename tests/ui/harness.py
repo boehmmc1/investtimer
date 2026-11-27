@@ -65,6 +65,8 @@ def aktuell():
     d = dict(h[sorted(h)[-1]])
     if ZUSTAND['wert'] is not None:
         d['rounded'] = ZUSTAND['wert']
+    # Teilwerte wie die Live-API (marktstress.calculate); aeltere aufgezeichnete Tage haben keine -> feste Testwerte, ueberschreibbar
+    d.setdefault('bloecke', ZUSTAND.get('bloecke') or {'volatility': 52.4, 'price': 41.0, 'positioning': 47.6})
     return d
 
 
@@ -144,7 +146,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return self._json({'error': 'login'}, 401)
             return self._json(aus)
         if pfad == '/api/historie-oeffentlich':
-            return self._json(HIST_BIS(HIST(), stress_json()['publicSnapshot']['asOf']))
+            bis = stress_json()['publicSnapshot']['asOf']
+            from datetime import date as _d, timedelta as _t
+            return self._json(HIST_BIS(HIST(), bis, (_d.fromisoformat(bis) - _t(days=365)).isoformat()))  # DEC-019
         if pfad == '/api/konto':
             if not self._auth():
                 return self._json({'error': 'login'}, 401)

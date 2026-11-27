@@ -17,11 +17,11 @@ ziel = API / "volafly_chat.py"
 s = ziel.read_text(encoding="utf-8")
 start, ende = s.index("# ── InvestTimer-Chat (oeffentlich"), s.index('@app.get("/health")')
 block = "".join((ROOT / "volafly-api" / n).read_text(encoding="utf-8").rstrip() + "\n\n\n"
-                for n in ("investtimer_api_chat.py", "investtimer_api_konto.py", "investtimer_api_vertrag.py", "investtimer_api_alarm_mail.py", "investtimer_api_feedback.py", "investtimer_api_fehler.py", "investtimer_api_teilen.py", "investtimer_api_speicher.py"))
+                for n in ("investtimer_api_chat.py", "investtimer_api_konto.py", "investtimer_api_vertrag.py", "investtimer_api_alarm_mail.py", "investtimer_api_feedback.py", "investtimer_api_fehler.py", "investtimer_api_teilen.py", "investtimer_api_speicher.py", "investtimer_api_testumgebung.py"))
 neu = s[:start] + block + s[ende:]
 compile(neu, str(ziel), "exec")
 shutil.copy2(ziel, ziel.with_name(ziel.name + ".bak-" + time.strftime("%Y%m%d-%H%M%S")))
 ziel.write_text(neu, encoding="utf-8")
-for m in ("investtimer_konto.py", "investtimer_alarme.py", "investtimer_vertrag.py", "investtimer_ki_limit.py", "investtimer_ki_preise.json"):
+for m in ("marktstress.py", "investtimer_konto.py", "investtimer_alarme.py", "investtimer_vertrag.py", "investtimer_ki_limit.py", "investtimer_ki_preise.json"):
     shutil.copy2(ROOT / "volafly-api" / m, API / m)
 print("eingebaut:", len(block), "Zeichen")

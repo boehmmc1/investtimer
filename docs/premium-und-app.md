@@ -128,7 +128,7 @@ Legende: ✅ fertig · 🟡 teilweise / hinter Schalter · ⛔ offen (extern ode
 | 006 | Zwei Tarife | 🟡 | Paywall mit 4,99 €/Monat und 39,99 €/Jahr, Jahresabo hervorgehoben. Preise stehen beim Anbieter, spätere Änderungen sind dort möglich. |
 | 007 | 7 Tage Test | 🟡 | Stripe: `trial_period_days=7` mit Zahlungsdaten vorab. Apple: Einführungsangebot. Die Paywall nennt Preis, Datum der ersten Abbuchung und Verlängerung. |
 | 008 | Testphase einmal | 🟡 | Je Konto über RevenueCat, je E-Mail als Hash. Apple-Regeln gelten zusätzlich. |
-| 009 | Kostenloser Zugang | ✅/🟡 | Ohne Anmeldung: 7 Tage alter Wert mit Datum (live). Verlauf nur über `/api/historie` (Anmeldung/Premium). Sperre für Nicht-Premium hängt am Schalter. |
+| 009 | Kostenloser Zugang | ✅/🟡 | Ohne Anmeldung: mindestens 30 Tage alter Wert mit Datum (DEC-018), Verlauf höchstens 1 Jahr (DEC-019). Verlauf nur über `/api/historie` (Anmeldung/Premium). Sperre für Nicht-Premium hängt am Schalter. |
 | 010 | Paywall | 🟡 | Gebaut, mobil und Desktop geprüft. `/agb.html` fehlt bis zur Freigabe der Abo-Bedingungen (Entwurf liegt vor). |
 | 011 | Stripe | 🟡 | Checkout, Portal, Webhook (Signatur + Zeitfenster), Einrichtungsskript. E2E gegen nachgebautes Stripe grün; echter Testmodus offen (Schlüssel fehlt). |
 | 012 | Apple In-App-Kauf | 🟡 | RevenueCat-Plugin mit Kauf, Wiederherstellen und Abo-Verwaltung; im Browser nachgestellt getestet. Produkte in App Store Connect fehlen. |
@@ -167,3 +167,13 @@ Legende: ✅ fertig · 🟡 teilweise / hinter Schalter · ⛔ offen (extern ode
   - Lösen: das jüngere Abo beim jeweiligen Anbieter erstatten und kündigen; der Webhook setzt den Stand neu.
 - **Sicherung:** täglich auf demselben Server; Kopie außer Haus fehlt.
 - **Gesperrte Nutzer:** Schaltet man `IT_PREMIUM_PFLICHT` ein, verlieren alle angemeldeten Nutzer ohne Abo sofort den aktuellen Wert, die KI und die Alarm-Mitteilungen. Vorher Bestandsnutzer informieren.
+
+
+## Testumgebung (DEC-020, 26.11.2026)
+
+- https://test.investtimer.net (Basic-Auth, noindex), Branch `test`, eigener Deploy-Timer und eigene API (Port 8101) mit eigenen
+  Datenbanken unter `/var/lib/investtimer-test`. Paywall, Premium-Pflicht und Abo-Mails sind dort an; Mails gehen nur mit `[TEST]`
+  an info@investtimer.net und `IT_TEST_EMPFAENGER`.
+- Konto-, Abo-, Bezahl- und Rechtstext-Änderungen laufen zuerst dort; nach Michels „passt“ nach `main`.
+- Stripe direkt (ohne RevenueCat) als Standard ist vorbereitet, aber noch nicht umgesetzt: es fehlt der Stripe-Testschlüssel
+  (`/root/.investtimer/stripe-key`). RevenueCat bleibt optional und ruhend.
