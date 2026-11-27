@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS ki_nutzung (
   anzahl INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (uid, tag)
 );
+CREATE TABLE IF NOT EXISTS gesperrt (
+  uid TEXT PRIMARY KEY,              -- geloeschtes Konto: Tokens sofort abweisen (Nachtrag N4)
+  bis INTEGER NOT NULL               -- ms; danach ist jeder alte Token ohnehin abgelaufen
+);
 CREATE TABLE IF NOT EXISTS test_marker (
   merkmal TEXT PRIMARY KEY,          -- SHA-256 der E-Mail-Adresse, nur gegen zweite Testphase
   erstellt INTEGER NOT NULL
@@ -323,8 +327,30 @@ def loeschen_pruefen(uid):
     return s
 
 
+# Nach der Kontoloeschung werden alte Zugriffstokens sofort abgewiesen (Nachtrag N4, 27.11.2026). Supabase-Tokens leben hoechstens
+# eine Stunde; 48 h Sperre deckt jede Token-Laufzeit ab, danach raeumt gesperrt() den Eintrag weg.
+SPERRE_MS = 48 * 3600 * 1000
+
+
+def gesperrt(uid):
+    """True, wenn das Konto geloescht wurde und alte Tokens noch gelten koennten. Bei jedem Aufruf (mehrere Prozesse, kein Cache)."""
+    if not uid or not os.path.exists(DB):
+        return False
+    try:
+        db = sqlite3.connect(DB, timeout=5)
+        try:
+            z = db.execute("SELECT bis FROM gesperrt WHERE uid=?", (uid,)).fetchone()
+        finally:
+            db.close()
+    except sqlite3.OperationalError:  # Tabelle noch nicht angelegt
+        return False
+    return bool(z and z[0] > jetzt_ms())
+
+
 def konto_loeschen(uid):
     with verbinden() as db:
+        db.execute("INSERT OR REPLACE INTO gesperrt (uid, bis) VALUES (?, ?)", (uid, jetzt_ms() + SPERRE_MS))
+        db.execute("DELETE FROM gesperrt WHERE bis < ?", (jetzt_ms(),))
         db.execute("DELETE FROM berechtigung WHERE uid=?", (uid,))
         db.execute("DELETE FROM ki_nutzung WHERE uid=?", (uid,))
         db.execute("DELETE FROM ereignis WHERE uid=?", (uid,))

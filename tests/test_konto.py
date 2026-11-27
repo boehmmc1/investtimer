@@ -203,6 +203,21 @@ class Abo(unittest.TestCase):
         self.assertTrue(k.ki_buchen(UID, 99, 4, tag="2027-02-01")[0])
 
 
+    def test_sperre_nach_loeschen(self):
+        """Nachtrag N4: nach der Kontoloeschung gelten alte Tokens nicht mehr (Sperrliste bis nach Token-Ablauf)."""
+        andere = "99999999-2222-3333-4444-555555555555"
+        self.assertFalse(k.gesperrt(andere))
+        k.konto_loeschen(andere)
+        self.assertTrue(k.gesperrt(andere))
+        self.assertFalse(k.gesperrt("88888888-2222-3333-4444-555555555555"))  # nie geloeschtes Konto
+        with k.verbinden() as db:  # abgelaufene Sperre zaehlt nicht mehr und wird beim naechsten Loeschen weggeraeumt
+            db.execute("UPDATE gesperrt SET bis=1 WHERE uid=?", (andere,))
+        self.assertFalse(k.gesperrt(andere))
+        k.konto_loeschen("x")
+        with k.verbinden() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM gesperrt WHERE uid=?", (andere,)).fetchone())
+
+
 _ms = k._ms
 
 if __name__ == "__main__":

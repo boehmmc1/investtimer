@@ -594,13 +594,23 @@ def _it_auth_aktiv():
     return bool(_it_env("IT_SUPABASE_URL") and _it_env("IT_SUPABASE_ANON_KEY"))
 
 
+def _it_konto_gesperrt(uid):
+    """Geloeschtes Konto (Sperrliste in konto.db): alte Tokens sofort abweisen, auch in anderen Prozessen (Nachtrag N4)."""
+    try:
+        import investtimer_konto as _kk
+        return _kk.gesperrt(uid)
+    except Exception as e:
+        print(f"[investtimer] sperrliste: {type(e).__name__}", flush=True)
+        return False
+
+
 def _it_check_user(auth_header):
     if not auth_header or not auth_header.lower().startswith("bearer "):
         return None
     tok = auth_header[7:].strip()
     c = _it_auth_cache.get(tok)
     if c and c[1] > time.time():
-        return c[0]
+        return None if _it_konto_gesperrt(c[0]) else c[0]
     try:
         r = _rq.get(_it_env("IT_SUPABASE_URL").rstrip("/") + "/auth/v1/user",
                     headers={"apikey": _it_env("IT_SUPABASE_ANON_KEY"),
@@ -610,6 +620,8 @@ def _it_check_user(auth_header):
     if r.status_code != 200:
         return None
     uid = r.json().get("id")
+    if uid and _it_konto_gesperrt(uid):
+        return None
     if uid:
         if len(_it_auth_cache) > 2000:
             _it_auth_cache.clear()
