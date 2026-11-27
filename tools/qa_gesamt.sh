@@ -13,7 +13,7 @@ mkdir -p "$QA_AUSGABE"; chmod 700 "$QA_AUSGABE"; rm -f "$QA_AUSGABE/ergebnisse.j
 PY=/opt/investtimer-qa/venv/bin/python
 exec > >(tee -a "$QA_AUSGABE/lauf.log") 2>&1
 echo "== InvestTimer QA $(date -Is) =="
-for m in funktion daten sicherheit datenschutz; do
+for m in funktion testumgebung daten sicherheit datenschutz; do
   echo "--- $m"; timeout 3600 nice -n 10 $PY -W ignore tests/qa/$m.py || echo "$m abgebrochen"
 done
 if [[ " $* " != *" --schnell "* ]]; then

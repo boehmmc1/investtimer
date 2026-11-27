@@ -1,0 +1,9 @@
+[Unit]
+Description=InvestTimer: naechtliche Pruefung der Testumgebung (Bearer-Token gegen test.investtimer.net, Mail nur bei Befund)
+After=network-online.target investtimer-test-api.service
+
+[Service]
+Type=oneshot
+Nice=10
+TimeoutStartSec=20min
+ExecStart=/bin/bash /var/www/investtimer/tools/qa_testumgebung.sh
