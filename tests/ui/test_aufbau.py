@@ -37,10 +37,11 @@ async def main():
                     # Reihenfolge unter dem Einordnungssatz
                     folge = await pg.evaluate("""()=>{const as=document.querySelector('.assessment'),o=[];let e=as.nextElementSibling;
                       while(e&&o.length<5){if(e.offsetHeight)o.push(e.id||e.className.split(' ')[0]);e=e.nextElementSibling}return o}""")
-                    erwartet = ['aufbau-karte', 'alarm-karte'] + (['ki-bruecke-start'] if mobil else [])
+                    film = (harness.PUBLIC / 'media' / 'film-marktstress.mp4').exists() and not ein  # Film-Karte nur ausgeloggt (Block G)
+                    erwartet = ['aufbau-karte'] + (['film-karte'] if film else []) + ['alarm-karte'] + (['ki-bruecke-start'] if mobil else [])
                     pruefe(folge[:len(erwartet)] == erwartet, f'{tag}: Reihenfolge {folge[:4]}')
-                    abst = await pg.evaluate("Math.round(document.querySelector('#alarm-karte').getBoundingClientRect().top-document.querySelector('#aufbau-karte').getBoundingClientRect().bottom)")
-                    pruefe(abst == 10, f'{tag}: Abstand Aufbau-Karte -> Alarm 10 px ({abst})')
+                    abst = await pg.evaluate("Math.round(document.querySelector('#aufbau-karte').nextElementSibling.getBoundingClientRect().top-document.querySelector('#aufbau-karte').getBoundingClientRect().bottom)")
+                    pruefe(abst == 10, f'{tag}: Abstand Aufbau-Karte -> naechste Karte 10 px ({abst})')
                     k = await pg.evaluate("""()=>{const k=document.querySelector('#aufbau-karte');return {kopf:k.querySelector('.aufbau-label').textContent,details:k.querySelector('.aufbau-details').textContent,
                       zeilen:[...k.querySelectorAll('.aufbau-zeile')].map(z=>[z.querySelector('.aufbau-name').textContent,z.querySelector('.aufbau-wert').textContent,
                         Math.round(z.querySelector('.aufbau-spur').getBoundingClientRect().height),z.querySelector('.aufbau-spur>span').style.width]),

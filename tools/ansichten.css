@@ -509,3 +509,4 @@ body.wert-laedt #aufbau-karte{visibility:hidden}
 @media(min-width:761px){.zz-mobil{display:none}}
 @media(max-width:400px){.zeitversatz-zeile{margin:4px 12px 6px;padding:8px 8px 8px 9px;gap:6px}.zeitversatz-zeile svg{width:15px;height:15px}}
 .aufbau-gruppe-kopf{flex-wrap:wrap;row-gap:2px}.aufbau-gruppe h3{overflow:visible;text-overflow:clip}.aufbau-gruppe-wert{margin-left:auto}
+@media(max-width:760px){.app>main{min-height:calc(100dvh - 60px)}}

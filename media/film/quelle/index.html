@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>So liest du den Marktstress</title>
+    <script src="vendor/gsap.min.js"></script>
+    <script src="data.js"></script>
+    <style>
+      @font-face { font-family: "Manrope"; font-weight: 400; src: url("assets/fonts/manrope-400.woff2") format("woff2"); }
+      @font-face { font-family: "Manrope"; font-weight: 600; src: url("assets/fonts/manrope-600.woff2") format("woff2"); }
+      @font-face { font-family: "Manrope"; font-weight: 800; src: url("assets/fonts/manrope-800.woff2") format("woff2"); }
+      :root { --bg: #f8f8f3; --text: #1b3330; --akzent: #2e6d5c; --sub: #5f6c66; --rand: #dfe5db; --hell: #eef2e9; }
+      html, body { margin: 0; background: var(--bg); }
+      #root { position: relative; width: 1280px; height: 720px; overflow: hidden; background: var(--bg); color: var(--text); font-family: "Manrope", sans-serif; }
+      .szene { position: absolute; inset: 0; }
+      .label { font-weight: 600; font-size: 19px; letter-spacing: 3px; color: var(--sub); text-transform: uppercase; }
+      .titel { font-weight: 800; font-size: 58px; letter-spacing: -1.5px; line-height: 1.08; }
+      .satz { font-weight: 400; font-size: 26px; line-height: 1.4; color: var(--sub); }
+      .mitte { position: absolute; left: 0; right: 0; text-align: center; }
+      /* Szene A */
+      #aLabel { top: 250px; } #aTitel { top: 288px; } #aSatz { top: 372px; }
+      #aLinie { position: absolute; left: 600px; top: 450px; width: 80px; height: 3px; background: var(--akzent); border-radius: 2px; transform-origin: 0 50%; }
+      /* Szene B */
+      #bSvg { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; }
+      #bZahl { top: 300px; font-weight: 800; font-size: 120px; letter-spacing: -4px; line-height: 1; }
+      #bSatz { top: 600px; }
+      .stufe { font-weight: 600; font-size: 21px; }
+      /* Szene C */
+      #cSvg { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; }
+      #cLabel { top: 40px; } #cSatz { top: 618px; font-size: 22px; }
+      .phase { font-weight: 600; font-size: 19px; fill: var(--text); }
+      .achse { font-weight: 400; font-size: 19px; fill: var(--sub); }
+      /* Szene D */
+      #dLabel { top: 120px; } #dTitel { top: 152px; font-size: 48px; }
+      .karte { position: absolute; left: 290px; width: 700px; height: 92px; box-sizing: border-box; padding: 18px 26px; background: #fff; border: 1px solid var(--rand); border-radius: 18px; }
+      .karte b { display: block; font-weight: 600; font-size: 24px; }
+      .karte span { display: block; margin-top: 6px; font-size: 19px; color: var(--sub); }
+      .karte i { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: 18px 0 0 18px; }
+      #k1 { top: 262px; } #k2 { top: 370px; } #k3 { top: 478px; }
+      #dSatz { top: 600px; font-size: 22px; }
+      /* Szene E */
+      #eMarke { top: 270px; font-weight: 800; font-size: 64px; letter-spacing: -1.5px; }
+      #eMarke span { color: var(--akzent); font-weight: 600; }
+      #eSatz { top: 362px; }
+      #eFuss { top: 616px; font-size: 19px; color: var(--sub); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="29" data-width="1280" data-height="720">
+      <!-- A: Titel -->
+      <div id="szA" class="szene clip" data-start="0" data-duration="4.3" data-track-index="0">
+        <div id="aLabel" class="mitte label">Kurz erklärt</div>
+        <div id="aTitel" class="mitte titel">So liest du den Marktstress</div>
+        <div id="aSatz" class="mitte satz">Ein Wert von 0 bis 100 für die Anspannung am US-Aktienmarkt.</div>
+        <div id="aLinie"></div>
+      </div>
+      <!-- B: Skala -->
+      <div id="szB" class="szene clip" data-start="4.2" data-duration="6.3" data-track-index="0">
+        <svg id="bSvg" viewBox="0 0 1280 720">
+          <path id="bSpur" d="M390 470 A250 250 0 0 1 890 470" fill="none" stroke="#dfe5db" stroke-width="10" stroke-linecap="round" />
+          <g id="bSegmente"></g>
+          <circle id="bPunkt" r="11" fill="#2E6B57" stroke="#f8f8f3" stroke-width="4" cx="390" cy="470" />
+          <g id="bStufen"></g>
+        </svg>
+        <div id="bZahl" class="mitte">0</div>
+        <div id="bSatz" class="mitte satz">Je höher der Wert, desto angespannter der Markt.</div>
+      </div>
+      <!-- C: Verlauf seit 2006 -->
+      <div id="szC" class="szene clip" data-start="10.4" data-duration="10.3" data-track-index="0">
+        <div id="cLabel" class="mitte label">Marktstress seit 2006</div>
+        <svg id="cSvg" viewBox="0 0 1280 720">
+          <defs>
+            <linearGradient id="cVerlauf" gradientUnits="userSpaceOnUse" x1="0" y1="560" x2="0" y2="140">
+              <stop offset="0" stop-color="#2E6B57" /><stop offset="0.2" stop-color="#2E6B57" />
+              <stop offset="0.2" stop-color="#6F7F45" /><stop offset="0.4" stop-color="#6F7F45" />
+              <stop offset="0.4" stop-color="#A0722F" /><stop offset="0.6" stop-color="#A0722F" />
+              <stop offset="0.6" stop-color="#A24524" /><stop offset="0.8" stop-color="#A24524" />
+              <stop offset="0.8" stop-color="#8E2A27" /><stop offset="1" stop-color="#8E2A27" />
+            </linearGradient>
+            <clipPath id="cAufdecken"><rect id="cVorhang" x="110" y="100" width="0" height="480" /></clipPath>
+          </defs>
+          <g id="cRaster"></g>
+          <g id="cBaender"></g>
+          <path id="cLinie" fill="none" stroke="url(#cVerlauf)" stroke-width="2.4" stroke-linejoin="round" clip-path="url(#cAufdecken)" />
+          <g id="cNamen"></g>
+        </svg>
+        <div id="cSatz" class="mitte satz">Lange ruhige Zeiten, dazwischen kurze, heftige Stressphasen.</div>
+      </div>
+      <!-- D: Drei Blickwinkel -->
+      <div id="szD" class="szene clip" data-start="20.6" data-duration="4.9" data-track-index="0">
+        <div id="dLabel" class="mitte label">Aufbau</div>
+        <div id="dTitel" class="mitte titel">Drei Blickwinkel. Ein Wert.</div>
+        <div id="k1" class="karte"><i style="background:#2E6B57"></i><b>Kursschwankungen</b><span>Wie viel Unsicherheit preist der Markt ein?</span></div>
+        <div id="k2" class="karte"><i style="background:#6F7F45"></i><b>Breite und Trend</b><span>Wie viele Aktien tragen die Entwicklung?</span></div>
+        <div id="k3" class="karte"><i style="background:#A0722F"></i><b>Stimmung und Absicherung</b><span>Wie vorsichtig verhalten sich Anleger?</span></div>
+      </div>
+      <!-- E: Abschluss -->
+      <div id="szE" class="szene clip" data-start="25.4" data-duration="3.6" data-track-index="0">
+        <div id="eMarke" class="mitte">Invest<span>Timer</span></div>
+        <div id="eSatz" class="mitte satz">Marktstress verstehen · Keine Anlageberatung</div>
+        <div id="eFuss" class="mitte">Werte vor November 2026 mit dem heutigen Modell zurückgerechnet.</div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var D = window.FILM_DATA, NS = "http://www.w3.org/2000/svg";
+        var FARBE = ["#2E6B57", "#6F7F45", "#A0722F", "#A24524", "#8E2A27"], GRENZEN = [20, 40, 60, 80];
+        var STUFEN = ["ruhig", "moderat", "erhöht", "hoch", "Panik"], TEXT = ["#2E6B57", "#56652f", "#7f561c", "#A24524", "#8E2A27"];
+        function stufe(w) { return GRENZEN.filter(function (g) { return w >= g; }).length; }
+        function el(tag, attr, eltern) { var e = document.createElementNS(NS, tag); for (var k in attr) e.setAttribute(k, attr[k]); eltern.appendChild(e); return e; }
+        function bogen(w) { var a = Math.PI + w / 100 * Math.PI; return [640 + 250 * Math.cos(a), 470 + 250 * Math.sin(a)]; }
+        // B: farbige Segmente je Stufe und Stufen-Beschriftung
+        var seg = document.getElementById("bSegmente"), stu = document.getElementById("bStufen"), grenzen = [0, 20, 40, 60, 80, 100];
+        for (var i = 0; i < 5; i++) {
+          var p0 = bogen(grenzen[i] + (i ? 0.6 : 0)), p1 = bogen(grenzen[i + 1] - (i < 4 ? 0.6 : 0));
+          el("path", { id: "bSeg" + i, d: "M" + p0[0] + " " + p0[1] + " A250 250 0 0 1 " + p1[0] + " " + p1[1], fill: "none", stroke: FARBE[i], "stroke-width": 10, "stroke-linecap": "butt", opacity: 0 }, seg);
+          var m = bogen((grenzen[i] + grenzen[i + 1]) / 2), aus = [(m[0] - 640) * 1.25 + 640, (m[1] - 470) * 1.25 + 470];
+          var t = el("text", { id: "bSt" + i, x: aus[0], y: aus[1] + 6, "text-anchor": i < 2 ? "end" : i > 2 ? "start" : "middle", "class": "stufe", fill: TEXT[i], opacity: 0 }, stu);
+          t.textContent = STUFEN[i];
+        }
+        el("text", { x: 390, y: 512, "text-anchor": "middle", "class": "stufe", fill: "#5f6c66" }, stu).textContent = "0";
+        el("text", { x: 890, y: 512, "text-anchor": "middle", "class": "stufe", fill: "#5f6c66" }, stu).textContent = "100";
+        // C: Verlauf (Wochenschluss), Raster, Baender der staerksten Stressphasen
+        var W = D.wochen, t0 = Date.parse(W[0][0]), t1 = Date.parse(W[W.length - 1][0]);
+        function x(d) { return 120 + (Date.parse(d) - t0) / (t1 - t0) * 1040; }
+        function y(w) { return 560 - w / 100 * 420; }
+        var raster = document.getElementById("cRaster");
+        [0, 50, 100].forEach(function (g) { el("line", { x1: 120, x2: 1160, y1: y(g), y2: y(g), stroke: "#dfe5db", "stroke-width": 1 }, raster); el("text", { x: 104, y: y(g) + 5, "text-anchor": "end", "class": "achse" }, raster).textContent = g; });
+        for (var j = 2008; j <= 2026; j += 6) el("text", { x: x(j + "-01-01"), y: 596, "text-anchor": "middle", "class": "achse" }, raster).textContent = j;
+        var d = W.map(function (p, k) { return (k ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1); }).join("");
+        document.getElementById("cLinie").setAttribute("d", d);
+        var baender = document.getElementById("cBaender"), namen = document.getElementById("cNamen");
+        var letzte = -1e9, reihe = 0;
+        D.phasen.forEach(function (ph, k) {
+          var x0 = x(ph.start), x1 = Math.max(x0 + 8, x(ph.ende));
+          reihe = (x0 + x1) / 2 - letzte < 200 ? 1 - reihe : 0; letzte = (x0 + x1) / 2;
+          el("rect", { id: "cBand" + k, x: x0, y: 140, width: x1 - x0, height: 420, fill: "#efe9df", opacity: 0 }, baender);
+          var tx = Math.min(1150, Math.max(130, (x0 + x1) / 2));
+          el("text", { id: "cName" + k, x: tx, y: 128 - reihe * 26, "text-anchor": "middle", "class": "phase", opacity: 0 }, namen).textContent = ph.name;
+        });
+
+        var tl = gsap.timeline({ paused: true });
+        // A
+        tl.from("#aSatz", { y: 16, opacity: 0, duration: 0.6, ease: "power2.out" }, 0.5)
+          .from("#aLinie", { scaleX: 0, duration: 0.6, ease: "power2.inOut" }, 0.9)
+          .to(["#aLabel", "#aTitel", "#aSatz", "#aLinie"], { opacity: 0, duration: 0.35, ease: "power1.in" }, 3.85);
+        // B: Bogen fuellt sich, Zahl zaehlt mit, Stufen erscheinen nacheinander
+        var zahl = { w: 0 }, punkt = document.getElementById("bPunkt"), bz = document.getElementById("bZahl");
+        tl.from("#bSpur", { opacity: 0, duration: 0.4 }, 4.3);
+        for (var s = 0; s < 5; s++) {
+          tl.to("#bSeg" + s, { opacity: 1, duration: 0.25 }, 4.7 + s * 0.75)
+            .to("#bSt" + s, { opacity: 1, duration: 0.3 }, 4.75 + s * 0.75);
+        }
+        tl.to(zahl, { w: 100, duration: 3.75, ease: "none", onUpdate: function () {
+            var w = zahl.w, p = bogen(w); punkt.setAttribute("cx", p[0]); punkt.setAttribute("cy", p[1]);
+            punkt.setAttribute("fill", FARBE[Math.min(4, stufe(w))]); bz.textContent = Math.round(w); bz.style.color = TEXT[Math.min(4, stufe(w))];
+          } }, 4.7)
+          .from("#bSatz", { y: 14, opacity: 0, duration: 0.5 }, 6.9)
+          .to(["#bSvg", "#bZahl", "#bSatz"], { opacity: 0, duration: 0.35 }, 10.05);
+        // C: Linie zeichnet sich von links nach rechts, Phasen leuchten auf, wenn die Linie sie erreicht
+        tl.from("#cLabel", { opacity: 0, y: 10, duration: 0.5 }, 10.5)
+          .from("#cRaster", { opacity: 0, duration: 0.5 }, 10.5)
+          .to("#cVorhang", { attr: { width: 1060 }, duration: 6.8, ease: "none" }, 10.9);
+        D.phasen.forEach(function (ph, k) {
+          var an = 10.9 + (x(ph.start) - 110) / 1060 * 6.8;
+          tl.to("#cBand" + k, { opacity: 1, duration: 0.4 }, an).to("#cName" + k, { opacity: 1, duration: 0.4 }, an + 0.1);
+        });
+        tl.from("#cSatz", { opacity: 0, y: 12, duration: 0.5 }, 17.9)
+          .to(["#cLabel", "#cSvg", "#cSatz"], { opacity: 0, duration: 0.35 }, 20.25);
+        // D
+        tl.from("#dLabel", { opacity: 0, y: 10, duration: 0.4 }, 20.7)
+          .from("#dTitel", { opacity: 0, y: 18, duration: 0.6, ease: "power3.out" }, 20.8)
+          .from("#k1", { opacity: 0, y: 24, duration: 0.5, ease: "power2.out" }, 21.5)
+          .from("#k2", { opacity: 0, y: 24, duration: 0.5, ease: "power2.out" }, 21.85)
+          .from("#k3", { opacity: 0, y: 24, duration: 0.5, ease: "power2.out" }, 22.2)
+          .to(["#dLabel", "#dTitel", "#k1", "#k2", "#k3"], { opacity: 0, duration: 0.35 }, 25.05);
+        // E
+        tl.from("#eMarke", { opacity: 0, y: 16, duration: 0.6, ease: "power3.out" }, 25.5)
+          .from("#eSatz", { opacity: 0, y: 12, duration: 0.5 }, 25.9)
+          .from("#eFuss", { opacity: 0, duration: 0.5 }, 26.3);
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

@@ -881,6 +881,7 @@ body.wert-laedt #aufbau-karte{visibility:hidden}
 @media(min-width:761px){.zz-mobil{display:none}}
 @media(max-width:400px){.zeitversatz-zeile{margin:4px 12px 6px;padding:8px 8px 8px 9px;gap:6px}.zeitversatz-zeile svg{width:15px;height:15px}}
 .aufbau-gruppe-kopf{flex-wrap:wrap;row-gap:2px}.aufbau-gruppe h3{overflow:visible;text-overflow:clip}.aufbau-gruppe-wert{margin-left:auto}
+@media(max-width:760px){.app>main{min-height:calc(100dvh - 60px - var(--sa-top))}}
 </style>
 <style id="investtimer-natural-film-style">
 /* v1.3: explanation as a quiet part of the reading, never an advertising tile. */
@@ -1002,7 +1003,11 @@ body:not(.members-layout) .first-look .details-toggle{margin-top:16px}
    "name": "positioning"
   }
  ],
- "bloecke": {}
+ "bloecke": {
+  "volatility": 22.6,
+  "price": 31.5,
+  "positioning": 38.2
+ }
 }
 </script>
 
@@ -2914,7 +2919,7 @@ kmRender();
    Reduzierte Bewegung: ebenso nur Standbild bis zum Tippen. Eingeloggt erscheint die Karte nicht. */
 (()=>{
  document.querySelector('.public-context.natural-film')?.remove();
- if(!false)return;
+ if(!true)return;
  const FT={de:{label:'KURZ ERKLÄRT',titel:'So liest du den Marktstress',aria:'Film abspielen: So liest du den Marktstress',video:'Erklärfilm: So liest du den Marktstress'},
   en:{label:'EXPLAINED',titel:'How to read market stress',aria:'Play film: How to read market stress',video:'Explainer film: How to read market stress'}};
  const ft=k=>FT[document.documentElement.lang==='en'?'en':'de'][k];
@@ -2974,7 +2979,7 @@ const KA={de:{
 }};
 const ka=k=>(KA[document.documentElement.lang==='en'?'en':'de'][k])||k;
 const angemeldet=()=>!!(IT.member&&(IT.session||(IT.emailVonSitzung&&IT.emailVonSitzung())));
-const VERSION={"v": "2026.11.27-0040", "d": "27.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
+const VERSION={"v": "2026.11.27-0149", "d": "27.11.2026"};window.INVESTTIMER_VERSION=VERSION.v;
 const zustand={nutzer:null,alarme:null,konto:null,meldung:'',meldungOk:false,laedt:false};
 const sicht=document.createElement('section');sicht.id='konto-ansicht';sicht.className='konto-ansicht';sicht.hidden=true;sicht.setAttribute('aria-labelledby','konto-ansicht-titel');
 ($('#ki-ansicht')||$('.app-header'))?.after(sicht);
